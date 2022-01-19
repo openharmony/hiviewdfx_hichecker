@@ -1,0 +1,27 @@
+{
+  "subsystem": "hiviewdfx",
+  "parts": {
+    "hichecker_native": {
+      "module_list": [
+        "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker"
+      ],
+      "inner_kits": [
+        {
+          "name": "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker",
+          "header": {
+            "header_files": [
+              "hichecker.h",
+              "caution.h"
+            ],
+            "header_base": "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include/"
+          }
+        }
+      ]
+    },
+    "hichecker_js": {
+      "module_list": [
+        "//base/hiviewdfx/hichecker/interfaces/js/kits/napi:hichecker"
+      ]
+    }
+  }
+}
