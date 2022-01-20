@@ -27,7 +27,6 @@
 - 提供耗时消息检测功能
 - 支持应用增加、删除不同的检测规则
 - 支持应用增加、删除不同的告警通知规则，目前支持记录流水日志（默认），应用崩溃两种规则
-- 对外接口支持C++/JS形态两种接口
 - 相关检测条件满足时，支持Native回栈到关键触发点，暂不支持JS回栈
 
 ## 目录<a name="section14197309111"></a>
@@ -52,22 +51,20 @@
 
 主要接口说明
 
-| 类        | 方法                                           | 描述                             |
-| --------- | :--------------------------------------------- | -------------------------------- |
-| HiChecker | BigInt RULE_CAUTION_BY_LOG = 1<<63;            | 告警规则，仅记录日志             |
-|           | BigInt RULE_CAUTION_BY_CRASH = 1<<62;          | 告警规则，让应用退出             |
-|           | BigInt RULE_CUR_THREAD_CHECK_SLOW_PROCESS = 1; | 检测规则，检测耗时函数调用       |
-|           | BigInt RULE_CHECK_SLOW_EVENT = 1<<32;          | 检测规则，检测耗时事件分发与处理 |
-|           | BigInt RULE_CHECK_ABILITY_LEAK = 1<<33;        | 检测规则，检测ability泄露        |
-|           | addRule(BigInt rule) : void                    | 增加一个或多个检测项             |
-|           | removeRule(BigInt rule) : void                 | 删除一个或多个检测项             |
-|           | getRule() : BigInt                             | 获取所有检测项                   |
-|           | contains(BigInt rule) : boolean                | 当前是否有某一个检测项           |
-|           | NotifySlowProcess(std::string) : void          | 通知有耗时调用                   |
-|           | NotifySlowEvent(std::string) : void            | 通知有耗时事件                   |
-|           | NotifyAbilityLeaks(Caution caution) : void     | 通知有ability泄露                |
-| Caution   | GetTriggerRule() : BigInt                      | 获取触发当前告警的检测规则       |
-|           | GetCustomMessage() : String                    | 获取更多辅助信息                 |
+| 类        | 方法                                                | 描述                             |
+| --------- | :-------------------------------------------------- | -------------------------------- |
+| HiChecker | BigInt RULE_CAUTION_PRINT_LOG = 1<<63;              | 告警规则，仅记录日志             |
+|           | BigInt RULE_CAUTION_TRIGGER_CRASH = 1<<62;          | 告警规则，让应用退出             |
+|           | BigInt RULE_THREAD_CHECK_SLOW_PROCESS = 1;          | 检测规则，检测耗时函数调用       |
+|           | BigInt RULE_CHECK_SLOW_EVENT = 1<<32;               | 检测规则，检测耗时事件分发与处理 |
+|           | BigInt RULE_CHECK_ABILITY_CONNECTION_LEAK = 1<<33;  | 检测规则，检测ability泄露        |
+|           | addRule(BigInt rule) : void                         | 增加一个或多个检测项             |
+|           | removeRule(BigInt rule) : void                      | 删除一个或多个检测项             |
+|           | getRule() : BigInt                                  | 获取所有检测项                   |
+|           | contains(BigInt rule) : boolean                     | 当前是否有某一个检测项           |
+|           | NotifySlowProcess(std::string) : void               | 通知有耗时调用                   |
+|           | NotifySlowEvent(std::string) : void                 | 通知有耗时事件                   |
+|           | NotifyAbilityConnectionLeak(Caution caution) : void | 通知有ability泄露                |
 
 ### 使用说明
 
