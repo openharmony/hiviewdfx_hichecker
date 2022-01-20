@@ -16,6 +16,9 @@
             "header_base": "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include/"
           }
         }
+      ],
+      "test_list": [
+        "//base/hiviewdfx/hichecker/test:unittest"
       ]
     },
     "hichecker_js": {
