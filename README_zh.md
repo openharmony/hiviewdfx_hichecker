@@ -27,6 +27,7 @@
 - 提供耗时消息检测功能
 - 支持应用增加、删除不同的检测规则
 - 支持应用增加、删除不同的告警通知规则，目前支持记录流水日志（默认），应用崩溃两种规则
+- 对外接口支持C++/JS形态两种接口
 - 相关检测条件满足时，支持Native回栈到关键触发点，暂不支持JS回栈
 
 ## 目录<a name="section14197309111"></a>
@@ -65,19 +66,22 @@
 |           | NotifySlowProcess(std::string) : void               | 通知有耗时调用                   |
 |           | NotifySlowEvent(std::string) : void                 | 通知有耗时事件                   |
 |           | NotifyAbilityConnectionLeak(Caution caution) : void | 通知有ability泄露                |
+| Caution   | GetTriggerRule() : BigInt                           | 获取触发当前告警的检测规则       |
+|           | GetCustomMessage() : String                         | 获取更多辅助信息                 |
+|           | GetStackTrace() ：String                            | 获取堆栈信息                     |
 
 ### 使用说明
 
 1. 添加单条规则
 
    ```js
-   hichecker.addRule(hichecker.RULE_CAUTION_BY_LOG);
+   hichecker.addRule(hichecker.RULE_CAUTION_PRINT_LOG );
    ```
 
 2. 添加多条规则
 
    ```
-   hichecker.addRule(hichecker.RULE_CAUTION_BY_LOG | hichecker.RULE_CHECK_SLOW_EVENT);
+   hichecker.addRule(hichecker.RULE_CAUTION_PRINT_LOG | hichecker.RULE_CHECK_SLOW_EVENT);
    ```
 
 ## 涉及仓<a name="section1371113476310"></a>

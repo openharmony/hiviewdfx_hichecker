@@ -25,6 +25,9 @@ namespace {
     const int64_t SEC_TO_NS = 1000000000;
     const int64_t MAX_CALL_DURATION_US = 1000; // 1ms
     const int LOOP_COUNT = 1000;
+    const uint64_t RULE_ERROR0 = 0;
+    const uint64_t RULE_ERROR1 = -1;
+    const uint64_t RULE_ERROR2 = 999999999;
 }
 
 class HiCheckerNativeTest : public testing::Test {
@@ -85,6 +88,21 @@ HWTEST_F(HiCheckerNativeTest, AddRuleTest002, TestSize.Level1)
 }
 
 /**
+  * @tc.name: AddRule003
+  * @tc.desc: add invaild rule
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, AddRuleTest003, TestSize.Level1)
+{
+    HiChecker::AddRule(RULE_ERROR0);
+    ASSERT_EQ(HiChecker::GetRule(), 0);
+    HiChecker::AddRule(RULE_ERROR1);
+    ASSERT_EQ(HiChecker::GetRule(), 0);
+    HiChecker::AddRule(RULE_ERROR2);
+    ASSERT_EQ(HiChecker::GetRule(), 0);
+}
+
+/**
   * @tc.name: AddRulePerf
   * @tc.desc: test performance for AddRule
   * @tc.type: PERF
@@ -132,6 +150,22 @@ HWTEST_F(HiCheckerNativeTest, RemoveRuleTest002, TestSize.Level1)
     ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CAUTION_PRINT_LOG));
     uint64_t rule = Rule::ALL_RULES ^ (Rule::RULE_CAUTION_PRINT_LOG | Rule::RULE_CAUTION_TRIGGER_CRASH);
     ASSERT_EQ(HiChecker::GetRule(), rule);
+}      
+
+/**
+  * @tc.name: RemoveRule003
+  * @tc.desc: remove invaild rule
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, RemoveRuleTest003, TestSize.Level1)
+{
+    HiChecker::AddRule(Rule::ALL_RULES);
+    HiChecker::RemoveRule(RULE_ERROR0);
+    ASSERT_EQ(HiChecker::GetRule(), Rule::ALL_RULES);
+    HiChecker::RemoveRule(RULE_ERROR1);
+    ASSERT_EQ(HiChecker::GetRule(), Rule::ALL_RULES);
+    HiChecker::RemoveRule(RULE_ERROR2);
+    ASSERT_EQ(HiChecker::GetRule(), Rule::ALL_RULES);
 }
 
 /**
@@ -163,4 +197,18 @@ HWTEST_F(HiCheckerNativeTest, ContainsTest001, TestSize.Level1)
     HiChecker::AddRule(Rule::RULE_CAUTION_PRINT_LOG);
     ASSERT_TRUE(HiChecker::Contains(Rule::RULE_CAUTION_PRINT_LOG));
     ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CAUTION_TRIGGER_CRASH));
+    ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CAUTION_PRINT_LOG | Rule::RULE_CAUTION_TRIGGER_CRASH));
+}
+
+/**
+  * @tc.name: Contains002
+  * @tc.desc: test Contains with invaild rule
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, ContainsTest002, TestSize.Level1)
+{
+    HiChecker::AddRule(Rule::ALL_RULES);
+    ASSERT_FALSE(HiChecker::Contains(RULE_ERROR0));
+    ASSERT_FALSE(HiChecker::Contains(RULE_ERROR1));
+    ASSERT_FALSE(HiChecker::Contains(RULE_ERROR2));
 }

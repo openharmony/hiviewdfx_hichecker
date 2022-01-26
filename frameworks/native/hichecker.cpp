@@ -34,8 +34,7 @@ static constexpr HiLogLabel LABEL = { LOG_CORE, 0xD002D0B, "HICHECKER" };
 void HiChecker::AddRule(uint64_t rule)
 {
     std::lock_guard<std::mutex> lock(mutexLock_);
-    if ((Rule::ALL_RULES & rule) == 0) {
-        HiLog::Info(LABEL, "input rule is not exist,please check.");
+    if (!CheckRule(rule)) {
         return;
     }
     if ((Rule::RULE_CHECK_SLOW_EVENT & rule)) {
@@ -48,8 +47,7 @@ void HiChecker::AddRule(uint64_t rule)
 void HiChecker::RemoveRule(uint64_t rule)
 {
     std::lock_guard<std::mutex> lock(mutexLock_);
-    if ((Rule::ALL_RULES & rule) == 0) {
-        HiLog::Info(LABEL, "input rule is not exist,please check.");
+    if (!CheckRule(rule)) {
         return;
     }
     if ((Rule::RULE_CHECK_SLOW_EVENT & rule)) {
@@ -68,6 +66,9 @@ uint64_t HiChecker::GetRule()
 bool HiChecker::Contains(uint64_t rule)
 {
     std::lock_guard<std::mutex> lock(mutexLock_);
+    if (!CheckRule(rule)) {
+        return false;
+    }
     return rule == (rule & (threadLocalRules_ | processRules_));
 }
 
@@ -161,6 +162,15 @@ void HiChecker::DumpStackTrace(std::string& msg)
     if (!dumplog.DumpCatch(getpid(), gettid(), msg)) {
         HiLog::Info(LABEL, "HiChecker DumpStackTrace fail.");
     }
+}
+
+bool HiChecker::CheckRule(uint64_t rule)
+{
+    if (rule <= 0 || Rule::ALL_RULES != (Rule::ALL_RULES | rule)) {
+        HiLog::Info(LABEL, "input rule is not exist,please check.");
+        return false;
+    }
+    return true;
 }
 } // HiviewDFX
 } // OHOS
