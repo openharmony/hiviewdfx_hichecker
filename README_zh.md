@@ -12,7 +12,7 @@ HiChecker，可以作为应用开发阶段使用的检测工具，用于检测�
 
 ## 架构<a name="section161941989596"></a>
 
- <img src="./figures/HiChecker架构图.png" style="zoom:40%;" />
+ <img src="./figures/HiChecker架构图.png" style="zoom:100%;" />
 
 | 依赖部件                                                    | 依赖描述                                                     |
 | ----------------------------------------------------------- | ------------------------------------------------------------ |
@@ -27,7 +27,6 @@ HiChecker，可以作为应用开发阶段使用的检测工具，用于检测�
 - 提供耗时消息检测功能
 - 支持应用增加、删除不同的检测规则
 - 支持应用增加、删除不同的告警通知规则，目前支持记录流水日志（默认），应用崩溃两种规则
-- 对外接口支持C++/JS形态两种接口
 - 相关检测条件满足时，支持Native回栈到关键触发点，暂不支持JS回栈
 
 ## 目录<a name="section14197309111"></a>
@@ -38,9 +37,9 @@ HiChecker，可以作为应用开发阶段使用的检测工具，用于检测�
 │   └── native          # HiChecker native实现代码
 ├── interfaces          # 接口
 │   └── native          # C++接口
-│       └── innerkits   # 对内部子系统暴露的头文件
+│       └── innerkits   # 对内部子系统提供的接口
 |   └── js              # JS接口
-│       └── kits        # 对应用暴露的头文件
+│       └── kits        # 对应用提供的接口
 ├── test                # 测试用例
 │   └── unittest            
 ```
@@ -69,20 +68,6 @@ HiChecker，可以作为应用开发阶段使用的检测工具，用于检测�
 | Caution   | GetTriggerRule() : BigInt                           | 获取触发当前告警的检测规则       |
 |           | GetCustomMessage() : String                         | 获取更多辅助信息                 |
 |           | GetStackTrace() ：String                            | 获取堆栈信息                     |
-
-### 使用说明
-
-1. 添加单条规则
-
-   ```js
-   hichecker.addRule(hichecker.RULE_CAUTION_PRINT_LOG );
-   ```
-
-2. 添加多条规则
-
-   ```
-   hichecker.addRule(hichecker.RULE_CAUTION_PRINT_LOG | hichecker.RULE_CHECK_SLOW_EVENT);
-   ```
 
 ## 涉及仓<a name="section1371113476310"></a>
 
