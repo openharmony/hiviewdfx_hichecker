@@ -8,7 +8,7 @@
 
 ## 简介<a name="section11660541593"></a>
 
-​        本模块主要作用是给基于OpenHarmony的应用（包含系统和三方应用）开发者提供一套检测工具，用来检测应用程序开发过程中容易引人忽略的部分问题，包括应用线程出现耗时调用、应用进程中元能力资源泄露等问题，检测到的问题以日志记录或进程crash等形式展现出来以便开发者发现并修改相关问题，提升应用使用体验
+HiChecker，可以作为应用开发阶段使用的检测工具，用于检测代码运行过程中部分易忽略的问题，如应用线程出现耗时调用、应用进程中元能力资源泄露等问题。开发者可以通过日志记录或进程crash等形式查看具体问题并进行修改，提升应用的使用体验。
 
 ## 架构<a name="section161941989596"></a>
 
@@ -27,6 +27,7 @@
 - 提供耗时消息检测功能
 - 支持应用增加、删除不同的检测规则
 - 支持应用增加、删除不同的告警通知规则，目前支持记录流水日志（默认），应用崩溃两种规则
+- 对外接口支持C++/JS形态两种接口
 - 相关检测条件满足时，支持Native回栈到关键触发点，暂不支持JS回栈
 
 ## 目录<a name="section14197309111"></a>
@@ -65,19 +66,22 @@
 |           | NotifySlowProcess(std::string) : void               | 通知有耗时调用                   |
 |           | NotifySlowEvent(std::string) : void                 | 通知有耗时事件                   |
 |           | NotifyAbilityConnectionLeak(Caution caution) : void | 通知有ability泄露                |
+| Caution   | GetTriggerRule() : BigInt                           | 获取触发当前告警的检测规则       |
+|           | GetCustomMessage() : String                         | 获取更多辅助信息                 |
+|           | GetStackTrace() ：String                            | 获取堆栈信息                     |
 
 ### 使用说明
 
 1. 添加单条规则
 
    ```js
-   hichecker.addRule(hichecker.RULE_CAUTION_BY_LOG);
+   hichecker.addRule(hichecker.RULE_CAUTION_PRINT_LOG );
    ```
 
 2. 添加多条规则
 
    ```
-   hichecker.addRule(hichecker.RULE_CAUTION_BY_LOG | hichecker.RULE_CHECK_SLOW_EVENT);
+   hichecker.addRule(hichecker.RULE_CAUTION_PRINT_LOG | hichecker.RULE_CHECK_SLOW_EVENT);
    ```
 
 ## 涉及仓<a name="section1371113476310"></a>

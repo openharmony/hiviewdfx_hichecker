@@ -71,6 +71,7 @@ private:
     static void TriggerCrash(const CautionDetail& cautionDetail);
     static bool HasCautionRule(uint64_t rules);
     static void DumpStackTrace(std::string& msg);
+    static bool CheckRule(uint64_t rule);
 
     static std::mutex mutexLock_;
     static volatile bool checkMode_;
