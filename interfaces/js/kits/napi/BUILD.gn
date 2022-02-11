@@ -17,7 +17,7 @@ import("//build/ohos/ace/ace.gni")
 config("hichecker_js_source_config") {
   visibility = [ ":*" ]
 
-  include_dirs = 
+  include_dirs =
       [ "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include" ]
 }
 
