@@ -1,0 +1,33 @@
+{
+    "name": "@ohos/hichecker_js",
+    "description": "HiChecker for js application",
+    "version": "3.1",
+    "license": "Apache License 2.0",
+    "publishAs": "code-segment",
+    "segment": {
+        "destPath": "base/hiviewdfx/hichecker"
+    },
+    "dirs": {},
+    "scripts": {},
+    "component": {
+        "name": "hichecker_js",
+        "subsystem": "hiviewdfx",
+        "adapted_system_type": [
+            "standard"
+        ],
+        "rom": "",
+        "ram": "",
+        "deps": {
+            "components": [
+                "hichecker_native",
+                "hilog_native",
+                "napi"
+            ]
+        },
+        "build": {
+            "sub_component": [
+                "//base/hiviewdfx/hichecker/interfaces/js/kits/napi:hichecker"
+            ]
+        }
+    }
+}

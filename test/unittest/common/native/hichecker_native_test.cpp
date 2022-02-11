@@ -150,7 +150,7 @@ HWTEST_F(HiCheckerNativeTest, RemoveRuleTest002, TestSize.Level1)
     ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CAUTION_PRINT_LOG));
     uint64_t rule = Rule::ALL_RULES ^ (Rule::RULE_CAUTION_PRINT_LOG | Rule::RULE_CAUTION_TRIGGER_CRASH);
     ASSERT_EQ(HiChecker::GetRule(), rule);
-}      
+}
 
 /**
   * @tc.name: RemoveRule003
