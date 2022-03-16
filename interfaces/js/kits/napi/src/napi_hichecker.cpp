@@ -30,20 +30,18 @@ constexpr uint64_t GET_RULE_PARAM_FAIL = 0;
 napi_value AddRule(napi_env env, napi_callback_info info)
 {
     uint64_t rule = GetRuleParam(env, info);
-    if (rule == GET_RULE_PARAM_FAIL) {
-        return CreateErrorMessage(env, "invalid input, please check!");
+    if (rule != GET_RULE_PARAM_FAIL) {
+        HiChecker::AddRule(rule);
     }
-    HiChecker::AddRule(rule);
     return CreateUndefined(env);
 }
 
 napi_value RemoveRule(napi_env env, napi_callback_info info)
 {
     uint64_t rule = GetRuleParam(env, info);
-    if (rule == GET_RULE_PARAM_FAIL) {
-        return CreateErrorMessage(env, "invalid input, please check!");
+    if (rule != GET_RULE_PARAM_FAIL) {
+        HiChecker::RemoveRule(rule);
     }
-    HiChecker::RemoveRule(rule);
     return CreateUndefined(env);
 }
 
@@ -56,9 +54,6 @@ napi_value GetRule(napi_env env, napi_callback_info info)
 napi_value Contains(napi_env env, napi_callback_info info)
 {
     uint64_t rule = GetRuleParam(env, info);
-    if (rule == GET_RULE_PARAM_FAIL) {
-        return CreateErrorMessage(env, "invalid input, please check!");
-    }
     napi_value result = nullptr;
     napi_get_boolean(env, HiChecker::Contains(rule), &result);
     return result;
@@ -107,15 +102,6 @@ napi_value CreateUndefined(napi_env env)
     return result;
 }
 
-napi_value CreateErrorMessage(napi_env env, std::string msg)
-{
-    napi_value result = nullptr;
-    napi_value message = nullptr;
-    napi_create_string_utf8(env, (char *)msg.data(), msg.size(), &message);
-    napi_create_error(env, nullptr, message, &result);
-    return result;
-}
-
 uint64_t GetRuleParam(napi_env env, napi_callback_info info)
 {
     size_t argc = ONE_VALUE_LIMIT;
@@ -137,6 +123,9 @@ uint64_t GetRuleParam(napi_env env, napi_callback_info info)
     if (!lossless) {
         HiLog::Error(LABEL, "Type error, bigint should be 64!");
         return GET_RULE_PARAM_FAIL;
+    }
+    if (rule == GET_RULE_PARAM_FAIL) {
+        HiLog::Error(LABEL, "invalid input, please check!");
     }
     return rule;
 }
