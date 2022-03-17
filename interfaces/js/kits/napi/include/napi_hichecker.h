@@ -28,7 +28,6 @@ static napi_value Contains(napi_env env, napi_callback_info info);
 
 static napi_value DeclareHiCheckerInterface(napi_env env, napi_value exports);
 static napi_value DeclareHiCheckerRuleEnum(napi_env env, napi_value exports);
-static napi_value CreateErrorMessage(napi_env env, std::string msg);
 static napi_value CreateUndefined(napi_env env);
 static napi_value ToUInt64Value(napi_env env, uint64_t value);
 static bool MatchValueType(napi_env env, napi_value value, napi_valuetype targetType);
