@@ -74,6 +74,9 @@ bool HiChecker::Contains(uint64_t rule)
 
 void HiChecker::NotifySlowProcess(const std::string& tag)
 {
+    if ((threadLocalRules_ & Rule::RULE_THREAD_CHECK_SLOW_PROCESS) == 0) {
+        return;
+    }
     std::string stackTrace;
     DumpStackTrace(stackTrace);
     Caution caution(Rule::RULE_THREAD_CHECK_SLOW_PROCESS,
@@ -83,6 +86,9 @@ void HiChecker::NotifySlowProcess(const std::string& tag)
 
 void HiChecker::NotifySlowEvent(const std::string& tag)
 {
+    if ((processRules_ & Rule::RULE_CHECK_SLOW_EVENT) == 0) {
+        return;
+    }
     std::string stackTrace;
     DumpStackTrace(stackTrace);
     Caution caution(Rule::RULE_CHECK_SLOW_EVENT,
@@ -92,6 +98,9 @@ void HiChecker::NotifySlowEvent(const std::string& tag)
 
 void HiChecker::NotifyAbilityConnectionLeak(const Caution& caution)
 {
+    if ((processRules_ & Rule::RULE_CHECK_ABILITY_CONNECTION_LEAK) == 0) {
+        return;
+    }
     HandleCaution(caution);
 }
 
@@ -108,7 +117,6 @@ void HiChecker::HandleCaution(const Caution& caution)
         OnProcessCautionFound(cautionDetail);
         return;
     }
-    HiLog::Info(LABEL, "trigger rule is not be added.");
 }
 
 void HiChecker::OnThreadCautionFound(CautionDetail& cautionDetail)
@@ -116,7 +124,8 @@ void HiChecker::OnThreadCautionFound(CautionDetail& cautionDetail)
     if ((cautionDetail.rules_ & Rule::ALL_CAUTION_RULES) == 0) {
         cautionDetail.rules_ |= Rule::RULE_CAUTION_PRINT_LOG;
     }
-    if (cautionDetail.CautionEnable(Rule::RULE_CAUTION_PRINT_LOG)) {
+    if (cautionDetail.CautionEnable(Rule::RULE_CAUTION_PRINT_LOG)
+        && !cautionDetail.CautionEnable(Rule::RULE_CAUTION_TRIGGER_CRASH)) {
         PrintLog(cautionDetail);
     }
     if (cautionDetail.CautionEnable(Rule::RULE_CAUTION_TRIGGER_CRASH)) {
@@ -143,7 +152,7 @@ void HiChecker::TriggerCrash(const CautionDetail& cautionDetail)
         "HiChecker caution with RULE_CAUTION_TRIGGER_CRASH; exit.\nCautionMsg:%{public}s\nStackTrace:\n%{public}s",
         cautionDetail.caution_.GetCautionMsg().c_str(),
         cautionDetail.caution_.GetStackTrace().c_str());
-    kill(getpid(), SIGTERM);
+    kill(getpid(), SIGABRT);
 }
 
 bool HiChecker::NeedCheckSlowEvent()
