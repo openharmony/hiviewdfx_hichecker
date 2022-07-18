@@ -16,7 +16,6 @@
 #ifndef HIVIEWDFX_CAUTION_H
 #define HIVIEWDFX_CAUTION_H
 
-#include <cstdint>
 #include <string>
 
 namespace OHOS {

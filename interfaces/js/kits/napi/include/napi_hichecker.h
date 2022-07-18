@@ -16,7 +16,6 @@
 #ifndef NAPI_HICHECKER_H
 #define NAPI_HICHECKER_H
 
-#include <cstdint>
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
