@@ -16,9 +16,11 @@
 #ifndef HIVIEWDFX_HICHECKER_H
 #define HIVIEWDFX_HICHECKER_H
 
+#include <cstdint>
 #include <mutex>
 
 #include "caution.h"
+#include "string"
 
 namespace OHOS {
 namespace HiviewDFX {
