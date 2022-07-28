@@ -16,7 +16,8 @@
 #include "napi_hichecker.h"
 
 #include "hichecker.h"
-#include "hilog/log.h"
+#include "hilog/log_c.h"
+#include "hilog/log_cpp.h"
 
 namespace OHOS {
 namespace HiviewDFX {
