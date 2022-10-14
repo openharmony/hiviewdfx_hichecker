@@ -32,6 +32,7 @@ static napi_value CreateUndefined(napi_env env);
 static napi_value ToUInt64Value(napi_env env, uint64_t value);
 static bool MatchValueType(napi_env env, napi_value value, napi_valuetype targetType);
 static uint64_t GetRuleParam(napi_env env, napi_callback_info info);
+static void ThrowError(napi_env env, int errCode);
 } // HiviewDFX
 } // OHOS
 #endif // NAPI_HICHECKER_H
