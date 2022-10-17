@@ -15,6 +15,8 @@
 
 #include "napi_hichecker.h"
 
+#include <map>
+
 #include "hichecker.h"
 #include "hilog/log_c.h"
 #include "hilog/log_cpp.h"
@@ -142,7 +144,7 @@ napi_value CreateUndefined(napi_env env)
 
 void ThrowError(napi_env env, int errCode)
 {
-    const std::map<int, std::string> errMap = {
+    std::map<int, std::string> errMap = {
         { ERR_PARAM, "Invalid input parameter!" },
     };
     if (errMap.find(errCode) != errMap.end()) {
