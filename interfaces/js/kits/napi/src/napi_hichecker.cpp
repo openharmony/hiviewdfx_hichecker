@@ -15,6 +15,8 @@
 
 #include "napi_hichecker.h"
 
+#include <map>
+
 #include "hichecker.h"
 #include "hilog/log_c.h"
 #include "hilog/log_cpp.h"
@@ -26,6 +28,7 @@ constexpr HiLogLabel LABEL = { LOG_CORE, 0xD002D0B, "HiChecker_NAPI" };
 constexpr int ONE_VALUE_LIMIT = 1;
 constexpr int ARRAY_INDEX_FIRST = 0;
 constexpr uint64_t GET_RULE_PARAM_FAIL = 0;
+constexpr int ERR_PARAM = 401;
 }
 
 napi_value AddRule(napi_env env, napi_callback_info info)
@@ -60,6 +63,39 @@ napi_value Contains(napi_env env, napi_callback_info info)
     return result;
 }
 
+napi_value AddCheckRule(napi_env env, napi_callback_info info)
+{
+    uint64_t rule = GetRuleParam(env, info);
+    if (rule != GET_RULE_PARAM_FAIL) {
+        HiChecker::AddRule(rule);
+    } else {
+        ThrowError(env, ERR_PARAM);
+    }
+    return CreateUndefined(env);
+}
+
+napi_value RemoveCheckRule(napi_env env, napi_callback_info info)
+{
+    uint64_t rule = GetRuleParam(env, info);
+    if (rule != GET_RULE_PARAM_FAIL) {
+        HiChecker::RemoveRule(rule);
+    } else {
+        ThrowError(env, ERR_PARAM);
+    }
+    return CreateUndefined(env);
+}
+
+napi_value ContainsCheckRule(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    uint64_t rule = GetRuleParam(env, info);
+    if (rule == GET_RULE_PARAM_FAIL) {
+        ThrowError(env, ERR_PARAM);
+    }
+    napi_get_boolean(env, HiChecker::Contains(rule), &result);
+    return result;
+}
+
 napi_value DeclareHiCheckerInterface(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -67,6 +103,9 @@ napi_value DeclareHiCheckerInterface(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("removeRule", RemoveRule),
         DECLARE_NAPI_FUNCTION("getRule", GetRule),
         DECLARE_NAPI_FUNCTION("contains", Contains),
+        DECLARE_NAPI_FUNCTION("addCheckRule", AddCheckRule),
+        DECLARE_NAPI_FUNCTION("removeCheckRule", RemoveCheckRule),
+        DECLARE_NAPI_FUNCTION("containsCheckRule", ContainsCheckRule),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     DeclareHiCheckerRuleEnum(env, exports);
@@ -101,6 +140,17 @@ napi_value CreateUndefined(napi_env env)
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
     return result;
+}
+
+void ThrowError(napi_env env, int errCode)
+{
+    std::map<int, std::string> errMap = {
+        { ERR_PARAM, "Invalid input parameter!" },
+    };
+    if (errMap.find(errCode) != errMap.end()) {
+        napi_throw_error(env, std::to_string(errCode).c_str(), errMap[errCode].c_str());
+    }
+    return;
 }
 
 uint64_t GetRuleParam(napi_env env, napi_callback_info info)
