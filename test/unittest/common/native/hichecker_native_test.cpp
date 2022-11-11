@@ -16,6 +16,7 @@
 #include <ctime>
 #include <gtest/gtest.h>
 
+#include "caution.h"
 #include "hichecker.h"
 
 using namespace testing::ext;
@@ -211,4 +212,19 @@ HWTEST_F(HiCheckerNativeTest, ContainsTest002, TestSize.Level1)
     ASSERT_FALSE(HiChecker::Contains(RULE_ERROR0));
     ASSERT_FALSE(HiChecker::Contains(RULE_ERROR1));
     ASSERT_FALSE(HiChecker::Contains(RULE_ERROR2));
+}
+
+/**
+  * @tc.name: CautionTest001
+  * @tc.desc: test Caution
+  * @tc.type: FUNC
+*/
+HWTEST(HiCheckerNativeTest, CautionTest001, TestSize.Level1)
+{
+    Caution caution;
+    caution.SetTriggerRule(Rule::RULE_CAUTION_PRINT_LOG);
+    EXPECT_EQ(caution.GetTriggerRule(), Rule::RULE_CAUTION_PRINT_LOG);
+
+    caution.SetStackTrace("stack_trace");
+    EXPECT_EQ(caution.GetStackTrace(), "stack_trace");
 }
