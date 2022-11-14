@@ -219,7 +219,7 @@ HWTEST_F(HiCheckerNativeTest, ContainsTest002, TestSize.Level1)
   * @tc.desc: test Caution
   * @tc.type: FUNC
 */
-HWTEST(HiCheckerNativeTest, CautionTest001, TestSize.Level1)
+HWTEST_F(HiCheckerNativeTest, CautionTest001, TestSize.Level1)
 {
     Caution caution;
     caution.SetTriggerRule(Rule::RULE_CAUTION_PRINT_LOG);
