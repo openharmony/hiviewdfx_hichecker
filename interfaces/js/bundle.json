@@ -12,6 +12,9 @@
     "component": {
         "name": "hichecker_js",
         "subsystem": "hiviewdfx",
+        "syscap": [
+            "SystemCapability.HiviewDFX.HiChecker"
+        ],
         "adapted_system_type": [
             "standard"
         ],
