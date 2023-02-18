@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/hiviewdfx/hichecker/hichecker.gni")
 import("//build/ohos.gni")
 
 config("hichecker_native_config") {
@@ -29,4 +30,24 @@ ohos_shared_library("libhichecker") {
   output_extension = "so"
   part_name = "hichecker_native"
   subsystem_name = "hiviewdfx"
+}
+
+if (hichecker_support_asan) {
+  ohos_shared_library("libhichecker_asan") {
+    public_configs = [ ":hichecker_native_config" ]
+
+    deps = [ "//base/hiviewdfx/hichecker/frameworks/native/hichecker_asan:libhichecker_asan_source" ]
+
+    external_deps = [ "hilog_native:libhilog" ]
+
+    output_extension = "so"
+    part_name = "hichecker_native"
+    subsystem_name = "hiviewdfx"
+  }
+}
+
+group("libhichecker_asan_group") {
+  if (hichecker_support_asan) {
+    deps = [ ":libhichecker_asan" ]
+  }
 }
