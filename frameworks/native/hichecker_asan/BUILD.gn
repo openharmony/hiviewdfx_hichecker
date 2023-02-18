@@ -11,33 +11,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
 import("//base/hiviewdfx/hichecker/hichecker.gni")
+import("//build/ohos.gni")
 
 if (hichecker_support_asan) {
-ohos_source_set("libhichecker_asan_source") {
-  include_dirs =
-      [ "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include" ]
+  ohos_source_set("libhichecker_asan_source") {
+    include_dirs =
+        [ "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include" ]
 
-  sources = [ "hichecker_asan.cpp" ]
+    sources = [ "hichecker_asan.cpp" ]
 
-  deps = [
-    "//foundation/bundlemanager/bundle_framework/interfaces/inner_api/appexecfwk_core:appexecfwk_core",
-    "//foundation/systemabilitymgr/samgr/interfaces/innerkits/samgr_proxy:samgr_proxy",
-  ]
+    external_deps = [
+      "access_token:libaccesstoken_sdk",
+      "bundle_framework:appexecfwk_base",
+      "bundle_framework:appexecfwk_core",
+      "c_utils:utils",
+      "hilog_native:libhilog",
+      "ipc:ipc_core",
+      "samgr:samgr_proxy",
+    ]
 
-  external_deps = [
-    "access_token:libaccesstoken_sdk",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "hilog_native:libhilog",
-    "ipc:ipc_core",
-    "samgr:samgr_proxy",
-    "samgr:samgr_proxy",
-  ]
-
-  part_name = "hichecker_native"
-  subsystem_name = "hiviewdfx"
-}
+    part_name = "hichecker_native"
+    subsystem_name = "hiviewdfx"
+  }
 }
