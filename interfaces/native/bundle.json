@@ -18,8 +18,6 @@
 		"adapted_system_type": [
 			"standard"
 		],
-		"rom": "",
-		"ram": "",
 		"deps": {
 			"components": [
 				"faultloggerd",
