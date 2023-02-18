@@ -36,7 +36,7 @@ if (hichecker_support_asan) {
   ohos_shared_library("libhichecker_asan") {
     public_configs = [ ":hichecker_native_config" ]
 
-    deps = [ "hichecker_native:libhichecker_asan_source" ]
+    deps = [ "//base/hiviewdfx/hichecker/frameworks/native:libhichecker_asan_source" ]
 
     external_deps = [ "hilog_native:libhilog" ]
 
