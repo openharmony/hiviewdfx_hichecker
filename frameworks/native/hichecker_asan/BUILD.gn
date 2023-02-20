@@ -17,7 +17,7 @@ import("//build/ohos.gni")
 if (hichecker_support_asan) {
   ohos_source_set("libhichecker_asan_source") {
     include_dirs =
-        [ "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include" ]
+        [ "../../../interfaces/native/innerkits/include" ]
 
     sources = [ "hichecker_asan.cpp" ]
 
