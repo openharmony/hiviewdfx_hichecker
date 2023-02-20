@@ -1,7 +1,7 @@
 {
 	"name": "@ohos/hichecker_native",
 	"description": "HiChecker for native application",
-	"version": "3.1",
+	"version": "4.0",
 	"license": "Apache License 2.0",
 	"publishAs": "code-segment",
 	"segment": {
