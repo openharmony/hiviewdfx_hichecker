@@ -56,6 +56,7 @@ if (hichecker_support_asan) {
 }
 
 group("libhichecker_asan_group") {
+  public_configs = [ ":hichecker_native_config" ]
   if (hichecker_support_asan) {
     deps = [ ":libhichecker_asan" ]
   }
