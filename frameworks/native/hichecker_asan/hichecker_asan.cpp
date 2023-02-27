@@ -31,7 +31,10 @@ bool GetAsanEnabled(const int userId, char *appspawnBundleName)
     std::string bundleName = appspawnBundleName;
 	
     OHOS::AppExecFwk::ApplicationInfo appInfo;
-    bundleMgrProxy->GetApplicationInfo(bundleName, OHOS::AppExecFwk::ApplicationFlag::GET_BASIC_APPLICATION_INFO, userId, appInfo);
+    bundleMgrProxy->GetApplicationInfo(bundleName,
+                                       OHOS::AppExecFwk::ApplicationFlag::GET_BASIC_APPLICATION_INFO,
+                                       userId,
+                                       appInfo);
     if (appInfo.asanEnabled == true) {
         return true;
     }
