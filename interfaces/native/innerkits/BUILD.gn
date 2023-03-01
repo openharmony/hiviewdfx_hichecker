@@ -31,33 +31,3 @@ ohos_shared_library("libhichecker") {
   part_name = "hichecker_native"
   subsystem_name = "hiviewdfx"
 }
-
-if (hichecker_support_asan) {
-  ohos_shared_library("libhichecker_asan") {
-    public_configs = [ ":hichecker_native_config" ]
-
-    deps =
-        [ "../../../frameworks/native/hichecker_asan:libhichecker_asan_source" ]
-
-    external_deps = [
-      "access_token:libaccesstoken_sdk",
-      "bundle_framework:appexecfwk_base",
-      "bundle_framework:appexecfwk_core",
-      "c_utils:utils",
-      "hilog_native:libhilog",
-      "ipc:ipc_core",
-      "samgr:samgr_proxy",
-    ]
-
-    output_extension = "so"
-    part_name = "hichecker_native"
-    subsystem_name = "hiviewdfx"
-  }
-}
-
-group("libhichecker_asan_group") {
-  public_configs = [ ":hichecker_native_config" ]
-  if (hichecker_support_asan) {
-    deps = [ ":libhichecker_asan" ]
-  }
-}

@@ -30,8 +30,7 @@
         "build": {
             "sub_component": [
                 "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker",
-                "//base/hiviewdfx/hichecker/interfaces/js/kits/napi:hichecker",
-		"//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker_asan_group"
+                "//base/hiviewdfx/hichecker/interfaces/js/kits/napi:hichecker"
             ],
             "inner_kits": [
                 {
@@ -41,16 +40,6 @@
                       "header_files": [
                         "hichecker.h",
                         "caution.h"
-                      ],
-                      "header_base": "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include/"
-                    }
-                },
-		{
-		    "type": "so",
-                    "name": "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker_asan_group",
-                    "header": {
-                      "header_files": [
-			"hichecker_asan.h"
                       ],
                       "header_base": "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include/"
                     }
