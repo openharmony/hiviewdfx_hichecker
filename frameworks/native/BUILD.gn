@@ -22,9 +22,10 @@ ohos_source_set("libhichecker_source") {
     "hichecker.cpp",
   ]
 
-  deps = [ "//base/hiviewdfx/faultloggerd/interfaces/innerkits/dump_catcher:libdfx_dumpcatcher" ]
-
-  external_deps = [ "hilog_native:libhilog" ]
+  external_deps = [ 
+    "hilog_native:libhilog",
+    "faultloggerd:libdfx_dumpcatcher", 
+  ]
 
   part_name = "hichecker"
   subsystem_name = "hiviewdfx"
