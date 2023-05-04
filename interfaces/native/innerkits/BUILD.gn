@@ -11,8 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//base/hiviewdfx/hichecker/hichecker.gni")
 import("//build/ohos.gni")
+import("../../../hichecker.gni")
 
 config("hichecker_native_config") {
   visibility = [ ":*" ]
@@ -23,7 +23,7 @@ config("hichecker_native_config") {
 ohos_shared_library("libhichecker") {
   public_configs = [ ":hichecker_native_config" ]
 
-  deps = [ "//base/hiviewdfx/hichecker/frameworks/native:libhichecker_source" ]
+  deps = [ "../../../frameworks/native:libhichecker_source" ]
 
   external_deps = [ "hilog_native:libhilog" ]
 

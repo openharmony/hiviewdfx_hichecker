@@ -20,7 +20,7 @@ config("hichecker_config_test") {
 
   include_dirs = [
     ".",
-    "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include",
+    "../interfaces/native/innerkits/include",
   ]
 }
 
@@ -32,7 +32,7 @@ ohos_unittest("HiCheckerNativeTest") {
   sources = [ "unittest/common/native/hichecker_native_test.cpp" ]
 
   deps = [
-    "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker",
+    "../interfaces/native/innerkits:libhichecker",
     "//third_party/googletest:gtest_main",
   ]
 }

@@ -17,8 +17,7 @@ import("//build/ohos/ace/ace.gni")
 config("hichecker_js_source_config") {
   visibility = [ ":*" ]
 
-  include_dirs =
-      [ "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include" ]
+  include_dirs = [ "../../native/innerkits/include" ]
 }
 
 ohos_shared_library("hichecker") {
@@ -26,19 +25,18 @@ ohos_shared_library("hichecker") {
     "./",
     "include/",
     "//third_party/node/src",
-    "//foundation/arkui/napi/interfaces/kits",
   ]
 
   configs = [ ":hichecker_js_source_config" ]
 
   sources = [ "./src/napi_hichecker.cpp" ]
 
-  deps = [
-    "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker",
-    "//foundation/arkui/napi:ace_napi",
-  ]
+  deps = [ "../../../native/innerkits:libhichecker" ]
 
-  external_deps = [ "hilog_native:libhilog" ]
+  external_deps = [
+    "hilog_native:libhilog",
+    "napi:ace_napi",
+  ]
 
   relative_install_dir = "module"
 
