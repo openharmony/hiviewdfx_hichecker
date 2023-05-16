@@ -28,6 +28,10 @@ ohos_shared_library("libhichecker") {
   external_deps = [ "hilog_native:libhilog" ]
 
   output_extension = "so"
+  innerapi_tags = [
+    "chipsetsdk_indirect",
+    "platformsdk",
+  ]
   part_name = "hichecker_native"
   subsystem_name = "hiviewdfx"
 }
