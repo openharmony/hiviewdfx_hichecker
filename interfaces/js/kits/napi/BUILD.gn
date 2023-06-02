@@ -31,9 +31,8 @@ ohos_shared_library("hichecker") {
 
   sources = [ "./src/napi_hichecker.cpp" ]
 
-  deps = [ "../../../native/innerkits:libhichecker" ]
-
   external_deps = [
+    "hichecker_native:libhichecker",
     "hilog_native:libhilog",
     "napi:ace_napi",
   ]
