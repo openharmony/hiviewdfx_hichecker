@@ -23,9 +23,9 @@ config("hichecker_native_config") {
 ohos_shared_library("libhichecker") {
   public_configs = [ ":hichecker_native_config" ]
 
-  external_deps = [ 
+  external_deps = [
+    "hichecker_native:libhichecker_source",
     "hilog_native:libhilog",
-    "hichecker_native:libhichecker_source", 
   ]
 
   output_extension = "so"
