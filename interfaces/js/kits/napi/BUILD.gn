@@ -31,8 +31,9 @@ ohos_shared_library("hichecker") {
 
   sources = [ "./src/napi_hichecker.cpp" ]
 
+  deps = [ "../../../native/innerkits:libhichecker" ]
+
   external_deps = [
-    "hichecker_native:libhichecker",
     "hilog_native:libhilog",
     "napi:ace_napi",
   ]
@@ -40,5 +41,5 @@ ohos_shared_library("hichecker") {
   relative_install_dir = "module"
 
   subsystem_name = "hiviewdfx"
-  part_name = "hichecker_js"
+  part_name = "hichecker"
 }
