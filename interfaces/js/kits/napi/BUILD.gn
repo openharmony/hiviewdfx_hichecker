@@ -21,25 +21,27 @@ config("hichecker_js_source_config") {
 }
 
 ohos_shared_library("hichecker") {
-  include_dirs = [
-    "./",
-    "include/",
-    "//third_party/node/src",
-  ]
+  if (!is_emulator) {
+    include_dirs = [
+      "./",
+      "include/",
+      "//third_party/node/src",
+    ]
 
-  configs = [ ":hichecker_js_source_config" ]
+    configs = [ ":hichecker_js_source_config" ]
 
-  sources = [ "./src/napi_hichecker.cpp" ]
+    sources = [ "./src/napi_hichecker.cpp" ]
 
-  deps = [ "../../../native/innerkits:libhichecker" ]
+    deps = [ "../../../native/innerkits:libhichecker" ]
 
-  external_deps = [
-    "hilog_native:libhilog",
-    "napi:ace_napi",
-  ]
+    external_deps = [
+      "hilog_native:libhilog",
+      "napi:ace_napi",
+    ]
 
-  relative_install_dir = "module"
+    relative_install_dir = "module"
 
-  subsystem_name = "hiviewdfx"
-  part_name = "hichecker"
+    subsystem_name = "hiviewdfx"
+    part_name = "hichecker"
+  }
 }
