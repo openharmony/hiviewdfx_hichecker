@@ -21,7 +21,7 @@ config("hichecker_js_source_config") {
 }
 
 ohos_shared_library("hichecker") {
-  if (!is_emulator) {
+  if (support_jsapi) {
     include_dirs = [
       "./",
       "include/",
