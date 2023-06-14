@@ -23,16 +23,14 @@ config("hichecker_native_config") {
 ohos_shared_library("libhichecker") {
   public_configs = [ ":hichecker_native_config" ]
 
-  external_deps = [
-    "hichecker_native:libhichecker_source",
-    "hilog_native:libhilog",
-  ]
+  deps = [ "../../../frameworks/native:libhichecker_source" ]
+  external_deps = [ "hilog_native:libhilog" ]
 
   output_extension = "so"
   innerapi_tags = [
     "chipsetsdk_indirect",
     "platformsdk",
   ]
-  part_name = "hichecker_native"
+  part_name = "hichecker"
   subsystem_name = "hiviewdfx"
 }

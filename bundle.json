@@ -1,7 +1,7 @@
 {
     "name": "@ohos/hichecker",
     "description": "HiChecker mode for application",
-    "version": "3.1",
+    "version": "4.0",
     "license": "Apache License 2.0",
     "publishAs": "code-segment",
     "segment": {
@@ -18,8 +18,8 @@
         "adapted_system_type": [
             "standard"
         ],
-        "rom": "",
-        "ram": "",
+        "rom": "80KB",
+        "ram": "~100KB",
         "deps": {
             "components": [
                 "faultloggerd",
@@ -28,9 +28,10 @@
             ]
         },
         "build": {
-            "sub_component": [
+            "sub_component": [          
                 "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker",
-                "//base/hiviewdfx/hichecker/interfaces/js/kits/napi:hichecker"
+		 "//base/hiviewdfx/hichecker/interfaces/js/kits/napi:hichecker",
+                "//base/hiviewdfx/hichecker/frameworks/native:libhichecker_source"
             ],
             "inner_kits": [
                 {
@@ -43,7 +44,17 @@
                       ],
                       "header_base": "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include/"
                     }
-                }
+                },
+                {
+                    "name": "//base/hiviewdfx/hichecker/frameworks/native:libhichecker_source",
+                    "header": {
+                      "header_files": [
+                        "caution.cpp",
+                        "hichecker.cpp"
+                      ],
+                      "header_base": "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include/"
+                    }
+                  }
             ],
             "test": [ "//base/hiviewdfx/hichecker/test:unittest" ]
         }
