@@ -35,7 +35,7 @@ ohos_shared_library("hichecker") {
     deps = [ "../../../native/innerkits:libhichecker" ]
 
     external_deps = [
-      "hilog_native:libhilog",
+      "hilog:libhilog",
       "napi:ace_napi",
     ]
 

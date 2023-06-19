@@ -23,7 +23,7 @@ ohos_source_set("libhichecker_source") {
 
   external_deps = [
     "faultloggerd:libdfx_dumpcatcher",
-    "hilog_native:libhilog",
+    "hilog:libhilog",
   ]
 
   part_name = "hichecker"

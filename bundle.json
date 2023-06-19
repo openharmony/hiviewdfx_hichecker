@@ -23,7 +23,7 @@
         "deps": {
             "components": [
                 "faultloggerd",
-                "hilog_native",
+                "hilog",
                 "napi"
             ]
         },
