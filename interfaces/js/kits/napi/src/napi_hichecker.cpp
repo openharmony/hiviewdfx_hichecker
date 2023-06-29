@@ -123,6 +123,8 @@ napi_value DeclareHiCheckerRuleEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_STATIC_PROPERTY("RULE_CHECK_SLOW_EVENT", ToUInt64Value(env, Rule::RULE_CHECK_SLOW_EVENT)),
         DECLARE_NAPI_STATIC_PROPERTY("RULE_CHECK_ABILITY_CONNECTION_LEAK",
             ToUInt64Value(env, Rule::RULE_CHECK_ABILITY_CONNECTION_LEAK)),
+        DECLARE_NAPI_STATIC_PROPERTY("RULE_CHECK_ARKUI_PERFORMANCE",
+            ToUInt64Value(env, Rule::RULE_CHECK_ARKUI_PERFORMANCE)),    
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
