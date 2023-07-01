@@ -284,18 +284,3 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
     HiChecker::NotifySlowEvent(eventTag)
     HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
 }
-
-/**
-  * @tc.name: NotifySlowEventTest002
-  * @tc.desc: test TriggerCrash
-  * @tc.type: FUNC
-*/
-// HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest002, TestSize.Level1)
-// {   
-//     uint64 _t rule = RULE_CHECK_SLOW_EVENT;
-//     HiChecker::AddRule(Rule::RULE_CHECK_SLOW_EVENT | Rule::RULE_CAUTION_PRINT_LOG
-//                       | Rule::RULE_CAUTION_TRIGGER_CRASH);
-//     ASSERT_TRUE(HiChecker::NeedCheckSlowEvent());
-//     std::string eventTag = "NotifySlowEventTest002 time out";
-//     HiChecker::NotifySlowEvent(eventTag);
-// }
