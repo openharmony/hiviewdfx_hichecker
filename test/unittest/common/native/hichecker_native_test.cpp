@@ -227,4 +227,75 @@ HWTEST_F(HiCheckerNativeTest, CautionTest001, TestSize.Level1)
 
     caution.SetStackTrace("stack_trace");
     EXPECT_EQ(caution.GetStackTrace(), "stack_trace");
+
+    caution.SetCautionMsg("caution_msg");
+    EXPECT_EQ(caution.GetCautionMsg(), "caution_msg");
 }
+
+/**
+  * @tc.name: NotifySlowProcessTest001
+  * @tc.desc: test NotifySlowProcess
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
+{   
+    uint64 _t rule = RULE_ERROR0;
+    HiChecker::AddRule(RULE_ERROR0);
+    std::string eventTag = "NotifySlowProcessTest001";
+    HiChecker::NotifySlowProcess(eventTag)
+    rule |= Rule::RULE_THREAD_CHECK_SLOW_PROCESS;
+    HiChecker::AddRule(Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
+    ASSERT_EQ(HiChecker::GetRule(),Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
+    HiChecker::NotifySlowProcess(eventTag)
+    HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
+}
+
+/**
+  * @tc.name: NotifyAbilityConnectionLeakTest001
+  * @tc.desc: test NotifyAbilityConnectionLeak
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifyAbilityConnectionLeakTest001, TestSize.Level1)
+{   
+    std::string cautionMsg = "NotifyAbilityConnectionLeakTest001";
+    Caution caution(RULE_ERROR0, cautionMsg, "stackTrace");
+    HiChecker::NotifyAbilityConnectionLeak(caution)
+    caution(RULE_CHECK_ABILITY_CONNECTION_LEAK, cautionMsg, "stackTrace");
+    HiChecker::NotifyAbilityConnectionLeak(caution)
+    EXPECT_EQ(caution.GetStackTrace(), "stackTrace");
+    caution.SetCautionMsg("caution_msg");
+    EXPECT_EQ(caution.GetCautionMsg(), cautionMsg);
+}
+
+/**
+  * @tc.name: NotifySlowEventTest001
+  * @tc.desc: test PrintLog
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
+{   
+    uint64 _t rule = RULE_ERROR0;
+    HiChecker::AddRule(RULE_ERROR0);
+    std::string eventTag = "NotifySlowEventTest001 time out";
+    HiChecker::NotifySlowEvent(eventTag)
+    rule |= Rule::RULE_CHECK_SLOW_EVENT;
+    HiChecker::AddRule(Rule::RULE_CHECK_SLOW_EVENT);
+    ASSERT_TRUE(HiChecker::NeedCheckSlowEvent());
+    HiChecker::NotifySlowEvent(eventTag)
+    HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
+}
+
+/**
+  * @tc.name: NotifySlowEventTest002
+  * @tc.desc: test TriggerCrash
+  * @tc.type: FUNC
+*/
+// HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest002, TestSize.Level1)
+// {   
+//     uint64 _t rule = RULE_CHECK_SLOW_EVENT;
+//     HiChecker::AddRule(Rule::RULE_CHECK_SLOW_EVENT | Rule::RULE_CAUTION_PRINT_LOG
+//                       | Rule::RULE_CAUTION_TRIGGER_CRASH);
+//     ASSERT_TRUE(HiChecker::NeedCheckSlowEvent());
+//     std::string eventTag = "NotifySlowEventTest002 time out";
+//     HiChecker::NotifySlowEvent(eventTag);
+// }
