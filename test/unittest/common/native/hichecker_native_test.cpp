@@ -239,11 +239,9 @@ HWTEST_F(HiCheckerNativeTest, CautionTest001, TestSize.Level1)
 */
 HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
 {   
-    uint64 _t rule = RULE_ERROR0;
     HiChecker::AddRule(RULE_ERROR0);
     std::string eventTag = "NotifySlowProcessTest001";
     HiChecker::NotifySlowProcess(eventTag)
-    rule |= Rule::RULE_THREAD_CHECK_SLOW_PROCESS;
     HiChecker::AddRule(Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
     ASSERT_EQ(HiChecker::GetRule(),Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
     HiChecker::NotifySlowProcess(eventTag)
@@ -274,11 +272,9 @@ HWTEST_F(HiCheckerNativeTest, NotifyAbilityConnectionLeakTest001, TestSize.Level
 */
 HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
 {   
-    uint64 _t rule = RULE_ERROR0;
     HiChecker::AddRule(RULE_ERROR0);
     std::string eventTag = "NotifySlowEventTest001 time out";
     HiChecker::NotifySlowEvent(eventTag)
-    rule |= Rule::RULE_CHECK_SLOW_EVENT;
     HiChecker::AddRule(Rule::RULE_CHECK_SLOW_EVENT);
     ASSERT_TRUE(HiChecker::NeedCheckSlowEvent());
     HiChecker::NotifySlowEvent(eventTag)
