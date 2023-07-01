@@ -241,10 +241,10 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
 {   
     HiChecker::AddRule(RULE_ERROR0);
     std::string eventTag = "NotifySlowProcessTest001";
-    HiChecker::NotifySlowProcess(eventTag)
+    HiChecker::NotifySlowProcess(eventTag);
     HiChecker::AddRule(Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
-    ASSERT_EQ(HiChecker::GetRule(),Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
-    HiChecker::NotifySlowProcess(eventTag)
+    ASSERT_EQ(HiChecker::GetRule(), Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
+    HiChecker::NotifySlowProcess(eventTag);
     HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
 }
 
@@ -256,12 +256,12 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
 HWTEST_F(HiCheckerNativeTest, NotifyAbilityConnectionLeakTest001, TestSize.Level1)
 {   
     std::string cautionMsg = "NotifyAbilityConnectionLeakTest001";
-    Caution caution(RULE_ERROR0, cautionMsg, "stackTrace");
-    HiChecker::NotifyAbilityConnectionLeak(caution)
-    caution(RULE_CHECK_ABILITY_CONNECTION_LEAK, cautionMsg, "stackTrace");
-    HiChecker::NotifyAbilityConnectionLeak(caution)
-    EXPECT_EQ(caution.GetStackTrace(), "stackTrace");
-    caution.SetCautionMsg("caution_msg");
+    std::string stackTrace = "stackTrace";
+    Caution cautionError(RULE_ERROR0, cautionMsg, "stackTrace");
+    HiChecker::NotifyAbilityConnectionLeak(cautionError);
+    Caution caution(Rule::RULE_CHECK_ABILITY_CONNECTION_LEAK, cautionMsg, stackTrace);
+    HiChecker::NotifyAbilityConnectionLeak(caution);
+    EXPECT_EQ(caution.GetStackTrace(), stackTrace);
     EXPECT_EQ(caution.GetCautionMsg(), cautionMsg);
 }
 
@@ -274,9 +274,9 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
 {   
     HiChecker::AddRule(RULE_ERROR0);
     std::string eventTag = "NotifySlowEventTest001 time out";
-    HiChecker::NotifySlowEvent(eventTag)
+    HiChecker::NotifySlowEvent(eventTag);
     HiChecker::AddRule(Rule::RULE_CHECK_SLOW_EVENT);
     ASSERT_TRUE(HiChecker::NeedCheckSlowEvent());
-    HiChecker::NotifySlowEvent(eventTag)
+    HiChecker::NotifySlowEvent(eventTag);
     HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
 }
