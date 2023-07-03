@@ -16,12 +16,12 @@
 #include "hichecker.h"
 
 #include <csignal>
-#include <errno.h>
+#include <cerrno>
 #include <sys/types.h>
 #include <unistd.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <parameter.h>
 
 #include "securec.h"
@@ -130,8 +130,7 @@ void HiChecker::NotifyCaution(uint64_t rule, const std::string& tag, Caution& ca
         return;
     }
     std::string msg;
-    switch (rule)
-    {
+    switch (rule) {
         case Rule::RULE_THREAD_CHECK_SLOW_PROCESS:
             msg = "trigger:RULE_THREAD_CHECK_SLOW_PROCESS," + tag;
             break;
@@ -242,6 +241,7 @@ static bool ParseKeyValue(const char *input)
         HiLog::Info(LABEL, "params is illegal.");
         return false;
     }
+    HiLog::Info(LABEL, "param is %{public}s", colonPos);
     errno_t err = strncpy_s(g_params.key, MAX_PARA_LEN, input, colonPos - input);
     if (err != EOK) {
         HiLog::Info(LABEL, "strncpy_s copy key strings failed.");
@@ -283,44 +283,47 @@ static void InitHicheckerParam(const char *serviceName)
     uint64_t rule = std::stoull(g_params.value);
     HiLog::Debug(LABEL, "param rule is %{public}llu", rule);
     HiChecker::AddRule(rule);
+    if (HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE)) {
+        HiLog::Info(LABEL, "contains RULE_CHECK_ARKUI_PERFORMANCE");
+    }
     return;
 }
 
-static bool GetProcName(pid_t pid, char *buf, unsigned int buf_len)
+static bool GetProcName(pid_t pid, char * buf, uint32_t bufLen)
 {
     HiLog::Debug(LABEL, "GetProcName pid :%{public}d", pid);
-	if (pid <= 0) {
-		return false;
-	}
-	char target_file[FILE_NAME_MAX_SIZE] = {0};
-	(void)snprintf(target_file, sizeof(target_file), "/proc/%d/cmdline", pid);
-	FILE *f = fopen(target_file, "r");
-	if (f == NULL) {
-		return false;
-	}
-	if (fgets(buf, buf_len, f) == NULL) {
-		(void)fclose(f);
-		return false;
-	}
-	(void)fclose(f);
-	return true;
+    if (pid <= 0) {
+	    return false;
+    }
+    char targetFile[FILE_NAME_MAX_SIZE] = {0};
+    snprintf_s(targetFile, sizeof(targetFile), sizeof(targetFile) - 1, "/proc/%d/cmdline", pid);
+    FILE *f = fopen(targetFile, "r");
+    if (f == nullptr) {
+	    return false;
+    }
+    if (fgets(buf, bufLen, f) == nullptr) {
+	    (void)fclose(f);
+	    return false;
+    }
+    (void)fclose(f);
+    return true;
 }
 
-__attribute__((constructor(1))) static void __checker_param_initialize()
+__attribute__((constructor(1))) static void CheckerParamInitialize()
 {
     char procName[MAX_PROC_NAME_SIZE + 1] = {0};
     HiLog::Info(LABEL, "start __checker_param_initialize");
     if (GetProcName(getpid(), procName, sizeof(procName) - 1)) {
         const char *pos = strrchr(procName, '/');
         const char* fileName;
-        if (pos != NULL) {
+        if (pos != nullptr) {
             fileName = pos + 1;
         } else {
             fileName = procName;
         }
         HiLog::Info(LABEL, "fileName is : %{public}s", fileName);
         InitHicheckerParam(fileName);
-	}
+    }
 }
 } // HiviewDFX
 } // OHOS
