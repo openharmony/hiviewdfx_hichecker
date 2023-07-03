@@ -227,4 +227,56 @@ HWTEST_F(HiCheckerNativeTest, CautionTest001, TestSize.Level1)
 
     caution.SetStackTrace("stack_trace");
     EXPECT_EQ(caution.GetStackTrace(), "stack_trace");
+
+    caution.SetCautionMsg("caution_msg");
+    EXPECT_EQ(caution.GetCautionMsg(), "caution_msg");
+}
+
+/**
+  * @tc.name: NotifySlowProcessTest001
+  * @tc.desc: test NotifySlowProcess
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
+{   
+    HiChecker::AddRule(RULE_ERROR0);
+    std::string eventTag = "NotifySlowProcessTest001";
+    HiChecker::NotifySlowProcess(eventTag);
+    HiChecker::AddRule(Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
+    ASSERT_EQ(HiChecker::GetRule(), Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
+    HiChecker::NotifySlowProcess(eventTag);
+    HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
+}
+
+/**
+  * @tc.name: NotifyAbilityConnectionLeakTest001
+  * @tc.desc: test NotifyAbilityConnectionLeak
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifyAbilityConnectionLeakTest001, TestSize.Level1)
+{   
+    std::string cautionMsg = "NotifyAbilityConnectionLeakTest001";
+    std::string stackTrace = "stackTrace";
+    Caution cautionError(RULE_ERROR0, cautionMsg, "stackTrace");
+    HiChecker::NotifyAbilityConnectionLeak(cautionError);
+    Caution caution(Rule::RULE_CHECK_ABILITY_CONNECTION_LEAK, cautionMsg, stackTrace);
+    HiChecker::NotifyAbilityConnectionLeak(caution);
+    EXPECT_EQ(caution.GetStackTrace(), stackTrace);
+    EXPECT_EQ(caution.GetCautionMsg(), cautionMsg);
+}
+
+/**
+  * @tc.name: NotifySlowEventTest001
+  * @tc.desc: test PrintLog
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
+{   
+    HiChecker::AddRule(RULE_ERROR0);
+    std::string eventTag = "NotifySlowEventTest001 time out";
+    HiChecker::NotifySlowEvent(eventTag);
+    HiChecker::AddRule(Rule::RULE_CHECK_SLOW_EVENT);
+    ASSERT_TRUE(HiChecker::NeedCheckSlowEvent());
+    HiChecker::NotifySlowEvent(eventTag);
+    HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
 }
