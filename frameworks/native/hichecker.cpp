@@ -293,17 +293,17 @@ static bool GetProcName(pid_t pid, char * buf, uint32_t bufLen)
 {
     HiLog::Debug(LABEL, "GetProcName pid :%{public}d", pid);
     if (pid <= 0) {
-	    return false;
+        return false;
     }
     char targetFile[FILE_NAME_MAX_SIZE] = {0};
     snprintf_s(targetFile, sizeof(targetFile), sizeof(targetFile) - 1, "/proc/%d/cmdline", pid);
     FILE *f = fopen(targetFile, "r");
     if (f == nullptr) {
-	    return false;
+        return false;
     }
     if (fgets(buf, bufLen, f) == nullptr) {
 	    (void)fclose(f);
-	    return false;
+        return false;
     }
     (void)fclose(f);
     return true;
