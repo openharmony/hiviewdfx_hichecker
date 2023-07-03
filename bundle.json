@@ -22,8 +22,10 @@
         "ram": "~100KB",
         "deps": {
             "components": [
+                "c_utils",
                 "faultloggerd",
                 "hilog",
+                "init",
                 "napi"
             ]
         },

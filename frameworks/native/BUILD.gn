@@ -22,8 +22,11 @@ ohos_source_set("libhichecker_source") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "faultloggerd:libdfx_dumpcatcher",
     "hilog:libhilog",
+    "init:libbeget_proxy",
+    "init:libbegetutil"
   ]
 
   part_name = "hichecker"
