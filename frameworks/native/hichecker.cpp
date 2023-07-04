@@ -86,7 +86,7 @@ uint64_t HiChecker::GetRule()
 bool HiChecker::Contains(uint64_t rule)
 {
     std::lock_guard<std::mutex> lock(mutexLock_);
-    CheckerParamInitialize();
+    Hichecker::CheckerParamInitialize();
     if (!CheckRule(rule)) {
         return false;
     }
