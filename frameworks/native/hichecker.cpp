@@ -86,6 +86,7 @@ uint64_t HiChecker::GetRule()
 bool HiChecker::Contains(uint64_t rule)
 {
     std::lock_guard<std::mutex> lock(mutexLock_);
+    CheckerParamInitialize();
     if (!CheckRule(rule)) {
         return false;
     }
@@ -309,7 +310,7 @@ static bool GetProcName(pid_t pid, char * buf, uint32_t bufLen)
     return true;
 }
 
-__attribute__((constructor(1))) static void CheckerParamInitialize()
+static void CheckerParamInitialize()
 {
     char procName[MAX_PROC_NAME_SIZE + 1] = {0};
     HiLog::Info(LABEL, "start __checker_param_initialize");
