@@ -86,7 +86,7 @@ uint64_t HiChecker::GetRule()
 bool HiChecker::Contains(uint64_t rule)
 {
     std::lock_guard<std::mutex> lock(mutexLock_);
-    Hichecker::CheckerParamInitialize();
+    HiChecker::CheckerParamInitialize();
     if (!CheckRule(rule)) {
         return false;
     }
@@ -284,9 +284,6 @@ static void InitHicheckerParam(const char *serviceName)
     uint64_t rule = std::stoull(g_params.value);
     HiLog::Debug(LABEL, "param rule is %{public}llu", rule);
     HiChecker::AddRule(rule);
-    if (HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE)) {
-        HiLog::Info(LABEL, "contains RULE_CHECK_ARKUI_PERFORMANCE");
-    }
     return;
 }
 
