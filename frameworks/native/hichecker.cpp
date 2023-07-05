@@ -86,10 +86,10 @@ uint64_t HiChecker::GetRule()
 bool HiChecker::Contains(uint64_t rule)
 {
     std::lock_guard<std::mutex> lock(mutexLock_);
-    HiChecker::CheckerParamInitialize();
     if (!CheckRule(rule)) {
         return false;
     }
+    CheckerParamInitialize();
     return rule == (rule & (threadLocalRules_ | processRules_));
 }
 
@@ -231,7 +231,7 @@ bool HiChecker::CheckRule(uint64_t rule)
     return true;
 }
 
-static bool ParseKeyValue(const char *input)
+bool HiChecker::ParseKeyValue(const char *input)
 {
     if (input == nullptr) {
         HiLog::Info(LABEL, "input is illegal.");
@@ -256,7 +256,7 @@ static bool ParseKeyValue(const char *input)
     return true;
 }
 
-static bool QueryParams(const char *queryName)
+bool HiChecker::QueryParams(const char *queryName)
 {
     char paramOutBuf[PARAM_BUF_LEN] = { 0 };
     char defStrValue[PARAM_BUF_LEN] = { 0 };
@@ -268,7 +268,7 @@ static bool QueryParams(const char *queryName)
     return ParseKeyValue(paramOutBuf);
 }
 
-static void InitHicheckerParam(const char *serviceName)
+void HiChecker::InitHicheckerParam(const char *serviceName)
 {
     char checkerName[QUERYNAME_LEN] = "hiviewdfx.hichecker.";
     errno_t err = 0;
@@ -287,7 +287,7 @@ static void InitHicheckerParam(const char *serviceName)
     return;
 }
 
-static bool GetProcName(pid_t pid, char * buf, uint32_t bufLen)
+bool HiChecker::GetProcName(pid_t pid, char * buf, uint32_t bufLen)
 {
     HiLog::Debug(LABEL, "GetProcName pid :%{public}d", pid);
     if (pid <= 0) {
@@ -307,7 +307,7 @@ static bool GetProcName(pid_t pid, char * buf, uint32_t bufLen)
     return true;
 }
 
-static void CheckerParamInitialize()
+void HiChecker::CheckerParamInitialize()
 {
     char procName[MAX_PROC_NAME_SIZE + 1] = {0};
     HiLog::Info(LABEL, "start __checker_param_initialize");
