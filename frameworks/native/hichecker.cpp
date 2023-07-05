@@ -89,7 +89,6 @@ bool HiChecker::Contains(uint64_t rule)
     if (!CheckRule(rule)) {
         return false;
     }
-    CheckerParamInitialize();
     return rule == (rule & (threadLocalRules_ | processRules_));
 }
 
@@ -268,11 +267,11 @@ bool HiChecker::QueryParams(const char *queryName)
     return ParseKeyValue(paramOutBuf);
 }
 
-void HiChecker::InitHicheckerParam(const char *serviceName)
+void HiChecker::InitHicheckerParam(const char *processName)
 {
     char checkerName[QUERYNAME_LEN] = "hiviewdfx.hichecker.";
     errno_t err = 0;
-    err = strcat_s(checkerName, sizeof(checkerName), serviceName);
+    err = strcat_s(checkerName, sizeof(checkerName), processName);
     if (err != EOK) {
         HiLog::Info(LABEL, "checker strcat_s query name failed.");
         return;
@@ -285,43 +284,6 @@ void HiChecker::InitHicheckerParam(const char *serviceName)
     HiLog::Debug(LABEL, "param rule is %{public}llu", rule);
     HiChecker::AddRule(rule);
     return;
-}
-
-bool HiChecker::GetProcName(pid_t pid, char * buf, uint32_t bufLen)
-{
-    HiLog::Debug(LABEL, "GetProcName pid :%{public}d", pid);
-    if (pid <= 0) {
-        return false;
-    }
-    char targetFile[FILE_NAME_MAX_SIZE] = {0};
-    snprintf_s(targetFile, sizeof(targetFile), sizeof(targetFile) - 1, "/proc/%d/cmdline", pid);
-    FILE *f = fopen(targetFile, "r");
-    if (f == nullptr) {
-        return false;
-    }
-    if (fgets(buf, bufLen, f) == nullptr) {
-	    (void)fclose(f);
-        return false;
-    }
-    (void)fclose(f);
-    return true;
-}
-
-void HiChecker::CheckerParamInitialize()
-{
-    char procName[MAX_PROC_NAME_SIZE + 1] = {0};
-    HiLog::Info(LABEL, "start __checker_param_initialize");
-    if (GetProcName(getpid(), procName, sizeof(procName) - 1)) {
-        const char *pos = strrchr(procName, '/');
-        const char* fileName;
-        if (pos != nullptr) {
-            fileName = pos + 1;
-        } else {
-            fileName = procName;
-        }
-        HiLog::Info(LABEL, "fileName is : %{public}s", fileName);
-        InitHicheckerParam(fileName);
-    }
 }
 } // HiviewDFX
 } // OHOS

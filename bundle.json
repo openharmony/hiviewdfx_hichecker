@@ -42,7 +42,8 @@
                     "header": {
                       "header_files": [
                         "hichecker.h",
-                        "caution.h"
+                        "caution.h",
+                        "hichecker_wrapper.h"
                       ],
                       "header_base": "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include/"
                     }
@@ -52,7 +53,8 @@
                     "header": {
                       "header_files": [
                         "caution.cpp",
-                        "hichecker.cpp"
+                        "hichecker.cpp",
+                        "hichecker_wrapper.cpp"
                       ],
                       "header_base": "//base/hiviewdfx/hichecker/interfaces/native/innerkits/include/"
                     }
