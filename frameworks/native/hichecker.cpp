@@ -32,12 +32,8 @@
 
 namespace OHOS {
 namespace HiviewDFX {
-#define MAX_PARA_LEN 50
 #define PARAM_BUF_LEN 128
 #define QUERYNAME_LEN 80
-#define COLON_CHR ':'
-#define FILE_NAME_MAX_SIZE 40
-#define MAX_PROC_NAME_SIZE 256
 
 std::mutex HiChecker::mutexLock_;
 volatile bool HiChecker::checkMode_;
@@ -45,11 +41,6 @@ volatile uint64_t HiChecker::processRules_;
 thread_local uint64_t HiChecker::threadLocalRules_;
 
 static constexpr HiLogLabel LABEL = { LOG_CORE, 0xD002D0B, "HICHECKER" };
-
-static struct Params {
-    char key[MAX_PARA_LEN];
-    char value[MAX_PARA_LEN];
-} g_params;
 
 void HiChecker::AddRule(uint64_t rule)
 {
@@ -230,43 +221,6 @@ bool HiChecker::CheckRule(uint64_t rule)
     return true;
 }
 
-bool HiChecker::ParseKeyValue(const char *input)
-{
-    if (input == nullptr) {
-        HiLog::Info(LABEL, "input is illegal.");
-        return false;
-    }
-    const char *colonPos = strchr(input, COLON_CHR);
-    if (colonPos == nullptr) {
-        HiLog::Info(LABEL, "params is illegal.");
-        return false;
-    }
-    HiLog::Info(LABEL, "param is %{public}s", colonPos);
-    errno_t err = strncpy_s(g_params.key, MAX_PARA_LEN, input, colonPos - input);
-    if (err != EOK) {
-        HiLog::Info(LABEL, "strncpy_s copy key strings failed.");
-        return false;
-    }
-    err = strncpy_s(g_params.value, MAX_PARA_LEN, colonPos + 1, strlen(colonPos + 1));
-    if (err != EOK) {
-        HiLog::Info(LABEL, "strncpy_s copy value strings failed.");
-        return false;
-    }
-    return true;
-}
-
-bool HiChecker::QueryParams(const char *queryName)
-{
-    char paramOutBuf[PARAM_BUF_LEN] = { 0 };
-    char defStrValue[PARAM_BUF_LEN] = { 0 };
-    int retLen = GetParameter(queryName, defStrValue, paramOutBuf, PARAM_BUF_LEN);
-    if (retLen == 0 || retLen > PARAM_BUF_LEN - 1) {
-        return false;
-    }
-    paramOutBuf[retLen] = '\0';
-    return ParseKeyValue(paramOutBuf);
-}
-
 void HiChecker::InitHicheckerParam(const char *processName)
 {
     char checkerName[QUERYNAME_LEN] = "hiviewdfx.hichecker.";
@@ -276,12 +230,17 @@ void HiChecker::InitHicheckerParam(const char *processName)
         HiLog::Info(LABEL, "checker strcat_s query name failed.");
         return;
     }
-    if (!QueryParams(checkerName)) {
-        HiLog::Info(LABEL, "param is empty.");
+
+    char paramOutBuf[PARAM_BUF_LEN] = { 0 };
+    char defStrValue[PARAM_BUF_LEN] = { 0 };
+    int retLen = GetParameter(checkerName, defStrValue, paramOutBuf, PARAM_BUF_LEN);
+    if (retLen == 0 || retLen > PARAM_BUF_LEN - 1) {
+        HiLog::Info(LABEL, "hichecker param is empty.");
         return;
     }
-    uint64_t rule = std::stoull(g_params.value);
-    HiLog::Debug(LABEL, "param rule is %{public}llu", rule);
+    paramOutBuf[retLen] = '\0';
+    HiLog::Info(LABEL, "hichecker param value is %{public}s", paramOutBuf);
+    uint64_t rule = std::stoull(paramOutBuf);
     HiChecker::AddRule(rule);
     return;
 }
