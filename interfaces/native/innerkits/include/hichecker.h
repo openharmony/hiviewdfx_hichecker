@@ -69,8 +69,6 @@ public:
     static uint64_t GetRule();
     static bool Contains(uint64_t rule);
     static void InitHicheckerParam(const char *processName);
-    static bool QueryParams(const char *queryName);
-    static bool ParseKeyValue(const char *input);
 private:
     static void HandleCaution(const Caution& caution);
     static void OnThreadCautionFound(CautionDetail& cautionDetail);
