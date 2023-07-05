@@ -31,6 +31,8 @@ namespace {
     const uint64_t RULE_ERROR2 = 999999999;
 }
 
+namespace OHOS {
+namespace HiviewDFX {
 class HiCheckerNativeTest : public testing::Test {
 public:
     static void SerUpTestCase() {};
@@ -280,3 +282,5 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
     HiChecker::NotifySlowEvent(eventTag);
     HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
 }
+} // namespace HiviewDFX
+} // namespace OHOS
