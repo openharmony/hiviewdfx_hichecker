@@ -19,6 +19,7 @@ ohos_source_set("libhichecker_source") {
   sources = [
     "caution.cpp",
     "hichecker.cpp",
+    "hichecker_wrapper.cpp"
   ]
 
   external_deps = [

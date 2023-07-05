@@ -68,6 +68,9 @@ public:
     static void RemoveRule(uint64_t rule);
     static uint64_t GetRule();
     static bool Contains(uint64_t rule);
+    static void InitHicheckerParam(const char *processName);
+    static bool QueryParams(const char *queryName);
+    static bool ParseKeyValue(const char *input);
 private:
     static void HandleCaution(const Caution& caution);
     static void OnThreadCautionFound(CautionDetail& cautionDetail);
@@ -77,11 +80,6 @@ private:
     static bool HasCautionRule(uint64_t rules);
     static void DumpStackTrace(std::string& msg);
     static bool CheckRule(uint64_t rule);
-    static void CheckerParamInitialize();
-    static bool GetProcName(pid_t pid, char * buf, uint32_t bufLen);
-    static void InitHicheckerParam(const char *serviceName);
-    static bool QueryParams(const char *queryName);
-    static bool ParseKeyValue(const char *input);
 
     static std::mutex mutexLock_;
     static volatile bool checkMode_;
