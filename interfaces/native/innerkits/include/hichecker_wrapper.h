@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef HIVIEWDFX_HICHECKER_WRAPPER_H
+#define HIVIEWDFX_HICHECKER_WRAPPER_H
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -21,3 +24,5 @@ void InitHicheckerParamWrapper(const char *processName);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#endif // HIVIEWDFX_HICHECKER_H

@@ -223,6 +223,7 @@ bool HiChecker::CheckRule(uint64_t rule)
 
 void HiChecker::InitHicheckerParam(const char *processName)
 {
+    HiLog::Info(LABEL, "hichecker processName is %{public}s", processName);
     char checkerName[QUERYNAME_LEN] = "hiviewdfx.hichecker.";
     errno_t err = 0;
     err = strcat_s(checkerName, sizeof(checkerName), processName);
@@ -241,7 +242,7 @@ void HiChecker::InitHicheckerParam(const char *processName)
     paramOutBuf[retLen] = '\0';
     HiLog::Info(LABEL, "hichecker param value is %{public}s", paramOutBuf);
     uint64_t rule = std::stoull(paramOutBuf);
-    HiChecker::AddRule(rule);
+    AddRule(rule);
     return;
 }
 } // HiviewDFX
