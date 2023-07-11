@@ -30,9 +30,9 @@
             ]
         },
         "build": {
-            "sub_component": [          
+            "sub_component": [ 
                 "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker",
-		 "//base/hiviewdfx/hichecker/interfaces/js/kits/napi:hichecker",
+		        "//base/hiviewdfx/hichecker/interfaces/js/kits/napi:hichecker",
                 "//base/hiviewdfx/hichecker/frameworks/native:libhichecker_source"
             ],
             "inner_kits": [

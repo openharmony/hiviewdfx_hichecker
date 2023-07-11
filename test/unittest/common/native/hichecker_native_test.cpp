@@ -240,7 +240,7 @@ HWTEST_F(HiCheckerNativeTest, CautionTest001, TestSize.Level1)
   * @tc.type: FUNC
 */
 HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
-{   
+{
     HiChecker::AddRule(RULE_ERROR0);
     std::string eventTag = "NotifySlowProcessTest001";
     HiChecker::NotifySlowProcess(eventTag);
@@ -256,7 +256,7 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
   * @tc.type: FUNC
 */
 HWTEST_F(HiCheckerNativeTest, NotifyAbilityConnectionLeakTest001, TestSize.Level1)
-{   
+{
     std::string cautionMsg = "NotifyAbilityConnectionLeakTest001";
     std::string stackTrace = "stackTrace";
     Caution cautionError(RULE_ERROR0, cautionMsg, "stackTrace");
@@ -273,7 +273,7 @@ HWTEST_F(HiCheckerNativeTest, NotifyAbilityConnectionLeakTest001, TestSize.Level
   * @tc.type: FUNC
 */
 HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
-{   
+{
     HiChecker::AddRule(RULE_ERROR0);
     std::string eventTag = "NotifySlowEventTest001 time out";
     HiChecker::NotifySlowEvent(eventTag);
