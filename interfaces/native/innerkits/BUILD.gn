@@ -34,4 +34,3 @@ ohos_shared_library("libhichecker") {
   part_name = "hichecker"
   subsystem_name = "hiviewdfx"
 }
-
