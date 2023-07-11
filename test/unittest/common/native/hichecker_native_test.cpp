@@ -31,6 +31,8 @@ namespace {
     const uint64_t RULE_ERROR2 = 999999999;
 }
 
+namespace OHOS {
+namespace HiviewDFX {
 class HiCheckerNativeTest : public testing::Test {
 public:
     static void SerUpTestCase() {};
@@ -238,7 +240,7 @@ HWTEST_F(HiCheckerNativeTest, CautionTest001, TestSize.Level1)
   * @tc.type: FUNC
 */
 HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
-{   
+{
     HiChecker::AddRule(RULE_ERROR0);
     std::string eventTag = "NotifySlowProcessTest001";
     HiChecker::NotifySlowProcess(eventTag);
@@ -254,7 +256,7 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowProcessTest001, TestSize.Level1)
   * @tc.type: FUNC
 */
 HWTEST_F(HiCheckerNativeTest, NotifyAbilityConnectionLeakTest001, TestSize.Level1)
-{   
+{
     std::string cautionMsg = "NotifyAbilityConnectionLeakTest001";
     std::string stackTrace = "stackTrace";
     Caution cautionError(RULE_ERROR0, cautionMsg, "stackTrace");
@@ -271,7 +273,7 @@ HWTEST_F(HiCheckerNativeTest, NotifyAbilityConnectionLeakTest001, TestSize.Level
   * @tc.type: FUNC
 */
 HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
-{   
+{
     HiChecker::AddRule(RULE_ERROR0);
     std::string eventTag = "NotifySlowEventTest001 time out";
     HiChecker::NotifySlowEvent(eventTag);
@@ -280,3 +282,5 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
     HiChecker::NotifySlowEvent(eventTag);
     HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
 }
+} // namespace HiviewDFX
+} // namespace OHOS

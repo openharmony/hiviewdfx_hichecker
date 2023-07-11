@@ -29,9 +29,12 @@ const uint64_t RULE_CAUTION_TRIGGER_CRASH = 1ULL << 62;
 const uint64_t RULE_THREAD_CHECK_SLOW_PROCESS = 1ULL;
 const uint64_t RULE_CHECK_SLOW_EVENT = 1ULL << 32;
 const uint64_t RULE_CHECK_ABILITY_CONNECTION_LEAK = 1ULL << 33;
-const uint64_t ALL_RULES = RULE_CAUTION_PRINT_LOG | RULE_CAUTION_TRIGGER_CRASH
-            | RULE_THREAD_CHECK_SLOW_PROCESS | RULE_CHECK_SLOW_EVENT | RULE_CHECK_ABILITY_CONNECTION_LEAK;
-const uint64_t ALL_PROCESS_RULES = RULE_CHECK_SLOW_EVENT | RULE_CHECK_ABILITY_CONNECTION_LEAK;
+const uint64_t RULE_CHECK_ARKUI_PERFORMANCE = 1ULL << 34;
+const uint64_t ALL_RULES = RULE_CAUTION_PRINT_LOG | RULE_CAUTION_TRIGGER_CRASH | RULE_THREAD_CHECK_SLOW_PROCESS
+         | RULE_CHECK_SLOW_EVENT | RULE_CHECK_ABILITY_CONNECTION_LEAK | RULE_CHECK_ARKUI_PERFORMANCE;
+const uint64_t ALL_PROCESS_RULES = RULE_CHECK_SLOW_EVENT
+                                 | RULE_CHECK_ABILITY_CONNECTION_LEAK
+                                 | RULE_CHECK_ARKUI_PERFORMANCE;
 const uint64_t ALL_THREAD_RULES = RULE_THREAD_CHECK_SLOW_PROCESS;
 const uint64_t ALL_CAUTION_RULES = RULE_CAUTION_PRINT_LOG | RULE_CAUTION_TRIGGER_CRASH;
 };
@@ -58,12 +61,14 @@ public:
     static void NotifySlowProcess(const std::string& tag);
     static void NotifySlowEvent(const std::string& tag);
     static void NotifyAbilityConnectionLeak(const Caution& caution);
+    static void NotifyCaution(uint64_t rule, const std::string& tag, Caution& caution);
     static bool NeedCheckSlowEvent();
 
     static void AddRule(uint64_t rule);
     static void RemoveRule(uint64_t rule);
     static uint64_t GetRule();
     static bool Contains(uint64_t rule);
+    static void InitHicheckerParam(const char *processName);
 private:
     static void HandleCaution(const Caution& caution);
     static void OnThreadCautionFound(CautionDetail& cautionDetail);

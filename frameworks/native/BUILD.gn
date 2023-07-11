@@ -19,11 +19,15 @@ ohos_source_set("libhichecker_source") {
   sources = [
     "caution.cpp",
     "hichecker.cpp",
+    "hichecker_wrapper.cpp",
   ]
 
   external_deps = [
+    "c_utils:utils",
     "faultloggerd:libdfx_dumpcatcher",
     "hilog:libhilog",
+    "init:libbeget_proxy",
+    "init:libbegetutil",
   ]
 
   part_name = "hichecker"

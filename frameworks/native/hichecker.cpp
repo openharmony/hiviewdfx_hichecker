@@ -16,8 +16,15 @@
 #include "hichecker.h"
 
 #include <csignal>
+#include <cerrno>
 #include <sys/types.h>
 #include <unistd.h>
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
+#include <parameter.h>
+
+#include "securec.h"
 
 #include "dfx_dump_catcher.h"
 #include "hilog/log_c.h"
@@ -25,6 +32,9 @@
 
 namespace OHOS {
 namespace HiviewDFX {
+#define PARAM_BUF_LEN 128
+#define QUERYNAME_LEN 80
+
 std::mutex HiChecker::mutexLock_;
 volatile bool HiChecker::checkMode_;
 volatile uint64_t HiChecker::processRules_;
@@ -105,6 +115,34 @@ void HiChecker::NotifyAbilityConnectionLeak(const Caution& caution)
     HandleCaution(caution);
 }
 
+void HiChecker::NotifyCaution(uint64_t rule, const std::string& tag, Caution& caution)
+{
+    if ((threadLocalRules_ & rule) == 0 && (processRules_ & rule) == 0) {
+        return;
+    }
+    std::string msg;
+    switch (rule) {
+        case Rule::RULE_THREAD_CHECK_SLOW_PROCESS:
+            msg = "trigger:RULE_THREAD_CHECK_SLOW_PROCESS," + tag;
+            break;
+        case Rule::RULE_CHECK_SLOW_EVENT:
+            msg = "trigger:RULE_CHECK_SLOW_EVENT," + tag;
+            break;
+        case Rule::RULE_CHECK_ARKUI_PERFORMANCE:
+            msg = "trigger:RULE_CHECK_ARKUI_PERFORMANCE," + tag;
+            break;
+        default:
+            break;
+    }
+    if (Rule::RULE_CHECK_ABILITY_CONNECTION_LEAK != rule) {
+        std::string stackTrace;
+        DumpStackTrace(stackTrace);
+        caution.SetCautionMsg(msg);
+        caution.SetStackTrace(stackTrace);
+    }
+    HandleCaution(caution);
+}
+
 void HiChecker::HandleCaution(const Caution& caution)
 {
     uint64_t triggerRule = caution.GetTriggerRule();
@@ -181,6 +219,31 @@ bool HiChecker::CheckRule(uint64_t rule)
         return false;
     }
     return true;
+}
+
+void HiChecker::InitHicheckerParam(const char *processName)
+{
+    HiLog::Info(LABEL, "hichecker processName is %{public}s", processName);
+    char checkerName[QUERYNAME_LEN] = "hiviewdfx.hichecker.";
+    errno_t err = 0;
+    err = strcat_s(checkerName, sizeof(checkerName), processName);
+    if (err != EOK) {
+        HiLog::Info(LABEL, "checker strcat_s query name failed.");
+        return;
+    }
+
+    char paramOutBuf[PARAM_BUF_LEN] = { 0 };
+    char defStrValue[PARAM_BUF_LEN] = { 0 };
+    int retLen = GetParameter(checkerName, defStrValue, paramOutBuf, PARAM_BUF_LEN);
+    if (retLen == 0 || retLen > PARAM_BUF_LEN - 1) {
+        HiLog::Info(LABEL, "hichecker param is empty.");
+        return;
+    }
+    paramOutBuf[retLen] = '\0';
+    HiLog::Info(LABEL, "hichecker param value is %{public}s", paramOutBuf);
+    uint64_t rule = std::stoull(paramOutBuf);
+    AddRule(rule);
+    return;
 }
 } // HiviewDFX
 } // OHOS
