@@ -241,7 +241,8 @@ void HiChecker::InitHicheckerParam(const char *processName)
     }
     paramOutBuf[retLen] = '\0';
     HiLog::Info(LABEL, "hichecker param value is %{public}s", paramOutBuf);
-    uint64_t rule = std::stoull(paramOutBuf);
+    std::string paramStr(paramOutBuf);
+    uint64_t rule = std::stoull(paramStr);
     AddRule(rule);
     return;
 }
