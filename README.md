@@ -63,10 +63,10 @@ The following table lists the APIs provided by HiChecker.
 |           | NotifySlowProcess(std::string) : void               | Sends a notification of a time-consuming function call.            |
 |           | NotifySlowEvent(std::string) : void                 | Sends a notification of a time-consuming function call event.            |
 |           | NotifyAbilityConnectionLeak(Caution caution) : void | Sends a notification of ability leakage.         |
-|           | NotifyCaution(uint64_t rule, const std::string& tag, Caution& caution) : void | Sends a notification of Arkui performance detection  problems.   |
+|           | NotifyCaution(uint64_t rule, const std::string& tag, Caution& caution) : void | Common APIs for Rule Detection   |
 | Caution   | GetTriggerRule() : BigInt                           | Obtains the rule that triggers the current alarm.|
 |           | GetCustomMessage() : String                         | Obtains the alarm message.          |
-|           | GetStackTrace() : String                           | Obtains stack information.              |
+|           | GetStackTrace() : String                            | Obtains stack information.              |
 
 ## Repositories Involved<a name="section1371113476310"></a>
 
