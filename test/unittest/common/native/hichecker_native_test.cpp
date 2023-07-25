@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cstdlib>
 #include <ctime>
 #include <gtest/gtest.h>
 
@@ -281,6 +282,106 @@ HWTEST_F(HiCheckerNativeTest, NotifySlowEventTest001, TestSize.Level1)
     ASSERT_TRUE(HiChecker::NeedCheckSlowEvent());
     HiChecker::NotifySlowEvent(eventTag);
     HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
+}
+
+/**
+  * @tc.name: NotifyCautionTest001
+  * @tc.desc: test NotifyCaution
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifyCautionTest001, TestSize.Level1)
+{
+    HiChecker::AddRule(RULE_ERROR0);
+    Caution caution;
+    std::string tag = "error_tag";
+    HiChecker::NotifyCaution(RULE_ERROR0, tag, caution);
+    ASSERT_EQ(HiChecker::GetRule(), 0);
+}
+
+/**
+  * @tc.name: NotifyCautionTest002
+  * @tc.desc: test NotifyCaution
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifyCautionTest002, TestSize.Level1)
+{
+    HiChecker::AddRule(Rule::RULE_CHECK_ARKUI_PERFORMANCE);
+    std::string tag = "arkui_tag";
+    Caution caution;
+    caution.SetTriggerRule(Rule::RULE_CHECK_ARKUI_PERFORMANCE);
+    HiChecker::NotifyCaution(Rule::RULE_CHECK_ARKUI_PERFORMANCE, tag, caution);
+    HiChecker::RemoveRule(Rule::RULE_CHECK_ARKUI_PERFORMANCE);
+    EXPECT_EQ(caution.GetCautionMsg(), "trigger:RULE_CHECK_ARKUI_PERFORMANCE,arkui_tag");
+}
+
+/**
+  * @tc.name: NotifyCautionTest003
+  * @tc.desc: test NotifyCaution
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifyCautionTest003, TestSize.Level1)
+{
+    HiChecker::AddRule(Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
+    std::string tag = "slow_process_tag";
+    Caution caution;
+    caution.SetTriggerRule(Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
+    HiChecker::NotifyCaution(Rule::RULE_THREAD_CHECK_SLOW_PROCESS, tag, caution);
+    HiChecker::RemoveRule(Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
+    EXPECT_EQ(caution.GetCautionMsg(), "trigger:RULE_THREAD_CHECK_SLOW_PROCESS,slow_process_tag");
+}
+
+/**
+  * @tc.name: NotifyCautionTest004
+  * @tc.desc: test NotifyCaution
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, NotifyCautionTest004, TestSize.Level1)
+{
+    HiChecker::AddRule(Rule::RULE_CHECK_SLOW_EVENT);
+    std::string tag = "slow_event_tag";
+    Caution caution;
+    caution.SetTriggerRule(Rule::RULE_CHECK_SLOW_EVENT);
+    HiChecker::NotifyCaution(Rule::RULE_CHECK_SLOW_EVENT, tag, caution);
+    HiChecker::RemoveRule(Rule::RULE_CHECK_SLOW_EVENT);
+    EXPECT_EQ(caution.GetCautionMsg(), "trigger:RULE_CHECK_SLOW_EVENT,slow_event_tag");
+}
+
+/**
+  * @tc.name: InitHicheckerParamTest001
+  * @tc.desc: test InitHicheckerParam
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest001, TestSize.Level1)
+{
+    system("param set hiviewdfx.hichecker.checker_test 17179869184");
+    const char *processName = "checker_test111";
+    HiChecker::InitHicheckerParam(processName);
+    ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+}
+
+/**
+  * @tc.name: InitHicheckerParamTest002
+  * @tc.desc: test InitHicheckerParam
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest002, TestSize.Level1)
+{
+    system("param set hiviewdfx.hichecker.checker_test 17179869184");
+    const char *processName = "checker_test";
+    HiChecker::InitHicheckerParam(processName);
+    ASSERT_TRUE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+}
+
+/**
+  * @tc.name: InitHicheckerParamTest003
+  * @tc.desc: test InitHicheckerParam
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest003, TestSize.Level1)
+{
+    const char *processName = "test.process.name.maxlength.greatthan.eighteen.aaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    HiChecker::InitHicheckerParam(processName);
+    ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
 }
 } // namespace HiviewDFX
 } // namespace OHOS

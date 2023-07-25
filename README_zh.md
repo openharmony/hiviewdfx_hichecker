@@ -55,6 +55,7 @@ HiChecker，可以作为应用开发阶段使用的检测工具，用于检测�
 |           | BigInt RULE_CAUTION_TRIGGER_CRASH = 1<<62;          | 告警规则，让应用退出       |
 |           | BigInt RULE_THREAD_CHECK_SLOW_PROCESS = 1;          | 检测规则，检测耗时函数调用 |
 |           | BigInt RULE_CHECK_ABILITY_CONNECTION_LEAK = 1<<33;  | 检测规则，检测ability泄露  |
+|           | BigInt RULE_CHECK_ARKUI_PERFORMANCE = 1<<34;        | 检测规则，用于arkui性能检测  |
 |           | addRule(BigInt rule) : void                         | 增加一个或多个检测项       |
 |           | removeRule(BigInt rule) : void                      | 删除一个或多个检测项       |
 |           | getRule() : BigInt                                  | 获取所有检测项             |
@@ -62,6 +63,7 @@ HiChecker，可以作为应用开发阶段使用的检测工具，用于检测�
 |           | NotifySlowProcess(std::string) : void               | 通知有耗时调用             |
 |           | NotifySlowEvent(std::string) : void                 | 通知有耗时事件             |
 |           | NotifyAbilityConnectionLeak(Caution caution) : void | 通知有ability泄露          |
+|           | NotifyCaution(uint64_t rule, const std::string& tag, Caution& caution) : void | 规则检测通用接口 |
 | Caution   | GetTriggerRule() : BigInt                           | 获取触发当前告警的检测规则 |
 |           | GetCustomMessage() : String                         | 获取更多辅助信息           |
 |           | GetStackTrace() ：String                            | 获取堆栈信息               |
