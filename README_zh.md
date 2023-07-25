@@ -63,7 +63,7 @@ HiChecker，可以作为应用开发阶段使用的检测工具，用于检测�
 |           | NotifySlowProcess(std::string) : void               | 通知有耗时调用             |
 |           | NotifySlowEvent(std::string) : void                 | 通知有耗时事件             |
 |           | NotifyAbilityConnectionLeak(Caution caution) : void | 通知有ability泄露          |
-|           | NotifyCaution(uint64_t rule, const std::string& tag, Caution& caution) : void | 通知有arkui性能检测问题 |
+|           | NotifyCaution(uint64_t rule, const std::string& tag, Caution& caution) : void | 规则检测通用接口 |
 | Caution   | GetTriggerRule() : BigInt                           | 获取触发当前告警的检测规则 |
 |           | GetCustomMessage() : String                         | 获取更多辅助信息           |
 |           | GetStackTrace() ：String                            | 获取堆栈信息               |
