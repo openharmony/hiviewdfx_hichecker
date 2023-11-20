@@ -20,6 +20,28 @@ config("hichecker_native_config") {
   include_dirs = [ "include" ]
 }
 
+ohos_prebuilt_etc("hichecker.para") {
+  source = "hichecker.para"
+  install_images = [
+    "system",
+    "updater",
+  ]
+  module_install_dir = "etc/param"
+  part_name = "hichecker"
+  subsystem_name = "hiviewdfx"
+}
+
+ohos_prebuilt_etc("hichecker.para.dac") {
+  source = "hichecker.para.dac"
+  install_images = [
+    "system",
+    "updater",
+  ]
+  module_install_dir = "etc/param"
+  part_name = "hichecker"
+  subsystem_name = "hiviewdfx"
+}
+
 ohos_shared_library("libhichecker") {
   public_configs = [ ":hichecker_native_config" ]
 
