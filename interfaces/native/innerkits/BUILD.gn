@@ -42,10 +42,20 @@ ohos_prebuilt_etc("hichecker.para.dac") {
   subsystem_name = "hiviewdfx"
 }
 
+group("hichecker_etc") {
+  deps = [
+    ":hichecker.para",
+    ":hichecker.para.dac",
+  ]
+}
+
 ohos_shared_library("libhichecker") {
   public_configs = [ ":hichecker_native_config" ]
 
-  deps = [ "../../../frameworks/native:libhichecker_source" ]
+  deps = [
+    ":hichecker_etc",
+    "../../../frameworks/native:libhichecker_source",
+  ]
   external_deps = [ "hilog:libhilog" ]
 
   output_extension = "so"
