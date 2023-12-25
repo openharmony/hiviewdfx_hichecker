@@ -24,7 +24,10 @@
 namespace OHOS {
 namespace HiviewDFX {
 namespace {
-constexpr HiLogLabel LABEL = { LOG_CORE, 0xD002D0B, "HiChecker_NAPI" };
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002D0B
+#undef LOG_TAG
+#define LOG_TAG "HiChecker_NAPI"
 constexpr int ONE_VALUE_LIMIT = 1;
 constexpr int ARRAY_INDEX_FIRST = 0;
 constexpr uint64_t GET_RULE_PARAM_FAIL = 0;
@@ -163,22 +166,22 @@ uint64_t GetRuleParam(napi_env env, napi_callback_info info)
     void *data = nullptr;
     napi_get_cb_info(env, info, &argc, argv, &thisVar, &data);
     if (argc != ONE_VALUE_LIMIT) {
-        HiLog::Error(LABEL, "invalid number=%{public}d of params.", ONE_VALUE_LIMIT);
+        HILOG_ERROR(LOG_CORE, "invalid number=%{public}d of params.", ONE_VALUE_LIMIT);
         return GET_RULE_PARAM_FAIL;
     }
     if (!MatchValueType(env, argv[ARRAY_INDEX_FIRST], napi_bigint)) {
-        HiLog::Error(LABEL, "Type error, should be bigint type!");
+        HILOG_ERROR(LOG_CORE, "Type error, should be bigint type!");
         return GET_RULE_PARAM_FAIL;
     }
     uint64_t rule = GET_RULE_PARAM_FAIL;
     bool lossless = true;
     napi_get_value_bigint_uint64(env, argv[ARRAY_INDEX_FIRST], &rule, &lossless);
     if (!lossless) {
-        HiLog::Error(LABEL, "Type error, bigint should be 64!");
+        HILOG_ERROR(LOG_CORE, "Type error, bigint should be 64!");
         return GET_RULE_PARAM_FAIL;
     }
     if (rule == GET_RULE_PARAM_FAIL) {
-        HiLog::Error(LABEL, "invalid input, please check!");
+        HILOG_ERROR(LOG_CORE, "invalid input, please check!");
     }
     return rule;
 }
