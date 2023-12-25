@@ -34,13 +34,15 @@ namespace OHOS {
 namespace HiviewDFX {
 #define PARAM_BUF_LEN 128
 #define QUERYNAME_LEN 80
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002D0B
+#undef LOG_TAG
+#define LOG_TAG "HICHECKER"
 
 std::mutex HiChecker::mutexLock_;
 volatile bool HiChecker::checkMode_;
 volatile uint64_t HiChecker::processRules_;
 thread_local uint64_t HiChecker::threadLocalRules_;
-
-static constexpr HiLogLabel LABEL = { LOG_CORE, 0xD002D0B, "HICHECKER" };
 
 void HiChecker::AddRule(uint64_t rule)
 {
@@ -179,7 +181,7 @@ void HiChecker::OnProcessCautionFound(CautionDetail& cautionDetail)
 
 void HiChecker::PrintLog(const CautionDetail& cautionDetail)
 {
-    HILOG_INFO(LABEL,
+    HILOG_INFO(LOG_CORE,
         "HiChecker caution with RULE_CAUTION_PRINT_LOG.\nCautionMsg:%{public}s\nStackTrace:\n%{public}s",
         cautionDetail.caution_.GetCautionMsg().c_str(),
         cautionDetail.caution_.GetStackTrace().c_str());
@@ -187,7 +189,7 @@ void HiChecker::PrintLog(const CautionDetail& cautionDetail)
 
 void HiChecker::TriggerCrash(const CautionDetail& cautionDetail)
 {
-    HILOG_INFO(LABEL,
+    HILOG_INFO(LOG_CORE,
         "HiChecker caution with RULE_CAUTION_TRIGGER_CRASH; exit.\nCautionMsg:%{public}s\nStackTrace:\n%{public}s",
         cautionDetail.caution_.GetCautionMsg().c_str(),
         cautionDetail.caution_.GetStackTrace().c_str());
@@ -208,14 +210,14 @@ void HiChecker::DumpStackTrace(std::string& msg)
 {
     DfxDumpCatcher dumplog;
     if (!dumplog.DumpCatch(getpid(), gettid(), msg)) {
-        HILOG_INFO(LABEL, "HiChecker DumpStackTrace fail.");
+        HILOG_INFO(LOG_CORE, "HiChecker DumpStackTrace fail.");
     }
 }
 
 bool HiChecker::CheckRule(uint64_t rule)
 {
     if (rule <= 0 || Rule::ALL_RULES != (Rule::ALL_RULES | rule)) {
-        HILOG_INFO(LABEL, "input rule is not exist,please check.");
+        HILOG_INFO(LOG_CORE, "input rule is not exist,please check.");
         return false;
     }
     return true;
@@ -223,12 +225,12 @@ bool HiChecker::CheckRule(uint64_t rule)
 
 void HiChecker::InitHicheckerParam(const char *processName)
 {
-    HILOG_INFO(LABEL, "hichecker processName is %{public}s", processName);
+    HILOG_INFO(LOG_CORE, "hichecker processName is %{public}s", processName);
     char checkerName[QUERYNAME_LEN] = "hiviewdfx.hichecker.";
     errno_t err = 0;
     err = strcat_s(checkerName, sizeof(checkerName), processName);
     if (err != EOK) {
-        HILOG_INFO(LABEL, "checker strcat_s query name failed.");
+        HILOG_INFO(LOG_CORE, "checker strcat_s query name failed.");
         return;
     }
 
@@ -236,11 +238,11 @@ void HiChecker::InitHicheckerParam(const char *processName)
     char defStrValue[PARAM_BUF_LEN] = { 0 };
     int retLen = GetParameter(checkerName, defStrValue, paramOutBuf, PARAM_BUF_LEN);
     if (retLen == 0 || retLen > PARAM_BUF_LEN - 1) {
-        HILOG_INFO(LABEL, "hichecker param is empty.");
+        HILOG_INFO(LOG_CORE, "hichecker param is empty.");
         return;
     }
     paramOutBuf[retLen] = '\0';
-    HILOG_INFO(LABEL, "hichecker param value is %{public}s", paramOutBuf);
+    HILOG_INFO(LOG_CORE, "hichecker param value is %{public}s", paramOutBuf);
     std::string paramStr(paramOutBuf);
     uint64_t rule = std::stoull(paramStr);
     AddRule(rule);
