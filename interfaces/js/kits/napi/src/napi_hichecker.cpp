@@ -150,7 +150,7 @@ napi_value CreateUndefined(napi_env env)
 void ThrowError(napi_env env, int errCode)
 {
     std::map<int, std::string> errMap = {
-        { ERR_PARAM, "Invalid input parameter!" },
+        { ERR_PARAM, "Invalid input parameter! only one bigint type parameter is needed" },
     };
     if (errMap.find(errCode) != errMap.end()) {
         napi_throw_error(env, std::to_string(errCode).c_str(), errMap[errCode].c_str());
