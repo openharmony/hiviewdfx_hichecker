@@ -11,50 +11,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//arkcompiler/ets_frontend/es2panda/es2abc_config.gni")
 import("//build/ohos.gni")
-import("//build/ohos/ace/ace.gni")
-import("//build/templates/abc/ohos_abc.gni")
 
-es2abc_gen_abc("gen_js_leak_watcher_abc") {
-  src_js = rebase_path("js_leak_watcher.js")
-  dst_file = rebase_path(target_out_dir + "/js_leak_watcher.abc")
-  in_puts = [ "js_leak_watcher.js" ]
-  out_puts = [ target_out_dir + "/js_leak_watcher.abc" ]
-  extra_args = [ "--module" ]
+if (support_jsapi) {
+  import("//arkcompiler/ets_frontend/es2panda/es2abc_config.gni")
+  import("//build/ohos/ace/ace.gni")
+  import("//build/templates/abc/ohos_abc.gni")
 }
 
-gen_js_obj("js_leak_watcher_js") {
-  input = "js_leak_watcher.js"
-  output = target_out_dir + "/js_leak_watcher.o"
-}
+if (support_jsapi) {
+  es2abc_gen_abc("gen_js_leak_watcher_abc") {
+    src_js = rebase_path("js_leak_watcher.js")
+    dst_file = rebase_path(target_out_dir + "/js_leak_watcher.abc")
+    in_puts = [ "js_leak_watcher.js" ]
+    out_puts = [ target_out_dir + "/js_leak_watcher.abc" ]
+    extra_args = [ "--module" ]
+  }
 
-gen_js_obj("js_leak_watcher_abc") {
-  input = get_label_info(":gen_js_leak_watcher_abc", "target_out_dir") +
-          "/js_leak_watcher.abc"
-  output = target_out_dir + "/js_leak_watcher_abc.o"
-  dep = ":gen_js_leak_watcher_abc"
-}
+  gen_js_obj("js_leak_watcher_js") {
+    input = "js_leak_watcher.js"
+    output = target_out_dir + "/js_leak_watcher.o"
+  }
 
-ohos_abc("jsleakwatcher_napi") {
-  sources = [ "js_leak_watcher.js" ]
-  output_name = "jsleakwatcher"
-  subsystem_name = "hiviewdfx"
-  part_name = "hichecker"
+  gen_js_obj("js_leak_watcher_abc") {
+    input = get_label_info(":gen_js_leak_watcher_abc", "target_out_dir") +
+            "/js_leak_watcher.abc"
+    output = target_out_dir + "/js_leak_watcher_abc.o"
+    dep = ":gen_js_leak_watcher_abc"
+  }
+
+  ohos_abc("jsleakwatcher_napi") {
+    sources = [ "js_leak_watcher.js" ]
+    output_name = "jsleakwatcher"
+    subsystem_name = "hiviewdfx"
+    part_name = "hichecker"
+  }
 }
 
 ohos_shared_library("jsleakwatcher") {
-  sources = [ "js_leak_watcher_module.cpp" ]
+  if (support_jsapi) {
+    sources = [ "js_leak_watcher_module.cpp" ]
 
-  deps = [
-    ":js_leak_watcher_abc",
-    ":js_leak_watcher_js",
-    ":jsleakwatcher_napi",
-  ]
+    deps = [
+      ":js_leak_watcher_abc",
+      ":js_leak_watcher_js",
+      ":jsleakwatcher_napi",
+    ]
 
-  external_deps = [ "napi:ace_napi" ]
+    external_deps = [ "napi:ace_napi" ]
 
-  relative_install_dir = "module/hiviewdfx"
-  subsystem_name = "hiviewdfx"
-  part_name = "hichecker"
+    relative_install_dir = "module/hiviewdfx"
+    subsystem_name = "hiviewdfx"
+    part_name = "hichecker"
+  }
 }
