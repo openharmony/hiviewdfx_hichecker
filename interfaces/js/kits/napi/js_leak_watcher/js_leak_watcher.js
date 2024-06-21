@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-let util = requireNapi('util')
-let fs = requireNapi('file.fs')
-let hidebug = requireNapi('hidebug')
-let cryptoFramework = requireNapi('security.cryptoFramework')
+let util = requireNapi('util');
+let fs = requireNapi('file.fs');
+let hidebug = requireNapi('hidebug');
+let cryptoFramework = requireNapi('security.cryptoFramework');
 
 
 
@@ -68,6 +68,7 @@ let jsLeakWatcher = {
       return;
     }
     ArkTools.forceFullGC();
+    leakObjList.length = 0;
     for (let [key, value] of watchObjMap) {
       if (!gcObjList.includes(key)) {
         leakObjList.push(value);
@@ -89,7 +90,7 @@ let jsLeakWatcher = {
       let heapDumpFileName = timeStamp + '.heapsnapshot';
       fs.moveFileSync('/data/storage/el2/base/files/' + heapDumpFileName, filePath + '/' + heapDumpFileName, 0);
 
-      let file = fs.openSync(filePath + '/' + timeStamp + '.jsleakList', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+      let file = fs.openSync(filePath + '/' + timeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
       let md = cryptoFramework.createMd('SHA256');
       let heapDumpFile = fs.openSync(filePath + '/' + heapDumpFileName, fs.OpenMode.READ_WRITE);
       let bufSize = 1024;
@@ -134,6 +135,14 @@ let jsLeakWatcher = {
       };
       let files = fs.listFileSync(filePath, listFileOption);
       if (files.length > MAX_FILE_NUM) {
+        const regex = /(\d+)\.(heapsnapshot|jsleaklist)/;
+        files.sort((a, b) => {
+          const matchA = a.match(regex);
+          const matchB = b.match(regex);
+          const timeStampA = matchA ? parseInt(matchA[1]) : 0;
+          const timeStampB = matchB ? parseInt(matchB[1]) : 0;
+          return timeStampA - timeStampB;
+        })
         for (let i = 0; i < files.length - MAX_FILE_NUM; i++) {
           fs.unlinkSync(filePath + '/' + files[i]);
           console.log(`File: ${files[i]} is deleted.`);
@@ -152,6 +161,10 @@ let jsLeakWatcher = {
     return fileArray;
   },
   enable: (isEnable) => {
+    if (typeof isEnable !== 'boolean') {
+      console.log('Parameter error!');
+      return;
+    } 
     enabled = isEnable;
     if (!isEnable) {
       gcObjList.length = 0;
