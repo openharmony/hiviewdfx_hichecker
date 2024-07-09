@@ -15,8 +15,6 @@ import("//build/ohos.gni")
 
 if (support_jsapi) {
   import("//arkcompiler/ets_frontend/es2panda/es2abc_config.gni")
-  import("//build/ohos/ace/ace.gni")
-  import("//build/templates/abc/ohos_abc.gni")
 }
 
 if (support_jsapi) {
@@ -39,13 +37,6 @@ if (support_jsapi) {
     output = target_out_dir + "/js_leak_watcher_abc.o"
     dep = ":gen_js_leak_watcher_abc"
   }
-
-  ohos_abc("jsleakwatcher_napi") {
-    sources = [ "js_leak_watcher.js" ]
-    output_name = "jsleakwatcher"
-    subsystem_name = "hiviewdfx"
-    part_name = "hichecker"
-  }
 }
 
 ohos_shared_library("jsleakwatcher") {
@@ -55,7 +46,6 @@ ohos_shared_library("jsleakwatcher") {
     deps = [
       ":js_leak_watcher_abc",
       ":js_leak_watcher_js",
-      ":jsleakwatcher_napi",
     ]
 
     external_deps = [ "napi:ace_napi" ]
