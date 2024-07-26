@@ -94,7 +94,7 @@ function deleteOldFile(filePath) {
     recursion: false,
     listNum: 0,
     filter: {
-      suffix: [".heapsnapshot", ".jsleaklist"],
+      suffix: ['.heapsnapshot', '.jsleaklist'],
       fileSizeOver: 0
     }
   };
@@ -107,7 +107,7 @@ function deleteOldFile(filePath) {
       const timeStampA = matchA ? parseInt(matchA[1]) : 0;
       const timeStampB = matchB ? parseInt(matchB[1]) : 0;
       return timeStampA - timeStampB;
-    })
+    });
     for (let i = 0; i < files.length - MAX_FILE_NUM; i++) {
       fs.unlinkSync(filePath + '/' + files[i]);
       console.log(`File: ${files[i]} is deleted.`);
