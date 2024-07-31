@@ -30,7 +30,8 @@
                 "hilog",
                 "init",
                 "napi",
-                "node"
+                "node",
+                "ets_frontend"
             ]
         },
         "build": {
