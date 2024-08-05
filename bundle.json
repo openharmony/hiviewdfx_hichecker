@@ -26,12 +26,13 @@
         "deps": {
             "components": [
                 "c_utils",
+                "ets_frontend",
+                "ets_runtime",
                 "faultloggerd",
                 "hilog",
                 "init",
                 "napi",
-                "node",
-                "ets_frontend"
+                "node"
             ]
         },
         "build": {

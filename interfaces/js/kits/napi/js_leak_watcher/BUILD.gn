@@ -48,7 +48,10 @@ ohos_shared_library("jsleakwatcher") {
       ":js_leak_watcher_js",
     ]
 
-    external_deps = [ "napi:ace_napi" ]
+    external_deps = [
+      "ets_runtime:libark_jsruntime",
+      "napi:ace_napi",  
+    ]
     cflags = [ "-fstack-protector-strong" ]
     relative_install_dir = "module/hiviewdfx"
     subsystem_name = "hiviewdfx"
