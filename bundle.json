@@ -26,6 +26,8 @@
         "deps": {
             "components": [
                 "c_utils",
+                "ets_frontend",
+                "ets_runtime",
                 "faultloggerd",
                 "hilog",
                 "init",
