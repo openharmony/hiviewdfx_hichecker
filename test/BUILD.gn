@@ -32,8 +32,6 @@ ohos_unittest("HiCheckerNativeTest") {
   sources = [ "unittest/common/native/hichecker_native_test.cpp" ]
 
   deps = [ "../interfaces/native/innerkits:libhichecker" ]
-
-  external_deps = [ "googletest:gtest_main" ]
 }
 
 group("unittest") {
