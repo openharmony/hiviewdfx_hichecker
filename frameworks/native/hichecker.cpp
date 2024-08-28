@@ -38,6 +38,7 @@ namespace HiviewDFX {
 #define LOG_DOMAIN 0xD002D0B
 #undef LOG_TAG
 #define LOG_TAG "HICHECKER"
+#define BASE_TAG 10
 
 std::mutex HiChecker::mutexLock_;
 volatile bool HiChecker::checkMode_;
@@ -245,6 +246,12 @@ void HiChecker::InitHicheckerParam(const char *processName)
     HILOG_INFO(LOG_CORE, "hichecker param value is %{public}s", paramOutBuf);
     std::string paramStr(paramOutBuf);
     uint64_t rule = std::stoull(paramStr);
+    char *endPtr = nullptr;
+    uint64_t rule = strtoul(paramOutBuf, &endPtr, BASE_TAG);
+    if (rule == 0) {
+        HILOG_INFO(LOG_CORE, "param strtoul failed.");
+        return;
+    }
     AddRule(rule);
     return;
 }
