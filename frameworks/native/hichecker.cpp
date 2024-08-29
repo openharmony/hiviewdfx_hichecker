@@ -39,6 +39,7 @@ namespace HiviewDFX {
 #undef LOG_TAG
 #define LOG_TAG "HICHECKER"
 #define BASE_TAG 10
+#define ULONG_MAX 18446744073709551615 
 
 std::mutex HiChecker::mutexLock_;
 volatile bool HiChecker::checkMode_;
@@ -226,7 +227,6 @@ bool HiChecker::CheckRule(uint64_t rule)
 
 void HiChecker::InitHicheckerParam(const char *processName)
 {
-    HILOG_INFO(LOG_CORE, "hichecker processName is %{public}s", processName);
     char checkerName[QUERYNAME_LEN] = "hiviewdfx.hichecker.";
     errno_t err = 0;
     err = strcat_s(checkerName, sizeof(checkerName), processName);
@@ -246,7 +246,7 @@ void HiChecker::InitHicheckerParam(const char *processName)
     HILOG_INFO(LOG_CORE, "hichecker param value is %{public}s", paramOutBuf);
     char *endPtr = nullptr;
     uint64_t rule = strtoul(paramOutBuf, &endPtr, BASE_TAG);
-    if (rule == 0) {
+    if (rule == 0 || rule == ULONG_MAX) {
         HILOG_INFO(LOG_CORE, "param strtoul failed.");
         return;
     }
