@@ -238,7 +238,7 @@ void HiChecker::InitHicheckerParam(const char *processName)
     char paramOutBuf[PARAM_BUF_LEN] = { 0 };
     char defStrValue[PARAM_BUF_LEN] = { 0 };
     int retLen = GetParameter(checkerName, defStrValue, paramOutBuf, PARAM_BUF_LEN);
-    if (retLen == 0 || retLen > PARAM_BUF_LEN - 1) {
+    if (retLen <= 0 || retLen > PARAM_BUF_LEN - 1) {
         HILOG_INFO(LOG_CORE, "hichecker param is empty.");
         return;
     }
