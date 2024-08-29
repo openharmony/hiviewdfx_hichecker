@@ -245,7 +245,7 @@ void HiChecker::InitHicheckerParam(const char *processName)
     HILOG_INFO(LOG_CORE, "hichecker param value is %{public}s", paramOutBuf);
     char *endPtr = nullptr;
     uint64_t rule = strtoul(paramOutBuf, &endPtr, BASE_TAG);
-    if (!(rule & static_cast<uint64_t>(ALLOWED_RULE::ARKUI_PERFORMANCE)) {
+    if (!(rule & static_cast<uint64_t>(ALLOWED_RULE::ARKUI_PERFORMANCE))) {
         HILOG_ERROR(LOG_CORE, "not allowed param.");
         return;
     }
