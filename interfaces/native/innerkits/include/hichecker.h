@@ -38,10 +38,6 @@ const uint64_t ALL_THREAD_RULES = RULE_THREAD_CHECK_SLOW_PROCESS;
 const uint64_t ALL_CAUTION_RULES = RULE_CAUTION_PRINT_LOG | RULE_CAUTION_TRIGGER_CRASH;
 };
 
-enum class ALLOWED_RULE : uint64_t {
-    ARKUI_PERFORMANCE = 1ULL << 34,
-};
-
 class CautionDetail {
 public:
     CautionDetail(const Caution& caution, uint64_t rules) : caution_(caution), rules_(rules) {}
