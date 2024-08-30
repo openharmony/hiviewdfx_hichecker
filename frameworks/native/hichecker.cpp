@@ -38,6 +38,8 @@ namespace HiviewDFX {
 #define LOG_DOMAIN 0xD002D0B
 #undef LOG_TAG
 #define LOG_TAG "HICHECKER"
+constexpr int BASE_TAG = 10;
+constexpr uint64_t ALLOWED_RULE = Rule::RULE_CHECK_ARKUI_PERFORMANCE;
 
 std::mutex HiChecker::mutexLock_;
 volatile bool HiChecker::checkMode_;
@@ -225,7 +227,6 @@ bool HiChecker::CheckRule(uint64_t rule)
 
 void HiChecker::InitHicheckerParam(const char *processName)
 {
-    HILOG_INFO(LOG_CORE, "hichecker processName is %{public}s", processName);
     char checkerName[QUERYNAME_LEN] = "hiviewdfx.hichecker.";
     errno_t err = 0;
     err = strcat_s(checkerName, sizeof(checkerName), processName);
@@ -237,14 +238,18 @@ void HiChecker::InitHicheckerParam(const char *processName)
     char paramOutBuf[PARAM_BUF_LEN] = { 0 };
     char defStrValue[PARAM_BUF_LEN] = { 0 };
     int retLen = GetParameter(checkerName, defStrValue, paramOutBuf, PARAM_BUF_LEN);
-    if (retLen == 0 || retLen > PARAM_BUF_LEN - 1) {
+    if (retLen <= 0 || retLen > PARAM_BUF_LEN - 1) {
         HILOG_INFO(LOG_CORE, "hichecker param is empty.");
         return;
     }
     paramOutBuf[retLen] = '\0';
     HILOG_INFO(LOG_CORE, "hichecker param value is %{public}s", paramOutBuf);
-    std::string paramStr(paramOutBuf);
-    uint64_t rule = std::stoull(paramStr);
+    char *endPtr = nullptr;
+    uint64_t rule = strtoul(paramOutBuf, &endPtr, BASE_TAG);
+    if (!(rule & ALLOWED_RULE)) {
+        HILOG_ERROR(LOG_CORE, "not allowed param.");
+        return;
+    }
     AddRule(rule);
     return;
 }
