@@ -30,6 +30,18 @@ namespace {
     const uint64_t RULE_ERROR0 = 0;
     const uint64_t RULE_ERROR1 = -1;
     const uint64_t RULE_ERROR2 = 999999999;
+    const uint64_t BASELINE_SIZE = 65 * 1024;
+
+    vector<string> OUTPUT_PATH = {
+        "/system/etc/param/hichecker.para",
+        "/system/etc/param/hichecker.para.dac",
+        "/system/lib/module/hiviewdfx/libjsleakwatcher.z.so",
+        "/system/lib/module/libhichecker.z.so",
+        "/system/lib/platformsdk/libhichecker.so",
+        "/system/lib64/module/hiviewdfx/libjsleakwatcher.z.so",
+        "/system/lib64/module/libhichecker.z.so",
+        "/system/lib64/platformsdk/libhichecker.so"
+    };
 }
 
 namespace OHOS {
@@ -382,6 +394,23 @@ HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest003, TestSize.Level1)
     const char *processName = "test.process.name.maxlength.greatthan.eighteen.aaaaaaaaaaaaaaaaaaaaaaaaaaa";
     HiChecker::InitHicheckerParam(processName);
     ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+}
+
+/**
+  * @tc.name: HicheckerRomTest001
+  * @tc.desc: test hichecker rom
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, HicheckerRomTest001, TestSize.Level1)
+{
+    uint64_t realSize = 0;
+    for (int i = 0; i < OUTPUT_PATH.size(); i++) {
+        struct stat info = {0};
+        stat(OUTPUT_PATH[i].c_str(), &info);
+        realSize += static_cast<uint64_t>(info.st_size);
+    }
+    std::cout << "realSize = " << realSize << std::endl;
+    EXPECT_LT(realSize, BASELINE_SIZE);
 }
 } // namespace HiviewDFX
 } // namespace OHOS
