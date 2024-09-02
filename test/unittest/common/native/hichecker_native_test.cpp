@@ -32,7 +32,7 @@ namespace {
     const uint64_t RULE_ERROR2 = 999999999;
     const uint64_t BASELINE_SIZE = 65 * 1024;
 
-    vector<string> gpath = {
+    vector<string> OUTPUT_PATH = {
         "/system/etc/param/hichecker.para",
         "/system/etc/param/hichecker.para.dac",
         "/system/lib/module/hiviewdfx/libjsleakwatcher.z.so",
@@ -404,11 +404,12 @@ HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest003, TestSize.Level1)
 HWTEST_F(HiCheckerNativeTest, HicheckerRomTest001, TestSize.Level1)
 {
     uint64_t realSize = 0;
-    for (int i = 0; i < gpath.size(); i++) {
+    for (int i = 0; i < OUTPUT_PATH.size(); i++) {
         struct stat info = {0};
-        stat(gpath[i].c_str(), &info);
+        stat(OUTPUT_PATH[i].c_str(), &info);
         realSize += static_cast<uint64_t>(info.st_size);
     }
+    std::cout << "realSize = " << realSize << std::endl;
     EXPECT_LT(realSize, BASELINE_SIZE);
 }
 } // namespace HiviewDFX
