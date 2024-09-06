@@ -50,6 +50,7 @@ group("hichecker_etc") {
 }
 
 ohos_shared_library("libhichecker") {
+  branch_protector_ret = "pac_ret"
   public_configs = [ ":hichecker_native_config" ]
 
   deps = [
