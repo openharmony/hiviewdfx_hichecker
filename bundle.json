@@ -31,8 +31,7 @@
                 "faultloggerd",
                 "hilog",
                 "init",
-                "napi",
-                "node"
+                "napi"
             ]
         },
         "build": {
