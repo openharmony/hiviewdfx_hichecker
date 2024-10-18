@@ -5,3 +5,4 @@ pytest-ordering
 pytest-rerunfailures
 pytest-html
 pytest-repeat
+hypium

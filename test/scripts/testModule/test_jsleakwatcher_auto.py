@@ -19,21 +19,24 @@ import os
 import subprocess
 import colorama
 
+from hypium import UiDriver
+from hypium import BY
+from hypium import Point
+from hypium.model import UiParam
+
+driver = UiDriver.connect()
+
 class TestHicheckerjssdk:
     @pytest.mark.L0
-    def test_hichecker_installhap(self):
-        subprocess.check_call("hdc install testModule/resource/hichecker.hap", shell=True)
-        time.sleep(2)
+    def test_hichecker_leakwatchersdk(self):
+        subprocess.check_call("hdc install testModule/resource/jsleakwatchr.hap", shell=True)
+        time.sleep(3)
         subprocess.check_call("hdc shell aa start -a EntryAbility -b com.example.myapplication", shell=True)
-        time.sleep(2)
+        time.sleep(3)
+        driver.touch(BY.text("Dump").type("Button"), mode=UiParam.DOUBLE)
+        time.sleep(3)
+        command = "ls -l /data/app/el2/100/base/com.example.myapplication/haps/entry/files|grep -e heapsnapshot -e jsleaklist"
+        output = subprocess.check_output(f"hdc shell \"{command}\"", shell=True, text=True, encoding="utf-8")
+        assert "heapsnapshot" in output
+        assert "jsleaklist" in output
         subprocess.check_call("hdc uninstall com.example.myapplication", shell=True)
-        time.sleep(2)
-
-    @pytest.mark.L0
-    def test_hichecker_hicheckersdk(self):
-        process = subprocess.Popen("hdc shell \"hilog | grep HICHECKER | grep NotifySlowProcess\"", stdout=subprocess.PIPE, shell=True, text=True)
-        output = ""
-        for _ in range(1):
-            output += process.stdout.readline()
-        assert "NotifySlowProcess" in output
-        process.kill()

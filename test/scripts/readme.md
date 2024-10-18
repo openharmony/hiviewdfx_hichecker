@@ -20,9 +20,11 @@ scripts
 └─requirements.txt # 依赖文件
 ```
 
+## 注意
+rk设备上不用执行test_jsleakwatcher_auto.py的测试用例
+
 ## 测试用例执行
 windows环境下执行测试用例：
-注意当前还未实现自动化点击hap的功能，请在测试用例执行过程中出现提示点击hap时按指引操作！
 进入scripts目录，打开cmd窗口
 ### 方式一：
 
