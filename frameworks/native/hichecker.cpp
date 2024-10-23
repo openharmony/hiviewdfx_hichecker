@@ -250,7 +250,7 @@ void HiChecker::InitHicheckerParam(const char *processName)
         HILOG_ERROR(LOG_CORE, "not allowed param.");
         return;
     }
-    AddRule(rule);
+    AddRule(rule & ALLOWED_RULE);
     return;
 }
 } // HiviewDFX

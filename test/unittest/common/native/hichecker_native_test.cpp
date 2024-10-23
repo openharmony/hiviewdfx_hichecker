@@ -397,6 +397,19 @@ HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest003, TestSize.Level1)
 }
 
 /**
+  * @tc.name: InitHicheckerParamTest004
+  * @tc.desc: test InitHicheckerParam
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest004, TestSize.Level1)
+{
+    system("param set hiviewdfx.hichecker.checker_test 1024");
+    const char *processName = "checker_test";
+    HiChecker::InitHicheckerParam(processName);
+    ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+}
+
+/**
   * @tc.name: HicheckerRomTest001
   * @tc.desc: test hichecker rom
   * @tc.type: FUNC
