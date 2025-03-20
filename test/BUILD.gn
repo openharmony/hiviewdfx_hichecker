@@ -13,7 +13,7 @@
 
 import("//build/test.gni")
 
-native_module_output_path = "hichecker/native"
+native_module_output_path = "hichecker/hichecker"
 
 config("hichecker_config_test") {
   visibility = [ ":*" ]
