@@ -76,7 +76,7 @@ static int64_t GetTimeNs()
   * @tc.desc: add only one rule
   * @tc.type: FUNC
 */
-HWTEST_F(HiCheckerNativeTest, AddRuleTest001, TestSize.Level1)
+HWTEST_F(HiCheckerNativeTest, AddRuleTest001, TestSize.Level0)
 {
     uint64_t rule = Rule::RULE_THREAD_CHECK_SLOW_PROCESS;
     HiChecker::AddRule(Rule::RULE_THREAD_CHECK_SLOW_PROCESS);
@@ -91,7 +91,7 @@ HWTEST_F(HiCheckerNativeTest, AddRuleTest001, TestSize.Level1)
   * @tc.desc: add two or more rules
   * @tc.type: FUNC
 */
-HWTEST_F(HiCheckerNativeTest, AddRuleTest002, TestSize.Level1)
+HWTEST_F(HiCheckerNativeTest, AddRuleTest002, TestSize.Level0)
 {
     uint64_t rule = Rule::RULE_THREAD_CHECK_SLOW_PROCESS |
         Rule::RULE_CHECK_SLOW_EVENT | Rule::RULE_CHECK_ABILITY_CONNECTION_LEAK;
@@ -108,7 +108,7 @@ HWTEST_F(HiCheckerNativeTest, AddRuleTest002, TestSize.Level1)
   * @tc.desc: add invaild rule
   * @tc.type: FUNC
 */
-HWTEST_F(HiCheckerNativeTest, AddRuleTest003, TestSize.Level1)
+HWTEST_F(HiCheckerNativeTest, AddRuleTest003, TestSize.Level0)
 {
     HiChecker::AddRule(RULE_ERROR0);
     ASSERT_EQ(HiChecker::GetRule(), 0);
