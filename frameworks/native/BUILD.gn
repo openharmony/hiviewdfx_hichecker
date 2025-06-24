@@ -25,7 +25,7 @@ ohos_source_set("libhichecker_source") {
 
   external_deps = [
     "c_utils:utils",
-    "faultloggerd:libdfx_dumpcatcher",
+    "faultloggerd:libbacktrace_local",
     "hilog:libhilog",
     "init:libbeget_proxy",
     "init:libbegetutil",

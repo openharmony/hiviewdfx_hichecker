@@ -26,7 +26,7 @@
 
 #include "securec.h"
 
-#include "dfx_dump_catcher.h"
+#include "backtrace_local.h"
 #include "hilog/log_c.h"
 #include "hilog/log_cpp.h"
 
@@ -210,8 +210,7 @@ bool HiChecker::HasCautionRule(uint64_t rules)
 
 void HiChecker::DumpStackTrace(std::string& msg)
 {
-    DfxDumpCatcher dumplog;
-    if (!dumplog.DumpCatch(getpid(), gettid(), msg)) {
+    if (!GetBacktrace(msg)) {
         HILOG_INFO(LOG_CORE, "HiChecker DumpStackTrace fail.");
     }
 }
