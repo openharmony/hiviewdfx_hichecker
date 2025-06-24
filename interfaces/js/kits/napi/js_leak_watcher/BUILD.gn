@@ -48,10 +48,12 @@ ohos_shared_library("jsleakwatcher") {
       ":js_leak_watcher_js",
     ]
 
-    external_deps = [
-      "ets_runtime:libark_jsruntime",
-      "napi:ace_napi",
-    ]
+    external_deps = [ "napi:ace_napi" ]
+    if (defined(ark_hybrid) && ark_hybrid) {
+      external_deps += [ "runtime_core:libarkruntime" ]
+    } else {
+      external_deps += [ "ets_runtime:libark_jsruntime" ]
+    }
     cflags = [ "-fstack-protector-strong" ]
     relative_install_dir = "module/hiviewdfx"
     subsystem_name = "hiviewdfx"
