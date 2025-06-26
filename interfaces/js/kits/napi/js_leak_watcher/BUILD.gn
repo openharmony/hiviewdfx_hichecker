@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Copyright (c) 2024-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -19,15 +19,15 @@ if (support_jsapi) {
 
 if (support_jsapi) {
   es2abc_gen_abc("gen_js_leak_watcher_abc") {
-    src_js = rebase_path("js_leak_watcher.js")
+    src_js = rebase_path("js_leak_watcher.ts")
     dst_file = rebase_path(target_out_dir + "/js_leak_watcher.abc")
-    in_puts = [ "js_leak_watcher.js" ]
+    in_puts = [ "js_leak_watcher.ts" ]
     out_puts = [ target_out_dir + "/js_leak_watcher.abc" ]
     extra_args = [ "--module" ]
   }
 
   gen_js_obj("js_leak_watcher_js") {
-    input = "js_leak_watcher.js"
+    input = "js_leak_watcher.ts"
     output = target_out_dir + "/js_leak_watcher.o"
   }
 
@@ -50,6 +50,24 @@ ohos_shared_library("jsleakwatcher") {
 
     external_deps = [
       "ets_runtime:libark_jsruntime",
+      "napi:ace_napi",
+    ]
+    cflags = [ "-fstack-protector-strong" ]
+    relative_install_dir = "module/hiviewdfx"
+    subsystem_name = "hiviewdfx"
+    part_name = "hichecker"
+  }
+}
+
+ohos_shared_library("jsleakwatchernative") {
+  if (support_jsapi) {
+    sources = [ "js_leak_watcher_napi.cpp" ]
+
+    external_deps = [
+      "ace_engine:libace_compatible",
+      "c_utils:utils",
+      "ets_runtime:libark_jsruntime",
+      "eventhandler:libeventhandler",
       "napi:ace_napi",
     ]
     cflags = [ "-fstack-protector-strong" ]
