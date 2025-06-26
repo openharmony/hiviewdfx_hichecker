@@ -15,14 +15,14 @@
 
 #include "native_engine/native_engine.h"
 
-extern const char _binary_js_leak_watcher_js_start[];
-extern const char _binary_js_leak_watcher_js_end[];
+extern const char _binary_js_leak_watcher_ts_start[];
+extern const char _binary_js_leak_watcher_ts_end[];
 extern const char _binary_js_leak_watcher_abc_start[];
 extern const char _binary_js_leak_watcher_abc_end[];
 
 static napi_module _module = {
     .nm_version = 0,
-    .nm_filename = "hiviewdifx/libjsleakwatcher.so/js_leak_watcher.js",
+    .nm_filename = "hiviewdifx/libjsleakwatcher.so/js_leak_watcher.ts",
     .nm_modname = "hiviewdfx.jsLeakWatcher",
 };
 extern "C" __attribute__((constructor))
@@ -35,11 +35,11 @@ extern "C" __attribute__((visibility("default")))
 void NAPI_hiviewdfx_jsLeakWatcher_GetJSCode(const char **buf, int *bufLen)
 {
     if (buf != nullptr) {
-        *buf = _binary_js_leak_watcher_js_start;
+        *buf = _binary_js_leak_watcher_ts_start;
     }
 
     if (bufLen != nullptr) {
-        *bufLen = _binary_js_leak_watcher_js_end - _binary_js_leak_watcher_js_start;
+        *bufLen = _binary_js_leak_watcher_ts_end - _binary_js_leak_watcher_ts_start;
     }
 }
 

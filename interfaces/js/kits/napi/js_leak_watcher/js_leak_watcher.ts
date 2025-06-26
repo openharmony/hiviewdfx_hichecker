@@ -13,10 +13,15 @@
  * limitations under the License.
  */
 
+declare function requireNapi(napiModuleName: string): any;
+declare function registerArkUIObjectLifeCycleCallback(callback: (weakRef: WeakRef<object>, msg: string) => void);
+declare function unregisterArkUIObjectLifeCycleCallback();
+
 let util = requireNapi('util');
 let fs = requireNapi('file.fs');
 let hidebug = requireNapi('hidebug');
 let cryptoFramework = requireNapi('security.cryptoFramework');
+let jsLeakWatcherNative = requireNapi('hiviewdfx.jsleakwatchernative');
 
 const ERROR_CODE_INVALID_PARAM = 401;
 const ERROR_MSG_INVALID_PARAM = 'Parameter error. Please check!';
@@ -38,21 +43,19 @@ class BusinessError extends Error {
 }
 
 let enabled = false;
-let gcObjList = [];
-
 let watchObjMap = new Map();
 
 const registry = new FinalizationRegistry((hash) => {
-  gcObjList.push(hash);
+  if (watchObjMap.has(hash)) {
+    watchObjMap.delete(hash);
+  }
 });
 const MAX_FILE_NUM = 20;
 
-function flushLeakList() {
+function getLeakList() {
   let leakObjList = [];
   for (let [key, value] of watchObjMap) {
-    if (!gcObjList.includes(key)) {
-      leakObjList.push(value);
-    }
+    leakObjList.push(value);
   }
   return leakObjList;
 }
@@ -115,6 +118,80 @@ function deleteOldFile(filePath) {
   }  
 }
 
+function executeRegister() {
+  // 注册自定义组件对象回调
+  registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
+    if (weakRef === undefined || weakRef === null) {
+      return;
+    }
+    let obj = weakRef.deref();
+    if (obj === undefined || obj === null) {
+      return;
+    }
+    let objMsg = {
+      hash: util.getHash(obj),
+      name: obj.constructor.name,
+      msg: msg
+    };
+    watchObjMap.set(objMsg.hash, objMsg);
+    registry.register(obj, objMsg.hash);
+  });
+  jsLeakWatcherNative.registerArkUIObjectLifeCycleCallback((obj) => {
+    if (obj === undefined || obj === null) {
+      return;
+    }
+    let weakRef : WeakRef<object> = obj as WeakRef<object>;
+    let originObj = weakRef.deref();
+    if (originObj === undefined || originObj === null) {
+      return;
+    }
+
+    let objMsg = {
+      hash: util.getHash(originObj),
+      name: obj.constructor.name,
+      msg: ''
+    };
+    watchObjMap.set(objMsg.hash, objMsg);
+    registry.register(originObj, objMsg.hash);
+  });
+}
+
+function autoDumpInner(filePath) {
+  let fileArray = new Array(2);
+  if (!enabled) {
+    return fileArray;
+  }
+  if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
+    throw new BusinessError(ERROR_CODE_INVALID_PARAM);
+  }
+  const fileTimeStamp = new Date().getTime().toString();
+  try {
+    const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath);
+    let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+    let leakObjList = getLeakList();
+    let result = {
+      snapshot_hash: heapDumpSHA256,
+      leakObjList: leakObjList
+    };
+    fs.writeSync(file.fd, JSON.stringify(result));
+    fs.closeSync(file);
+  } catch (error) {
+    console.log('Dump heaoSnapShot or LeakList failed! ' + e);
+    return fileArray;
+  }
+
+  try {
+    deleteOldFile(filePath);
+  } catch (e) {
+    console.log('Delete old files failed! ' + e);
+    return fileArray;
+  }
+
+  fileArray[0] = filePath + '/' + fileTimeStamp + '.jsleaklist';
+  fileArray[1] = filePath + '/' + fileTimeStamp + '.heapsnapshot';
+  return fileArray;
+}
+
 let jsLeakWatcher = {
   watch: (obj, msg) => {
     if (obj === undefined || obj === null || msg === undefined || msg === null) {
@@ -135,7 +212,7 @@ let jsLeakWatcher = {
     if (!enabled) {
       return '';
     }
-    let leakObjList = flushLeakList();
+    let leakObjList = getLeakList();
     return JSON.stringify(leakObjList);
   },
   dump: (filePath) => {
@@ -155,7 +232,7 @@ let jsLeakWatcher = {
       const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath);
 
       let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
-      let leakObjList = flushLeakList();
+      let leakObjList = getLeakList();
       let result = {
         snapshot_hash: heapDumpSHA256,
         leakObjList: leakObjList
@@ -184,9 +261,41 @@ let jsLeakWatcher = {
     }
     enabled = isEnable;
     if (!isEnable) {
-      gcObjList.length = 0;
       watchObjMap.clear();
     }
+  },
+  enableLeakWatcher: (isEnable: boolean, config: Array<string>, callback: Callback<Array<string>>) => {
+    if (isEnable === undefined || isEnable === null) {
+      throw new BusinessError(ERROR_CODE_INVALID_PARAM);
+    }
+    if (config === undefined || config === null) {
+      throw new BusinessError(ERROR_CODE_INVALID_PARAM);
+    }
+    if (callback === undefined || callback === null) {
+      throw new BusinessError(ERROR_CODE_INVALID_PARAM);
+    }
+    enabled = isEnable;
+    if (!isEnable) {
+      jsLeakWatcherNative.removeTask();
+      unregisterArkUIObjectLifeCycleCallback();
+      watchObjMap.clear();
+      return;
+    }
+    const context : Context = getContext(this);
+    const filePath : string = context.filesDir;
+
+    let gcDelayTime = 27000;
+    let dumpDelayTime = 30000;
+    for (let i = 1; i <= 10; i++) {
+      jsLeakWatcherNative.handleIdleTask(gcDelayTime * i, () => {
+        ArkTools.forceFullGC();
+      });
+      jsLeakWatcherNative.handleIdleTask(dumpDelayTime * i, () => {
+        let fileArray = autoDumpInner(filePath);
+        callback(fileArray);
+      });
+    }
+    executeRegister();
   }
 };
 
