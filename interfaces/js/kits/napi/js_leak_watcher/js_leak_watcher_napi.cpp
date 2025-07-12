@@ -126,8 +126,8 @@ napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
 
 static napi_module _module = {
     .nm_version = 0,
-    .nm_register_func = DeclareJsLeakWatcherInterface,
     .nm_filename = nullptr,
+    .nm_register_func = DeclareJsLeakWatcherInterface,
     .nm_modname = "jsLeakWatcherNative",
 };
 extern "C" __attribute__((constructor)) void NAPI_hiviewdfx_jsLeakWatcher_AutoRegister()
