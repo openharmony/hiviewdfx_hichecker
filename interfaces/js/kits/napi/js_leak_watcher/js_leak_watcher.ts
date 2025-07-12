@@ -25,9 +25,19 @@ let jsLeakWatcherNative = requireNapi('hiviewdfx.jsleakwatchernative');
 
 const ERROR_CODE_INVALID_PARAM = 401;
 const ERROR_MSG_INVALID_PARAM = 'Parameter error. Please check!';
+const ERROR_CODE_ENABLE_INVALID = 10801001;
+const ERROR_MSG_ENABLE_INVALID = 'The parameter isEnabled invalid. Please check!';
+const ERROR_CODE_CONFIG_INVALID = 10801002;
+const ERROR_MSG_CONFIG_INVALID = 'The parameter config invalid. Please check!';
+const ERROR_CODE_CALLBACK_INVALID = 10801003;
+const ERROR_MSG_CALLBACK_INVALID = 'The parameter callback invalid. Please check!';
+
 
 let errMap = new Map();
 errMap.set(ERROR_CODE_INVALID_PARAM, ERROR_MSG_INVALID_PARAM);
+errMap.set(ERROR_CODE_ENABLE_INVALID, ERROR_MSG_ENABLE_INVALID);
+errMap.set(ERROR_CODE_CONFIG_INVALID, ERROR_MSG_CONFIG_INVALID);
+errMap.set(ERROR_CODE_CALLBACK_INVALID, ERROR_MSG_CALLBACK_INVALID);
 
 class BusinessError extends Error {
   constructor(code) {
@@ -119,7 +129,6 @@ function deleteOldFile(filePath) {
 }
 
 function executeRegister() {
-  // 注册自定义组件对象回调
   registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
     if (weakRef === undefined || weakRef === null) {
       return;
@@ -266,13 +275,13 @@ let jsLeakWatcher = {
   },
   enableLeakWatcher: (isEnable: boolean, config: Array<string>, callback: Callback<Array<string>>) => {
     if (isEnable === undefined || isEnable === null) {
-      throw new BusinessError(ERROR_CODE_INVALID_PARAM);
+      throw new BusinessError(ERROR_CODE_ENABLE_INVALID);
     }
     if (config === undefined || config === null) {
-      throw new BusinessError(ERROR_CODE_INVALID_PARAM);
+      throw new BusinessError(ERROR_CODE_CONFIG_INVALID);
     }
     if (callback === undefined || callback === null) {
-      throw new BusinessError(ERROR_CODE_INVALID_PARAM);
+      throw new BusinessError(ERROR_CODE_CALLBACK_INVALID);
     }
     enabled = isEnable;
     if (!isEnable) {
