@@ -33,7 +33,9 @@
                 "init",
                 "napi",
                 "ace_engine",
-                "eventhandler"
+                "eventhandler",
+                "window_manager",
+                "ipc"
             ]
         },
         "build": {
