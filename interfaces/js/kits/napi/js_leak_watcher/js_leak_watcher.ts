@@ -45,7 +45,7 @@ class BusinessError extends Error {
     if (errMap.has(code)) {
       msg = errMap.get(code);
     } else {
-      msg = ERROR_MSG_INNER_ERROR;
+      msg = ERROR_MSG_INVALID_PARAM;
     }
     super(msg);
     this.code = code;
@@ -63,11 +63,7 @@ const registry = new FinalizationRegistry((hash) => {
 const MAX_FILE_NUM = 20;
 
 function getLeakList() {
-  let leakObjList = [];
-  for (let [key, value] of watchObjMap) {
-    leakObjList.push(value);
-  }
-  return leakObjList;
+  return Array.from(watchObjMap.values());
 }
 
 function createHeapDumpFile(fileName, filePath) {
@@ -81,13 +77,10 @@ function createHeapDumpFile(fileName, filePath) {
 function getHeapDumpSHA256(filePath) {
   let md = cryptoFramework.createMd('SHA256');
   let heapDumpFile = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
-  let bufSize = 1024;
+  let bufSize = 40960;
   let readSize = 0;
   let buf = new ArrayBuffer(bufSize);
-  let readOptions = {
-    offset: readSize,
-    length: bufSize
-  };
+  let readOptions = { offset: readSize, length: bufSize };
   let readLen = fs.readSync(heapDumpFile.fd, buf, readOptions);
 
   while (readLen > 0) {
@@ -128,47 +121,44 @@ function deleteOldFile(filePath) {
   }  
 }
 
-function executeRegister() {
-  registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
-    if (weakRef === undefined || weakRef === null) {
-      return;
-    }
-    let obj = weakRef.deref();
-    if (obj === undefined || obj === null) {
-      return;
-    }
-    let objMsg = {
-      hash: util.getHash(obj),
-      name: obj.constructor.name,
-      msg: msg
-    };
-    watchObjMap.set(objMsg.hash, objMsg);
-    registry.register(obj, objMsg.hash);
-  });
-  jsLeakWatcherNative.registerArkUIObjectLifeCycleCallback((obj) => {
-    if (obj === undefined || obj === null) {
-      return;
-    }
-    let weakRef : WeakRef<object> = obj as WeakRef<object>;
-    let originObj = weakRef.deref();
-    if (originObj === undefined || originObj === null) {
-      return;
-    }
-
-    let objMsg = {
-      hash: util.getHash(originObj),
-      name: obj.constructor.name,
-      msg: ''
-    };
-    watchObjMap.set(objMsg.hash, objMsg);
-    registry.register(originObj, objMsg.hash);
-  });
+function registerObject(obj, msg) {
+  if (!obj) {
+    return;
+  }
+  let objMsg = { hash: util.getHash(obj), name: obj.constructor.name, msg: msg };
+  watchObjMap.set(objMsg.hash, objMsg);
+  registry.register(obj, objMsg.hash);
 }
 
-function autoDumpInner(filePath) {
-  let fileArray = new Array(2);
+function executeRegister(config: Array<string>) {
+  if (config.includes('CustomComponent')) {
+    registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
+      if (!weakRef) {
+        return;
+      }
+      let obj = weakRef.deref();
+      registerObject(obj, msg);
+    });
+  }
+  if (config.includes('Window')) {
+    jsLeakWatcherNative.registerWindowLifecycleCallback((obj) => {
+      registerObject(obj, '');
+    });
+  }
+  if (config.includes('NodeContainer') || config.includes('XComponent')) {
+    jsLeakWatcherNative.registerNodeContainerLifecycleCallback((weakRef) => {
+      if (!weakRef) {
+        return;
+      }
+      let obj = weakRef.deref();
+      registerObject(obj, '');
+    });
+  }
+}
+
+function dumpInner(filePath, needSandBox) {
   if (!enabled) {
-    return fileArray;
+    return [];
   }
   if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
     throw new BusinessError(ERROR_CODE_INVALID_PARAM);
@@ -178,27 +168,33 @@ function autoDumpInner(filePath) {
     const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath);
     let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let leakObjList = getLeakList();
-    let result = {
-      snapshot_hash: heapDumpSHA256,
-      leakObjList: leakObjList
-    };
+    let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
     fs.writeSync(file.fd, JSON.stringify(result));
     fs.closeSync(file);
   } catch (error) {
-    console.log('Dump heaoSnapShot or LeakList failed! ' + e);
-    return fileArray;
+    console.log('Dump heaoSnapShot or LeakList failed! ' + error);
+    return [];
   }
 
   try {
     deleteOldFile(filePath);
   } catch (e) {
     console.log('Delete old files failed! ' + e);
-    return fileArray;
+    return [];
   }
+  if (needSandBox) {
+    return [filePath + '/' + fileTimeStamp + '.jsleaklist', filePath + '/' + fileTimeStamp + '.heapsnapshot'];
+  } else {
+    return [fileTimeStamp + '.jsleaklist', fileTimeStamp + '.heapsnapshot'];
+  }
+}
 
-  fileArray[0] = filePath + '/' + fileTimeStamp + '.jsleaklist';
-  fileArray[1] = filePath + '/' + fileTimeStamp + '.heapsnapshot';
-  return fileArray;
+function shutdownJsLeakWatcher() {
+  jsLeakWatcherNative.removeTask();
+  jsLeakWatcherNative.unregisterArkUIObjectLifeCycleCallback();
+  jsLeakWatcherNative.unregisterWindowLifecycleCallback();
+  unregisterArkUIObjectLifeCycleCallback();
+  watchObjMap.clear();
 }
 
 let jsLeakWatcher = {
@@ -209,11 +205,7 @@ let jsLeakWatcher = {
     if (!enabled) {
       return;
     }
-    let objMsg = {
-      hash: util.getHash(obj),
-      name: obj.constructor.name,
-      msg: msg
-    };
+    let objMsg = { hash: util.getHash(obj), name: obj.constructor.name, msg: msg };
     watchObjMap.set(objMsg.hash, objMsg);
     registry.register(obj, objMsg.hash);
   },
@@ -228,41 +220,7 @@ let jsLeakWatcher = {
     if (filePath === undefined || filePath === null) {
       throw new BusinessError(ERROR_CODE_INVALID_PARAM);
     }
-    let fileArray = new Array(2);
-    if (!enabled) {
-      return fileArray;
-    }
-    if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
-      throw new BusinessError(ERROR_CODE_INVALID_PARAM);
-    }
-
-    const fileTimeStamp = new Date().getTime().toString();
-    try {
-      const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath);
-
-      let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
-      let leakObjList = getLeakList();
-      let result = {
-        snapshot_hash: heapDumpSHA256,
-        leakObjList: leakObjList
-      };
-      fs.writeSync(file.fd, JSON.stringify(result));
-      fs.closeSync(file);
-    } catch (error) {
-      console.log('Dump heaoSnapShot or LeakList failed! ' + e);
-      return fileArray;
-    }
-
-    try {
-      deleteOldFile(filePath);
-    } catch (e) {
-      console.log('Delete old files failed! ' + e);
-      return fileArray;
-    }
-
-    fileArray[0] = fileTimeStamp + '.jsleaklist';
-    fileArray[1] = fileTimeStamp + '.heapsnapshot';
-    return fileArray;
+    return dumpInner(filePath, false);
   },
   enable: (isEnable) => {
     if (isEnable === undefined || isEnable === null) {
@@ -283,28 +241,41 @@ let jsLeakWatcher = {
     if (callback === undefined || callback === null) {
       throw new BusinessError(ERROR_CODE_CALLBACK_INVALID);
     }
-    enabled = isEnable;
-    if (!isEnable) {
-      jsLeakWatcherNative.removeTask();
-      unregisterArkUIObjectLifeCycleCallback();
-      watchObjMap.clear();
+    if (isEnable === enabled) {
+      console.log('JsLeakWatcher is already started or stopped.');
       return;
     }
+    enabled = isEnable;
+    if (!isEnable) {
+      shutdownJsLeakWatcher();
+      return;
+    }
+
+    const validConfig = ['CustomComponent', 'Window', 'NodeContainer', 'XComponent', 'Ability'];
+    for (let i = 0; i < config.length; i++) {
+      if (!validConfig.includes(config[i])) {
+        throw new BusinessError(ERROR_CODE_CONFIG_INVALID);
+      }
+    }
+    if (config.length == 0) {
+      config = validConfig;
+    }
+
     const context : Context = getContext(this);
     const filePath : string = context.filesDir;
 
-    let gcDelayTime = 27000;
-    let dumpDelayTime = 30000;
-    for (let i = 1; i <= 10; i++) {
-      jsLeakWatcherNative.handleIdleTask(gcDelayTime * i, () => {
-        ArkTools.forceFullGC();
-      });
-      jsLeakWatcherNative.handleIdleTask(dumpDelayTime * i, () => {
-        let fileArray = autoDumpInner(filePath);
-        callback(fileArray);
-      });
-    }
-    executeRegister();
+    jsLeakWatcherNative.handleGcTask(() => {
+      ArkTools.forceFullGC();
+    });
+    jsLeakWatcherNative.handleDumpTask(() => {
+      let fileArray = dumpInner(filePath, true);
+      callback(fileArray);
+    });
+    jsLeakWatcherNative.handleShutdownTask(() => {
+      enabled = false;
+      shutdownJsLeakWatcher();
+    });
+    executeRegister(config);
   }
 };
 

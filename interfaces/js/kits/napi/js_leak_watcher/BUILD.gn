@@ -68,7 +68,9 @@ ohos_shared_library("jsleakwatchernative") {
       "c_utils:utils",
       "ets_runtime:libark_jsruntime",
       "eventhandler:libeventhandler",
+      "ipc:ipc_single",
       "napi:ace_napi",
+      "window_manager:libwm",
     ]
     cflags = [ "-fstack-protector-strong" ]
     relative_install_dir = "module/hiviewdfx"
