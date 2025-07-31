@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <string>
 #include "event_handler.h"
 #include "event_runner.h"
 #include "native_engine/native_engine.h"
@@ -82,6 +83,9 @@ public:
         isRunning_ = isRunning;
         dumpCount_ = 0;
         gcCount_ = 0;
+        if (!isRunning) {
+            Reset();
+        }
     }
 
 private:
@@ -93,6 +97,15 @@ private:
         napi_get_reference_value(env_, callbackRef, &callback);
         napi_value argv[1] = {nullptr};
         napi_call_function(env_, global, callback, 1, argv, nullptr);
+    }
+    void Reset()
+    {
+        napi_delete_reference(env_, dumpFuncRef_);
+        napi_delete_reference(env_, gcFuncRef_);
+        napi_delete_reference(env_, shutdownFuncRef_);
+        dumpFuncRef_ = nullptr;
+        gcFuncRef_ = nullptr;
+        shutdownFuncRef_ = nullptr;
     }
     napi_env env_ = nullptr;
     napi_ref dumpFuncRef_ = nullptr;
@@ -124,6 +137,7 @@ public:
     }
     void Reset()
     {
+        napi_delete_reference(env_, callbackRef_);
         env_ = nullptr;
         callbackRef_ = nullptr;
     }
@@ -132,18 +146,73 @@ private:
     napi_ref callbackRef_ = nullptr;
 };
 
-static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info);
-static napi_value UnregisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info);
-static napi_value RegisterWindowLifeCycleCallback(napi_env env, napi_callback_info info);
-static napi_value UnregisterWindowLifeCycleCallback(napi_env env, napi_callback_info info);
-static napi_value RemoveTask(napi_env env, napi_callback_info info);
-static napi_value HandleDumpTask(napi_env env, napi_callback_info info);
-static napi_value HandleGCTask(napi_env env, napi_callback_info info);
-static napi_value HandleShutdownTask(napi_env env, napi_callback_info info);
-
 auto g_runner = EventRunner::Current();
 auto g_handler = std::make_shared<LeakWatcherEventHandler>(g_runner);
 auto g_listener = OHOS::sptr<WindowLifeCycleListener>::MakeSptr();
+napi_ref g_callbackRef = nullptr;
+
+static bool CreateFile(const std::string& filePath)
+{
+    if (access(filePath.c_str(), F_OK) == 0) {
+        return access(filePath.c_str(), W_OK) == 0;
+    }
+    const mode_t defaultMode = S_IRUSR | S_IWUSR | S_IRGRP; // -rw-r-----
+    int fd = creat(filePath.c_str(), defaultMode);
+    if (fd == -1) {
+        return false;
+    }
+    close(fd);
+    return true;
+}
+
+static bool GetNapiStringValue(napi_env env, napi_value value, std::string& str)
+{
+    size_t bufLen = 0;
+    napi_status status = napi_get_value_string_utf8(env, value, nullptr, 0, &bufLen);
+    if (status != napi_ok) {
+        return false;
+    }
+    str.reserve(bufLen + 1);
+    str.resize(bufLen);
+    status = napi_get_value_string_utf8(env, value, str.data(), bufLen + 1, &bufLen);
+    if (status != napi_ok) {
+        return false;
+    }
+    return true;
+}
+
+static uint64_t GetFileSize(const std::string& filePath)
+{
+    struct stat st;
+    if (stat(filePath.c_str(), &st) != 0) {
+        return 0;
+    }
+    return st.st_size;
+}
+
+static bool AppendMetaData(const std::string& filePath)
+{
+    const char* metaDataPath = "/system/lib64/module/arkcompiler/metadata.json";
+    auto rawHeapFileSize = static_cast<uint32_t>(GetFileSize(filePath));
+    auto metaDataFileSize = static_cast<uint32_t>(GetFileSize(metaDataPath));
+    FILE* targetFile = fopen(filePath.c_str(), "ab");
+    FILE* metaDataFile = fopen(metaDataPath, "rb");
+    constexpr auto buffSize = 1024;
+    char buff[buffSize] = {0};
+    size_t readSize = 0;
+    while ((readSize = fread(buff, 1, buffSize, metaDataFile)) > 0) {
+        if (fwrite(buff, 1, readSize, targetFile) != readSize) {
+            fclose(targetFile);
+            fclose(metaDataFile);
+            return false;
+        }
+    }
+    fwrite(&rawHeapFileSize, sizeof(rawHeapFileSize), 1, targetFile);
+    fwrite(&metaDataFileSize, sizeof(metaDataFileSize), 1, targetFile);
+    fclose(targetFile);
+    fclose(metaDataFile);
+    return true;
+}
 
 static napi_value CreateUndefined(napi_env env)
 {
@@ -166,20 +235,22 @@ static bool GetCallbackRef(napi_env env, napi_callback_info info, napi_ref* ref)
 
 static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info)
 {
-    napi_ref ref = nullptr;
-    if (!GetCallbackRef(env, info, &ref)) {
+    if (!GetCallbackRef(env, info, &g_callbackRef)) {
         return nullptr;
     }
 
     RefPtr<Kit::UIContext> uiContext = Kit::UIContext::Current();
-    uiContext->RegisterArkUIObjectLifecycleCallback([env, ref](void* obj) {
+    if (uiContext == nullptr) {
+        return nullptr;
+    }
+    uiContext->RegisterArkUIObjectLifecycleCallback([env](void* obj) {
         ArkUIRuntimeCallInfo* arkUIRuntimeCallInfo = reinterpret_cast<ArkUIRuntimeCallInfo*>(obj);
         panda::Local<panda::JSValueRef> firstArg = arkUIRuntimeCallInfo->GetCallArgRef(0);
         napi_value param = reinterpret_cast<napi_value>(*firstArg);
         napi_value global = nullptr;
         napi_get_global(env, &global);
         napi_value callback = nullptr;
-        napi_get_reference_value(env, ref, &callback);
+        napi_get_reference_value(env, g_callbackRef, &callback);
         napi_value argv[1] = {param};
         napi_call_function(env, global, callback, 1, argv, nullptr);
     });
@@ -190,7 +261,12 @@ static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callba
 static napi_value UnregisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info)
 {
     RefPtr<Kit::UIContext> uiContext = Kit::UIContext::Current();
+    if (uiContext == nullptr) {
+        return nullptr;
+    }
     uiContext->UnregisterArkUIObjectLifecycleCallback();
+    napi_delete_reference(env, g_callbackRef);
+    g_callbackRef = nullptr;
     return CreateUndefined(env);
 }
 
@@ -254,6 +330,27 @@ static napi_value RemoveTask(napi_env env, napi_callback_info info)
     return CreateUndefined(env);
 }
 
+static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
+{
+    size_t argc = ONE_VALUE_LIMIT;
+    napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (argc != ONE_VALUE_LIMIT) {
+        return nullptr;
+    }
+    std::string filePath = "";
+    if (!GetNapiStringValue(env, argv[0], filePath)) {
+        return nullptr;
+    }
+    if (!CreateFile(filePath)) {
+        return nullptr;
+    }
+    NativeEngine *engine = reinterpret_cast<NativeEngine*>(env);
+    engine->DumpHeapSnapshot(filePath, true, DumpFormat::BINARY, false, true);
+    AppendMetaData(filePath);
+    return CreateUndefined(env);
+}
+
 napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -265,6 +362,7 @@ napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("handleDumpTask", HandleDumpTask),
         DECLARE_NAPI_FUNCTION("handleGCTask", HandleGCTask),
         DECLARE_NAPI_FUNCTION("handleShutdownTask", HandleShutdownTask),
+        DECLARE_NAPI_FUNCTION("dumpRawHeap", DumpRawHeap),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
