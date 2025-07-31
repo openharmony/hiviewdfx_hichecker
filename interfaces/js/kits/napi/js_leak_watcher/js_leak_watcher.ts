@@ -66,11 +66,16 @@ function getLeakList() {
   return Array.from(watchObjMap.values());
 }
 
-function createHeapDumpFile(fileName, filePath) {
-  hidebug.dumpJsHeapData(fileName);
-  let heapDumpFileName = fileName + '.heapsnapshot';
+function createHeapDumpFile(fileName, filePath, isBinary) {
+  let suffix = isBinary ? '.rawheap' : '.heapsnapshot';
+  let heapDumpFileName = fileName + suffix;
   let desFilePath = filePath + '/' + heapDumpFileName;
-  fs.moveFileSync('/data/storage/el2/base/files/' + heapDumpFileName, desFilePath, 0);
+  if (isBinary) {
+    jsLeakWatcherNative.dumpRawHeap(desFilePath);
+  } else {
+    hidebug.dumpJsHeapData(fileName);
+    fs.moveFileSync('/data/storage/el2/base/files/' + heapDumpFileName, desFilePath, 0);
+  }
   return getHeapDumpSHA256(desFilePath);
 }
 
@@ -100,13 +105,13 @@ function deleteOldFile(filePath) {
     recursion: false,
     listNum: 0,
     filter: {
-      suffix: ['.heapsnapshot', '.jsleaklist'],
+      suffix: ['.heapsnapshot', '.jsleaklist', '.rawheap'],
       fileSizeOver: 0
     }
   };
   let files = fs.listFileSync(filePath, listFileOption);
   if (files.length > MAX_FILE_NUM) {
-    const regex = /(\d+)\.(heapsnapshot|jsleaklist)/;
+    const regex = /(\d+)\.(heapsnapshot|jsleaklist|rawheap)/;
     files.sort((a, b) => {
       const matchA = a.match(regex);
       const matchB = b.match(regex);
@@ -141,12 +146,12 @@ function executeRegister(config: Array<string>) {
     });
   }
   if (config.includes('Window')) {
-    jsLeakWatcherNative.registerWindowLifecycleCallback((obj) => {
+    jsLeakWatcherNative.registerWindowLifeCycleCallback((obj) => {
       registerObject(obj, '');
     });
   }
   if (config.includes('NodeContainer') || config.includes('XComponent')) {
-    jsLeakWatcherNative.registerNodeContainerLifecycleCallback((weakRef) => {
+    jsLeakWatcherNative.registerArkUIObjectLifeCycleCallback((weakRef) => {
       if (!weakRef) {
         return;
       }
@@ -156,7 +161,7 @@ function executeRegister(config: Array<string>) {
   }
 }
 
-function dumpInner(filePath, needSandBox) {
+function dumpInner(filePath, needSandBox, isBinary) {
   if (!enabled) {
     return [];
   }
@@ -165,7 +170,7 @@ function dumpInner(filePath, needSandBox) {
   }
   const fileTimeStamp = new Date().getTime().toString();
   try {
-    const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath);
+    const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath, isBinary);
     let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let leakObjList = getLeakList();
     let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
@@ -183,7 +188,7 @@ function dumpInner(filePath, needSandBox) {
     return [];
   }
   if (needSandBox) {
-    return [filePath + '/' + fileTimeStamp + '.jsleaklist', filePath + '/' + fileTimeStamp + '.heapsnapshot'];
+    return [filePath + '/' + fileTimeStamp + '.jsleaklist', filePath + '/' + fileTimeStamp + '.heapsnapshot', filePath + '/' + fileTimeStamp + '.rawheap'];
   } else {
     return [fileTimeStamp + '.jsleaklist', fileTimeStamp + '.heapsnapshot'];
   }
@@ -220,7 +225,7 @@ let jsLeakWatcher = {
     if (filePath === undefined || filePath === null) {
       throw new BusinessError(ERROR_CODE_INVALID_PARAM);
     }
-    return dumpInner(filePath, false);
+    return dumpInner(filePath, false, false);
   },
   enable: (isEnable) => {
     if (isEnable === undefined || isEnable === null) {
@@ -257,18 +262,18 @@ let jsLeakWatcher = {
         throw new BusinessError(ERROR_CODE_CONFIG_INVALID);
       }
     }
-    if (config.length == 0) {
+    if (config.length === 0) {
       config = validConfig;
     }
 
     const context : Context = getContext(this);
-    const filePath : string = context.filesDir;
+    const filePath : string = context ? context.filesDir : '/data/storage/el2/base/files/';
 
-    jsLeakWatcherNative.handleGcTask(() => {
+    jsLeakWatcherNative.handleGCTask(() => {
       ArkTools.forceFullGC();
     });
     jsLeakWatcherNative.handleDumpTask(() => {
-      let fileArray = dumpInner(filePath, true);
+      let fileArray = dumpInner(filePath, true, true);
       callback(fileArray);
     });
     jsLeakWatcherNative.handleShutdownTask(() => {
