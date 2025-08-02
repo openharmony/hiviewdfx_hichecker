@@ -105,8 +105,7 @@ function deleteOldFile(filePath) {
     recursion: false,
     listNum: 0,
     filter: {
-      suffix: ['.heapsnapshot', '.jsleaklist', '.rawheap'],
-      fileSizeOver: 0
+      displayName: ['*.heapsnapshot', '*.jsleaklist', '*.rawheap'],
     }
   };
   let files = fs.listFileSync(filePath, listFileOption);
@@ -197,7 +196,7 @@ function dumpInner(filePath, needSandBox, isRawHeap) {
 function shutdownJsLeakWatcher() {
   jsLeakWatcherNative.removeTask();
   jsLeakWatcherNative.unregisterArkUIObjectLifeCycleCallback();
-  jsLeakWatcherNative.unregisterWindowLifecycleCallback();
+  jsLeakWatcherNative.unregisterWindowLifeCycleCallback();
   unregisterArkUIObjectLifeCycleCallback();
   watchObjMap.clear();
 }
