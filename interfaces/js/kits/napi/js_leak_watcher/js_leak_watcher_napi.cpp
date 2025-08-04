@@ -207,8 +207,16 @@ static bool AppendMetaData(const std::string& filePath)
             return false;
         }
     }
-    fwrite(&rawHeapFileSize, sizeof(rawHeapFileSize), 1, targetFile);
-    fwrite(&metaDataFileSize, sizeof(metaDataFileSize), 1, targetFile);
+    if (fwrite(&rawHeapFileSize, sizeof(rawHeapFileSize), 1, targetFile) != 1) {
+        fclose(targetFile);
+        fclose(metaDataFile);
+        return false;
+    }
+    if (fwrite(&metaDataFileSize, sizeof(metaDataFileSize), 1, targetFile) != 1) {
+        fclose(targetFile);
+        fclose(metaDataFile);
+        return false;
+    }
     fclose(targetFile);
     fclose(metaDataFile);
     return true;
