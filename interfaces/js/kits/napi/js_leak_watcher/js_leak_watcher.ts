@@ -134,6 +134,30 @@ function registerObject(obj, msg) {
   registry.register(obj, objMsg.hash);
 }
 
+let lifecycleId;
+function registerAbilityLifecycleCallback() {
+  let abilityLifecycleCallback = {
+    onAbilityDestroy(ability) {
+      registerObject(ability, '');
+    }
+  }
+  const context : Context = getContext(this);
+  if (context) {
+    let applicationContext = context.getApplicationContext();
+    lifecycleId = applicationContext.registerAbilityLifecycleCallback(abilityLifecycleCallback);
+  }
+}
+
+function unregisterAbilityLifecycleCallback() {
+  const context : Context = getContext(this);
+  if (context) {
+    let applicationContext = context.getApplicationContext();
+    applicationContext.unregisterAbilityLifecycleCallback(lifecycleId, (error, data) => {
+      console.log('unregisterAbilityLifecycleCallback success! err:' + JSON.stringify(error));
+    });
+  }
+}
+
 function executeRegister(config: Array<string>) {
   if (config.includes('CustomComponent')) {
     registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
@@ -157,6 +181,9 @@ function executeRegister(config: Array<string>) {
       let obj = weakRef.deref();
       registerObject(obj, '');
     });
+  }
+  if (config.includes('Ability')) {
+    registerAbilityLifecycleCallback();
   }
 }
 
@@ -198,6 +225,7 @@ function shutdownJsLeakWatcher() {
   jsLeakWatcherNative.unregisterArkUIObjectLifeCycleCallback();
   jsLeakWatcherNative.unregisterWindowLifeCycleCallback();
   unregisterArkUIObjectLifeCycleCallback();
+  unregisterAbilityLifecycleCallback();
   watchObjMap.clear();
 }
 
