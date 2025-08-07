@@ -196,7 +196,14 @@ static bool AppendMetaData(const std::string& filePath)
     auto rawHeapFileSize = static_cast<uint32_t>(GetFileSize(filePath));
     auto metaDataFileSize = static_cast<uint32_t>(GetFileSize(metaDataPath));
     FILE* targetFile = fopen(filePath.c_str(), "ab");
+    if (targetFile == nullptr) {
+        return false;
+    }
     FILE* metaDataFile = fopen(metaDataPath, "rb");
+    if (metaDataFile == nullptr) {
+        fclose(targetFile);
+        return false;
+    }
     constexpr auto buffSize = 1024;
     char buff[buffSize] = {0};
     size_t readSize = 0;

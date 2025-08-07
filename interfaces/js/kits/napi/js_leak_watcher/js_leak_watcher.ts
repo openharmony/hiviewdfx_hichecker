@@ -66,11 +66,11 @@ function getLeakList() {
   return Array.from(watchObjMap.values());
 }
 
-function createHeapDumpFile(fileName, filePath, isRawHeap) {
-  let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
+function createHeapDumpFile(fileName, filePath, isBinary) {
+  let suffix = isBinary ? '.rawheap' : '.heapsnapshot';
   let heapDumpFileName = fileName + suffix;
   let desFilePath = filePath + '/' + heapDumpFileName;
-  if (isRawHeap) {
+  if (isBinary) {
     jsLeakWatcherNative.dumpRawHeap(desFilePath);
   } else {
     hidebug.dumpJsHeapData(fileName);
@@ -187,7 +187,7 @@ function executeRegister(config: Array<string>) {
   }
 }
 
-function dumpInner(filePath, needSandBox, isRawHeap) {
+function dumpInner(filePath, needSandBox, isBinary) {
   if (!enabled) {
     return [];
   }
@@ -196,7 +196,7 @@ function dumpInner(filePath, needSandBox, isRawHeap) {
   }
   const fileTimeStamp = new Date().getTime().toString();
   try {
-    const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath, isRawHeap);
+    const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath, isBinary);
     let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let leakObjList = getLeakList();
     let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
@@ -300,7 +300,7 @@ let jsLeakWatcher = {
       ArkTools.forceFullGC();
     });
     jsLeakWatcherNative.handleDumpTask(() => {
-      let fileArray = dumpInner(filePath, true, true);
+      let fileArray = dumpInner(filePath, true, false);
       callback(fileArray);
     });
     jsLeakWatcherNative.handleShutdownTask(() => {
