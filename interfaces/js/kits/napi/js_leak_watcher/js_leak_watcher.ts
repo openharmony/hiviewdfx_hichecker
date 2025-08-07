@@ -66,11 +66,11 @@ function getLeakList() {
   return Array.from(watchObjMap.values());
 }
 
-function createHeapDumpFile(fileName, filePath, isBinary) {
-  let suffix = isBinary ? '.rawheap' : '.heapsnapshot';
+function createHeapDumpFile(fileName, filePath, isRawHeap) {
+  let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
   let heapDumpFileName = fileName + suffix;
   let desFilePath = filePath + '/' + heapDumpFileName;
-  if (isBinary) {
+  if (isRawHeap) {
     jsLeakWatcherNative.dumpRawHeap(desFilePath);
   } else {
     hidebug.dumpJsHeapData(fileName);
@@ -187,7 +187,7 @@ function executeRegister(config: Array<string>) {
   }
 }
 
-function dumpInner(filePath, needSandBox, isBinary) {
+function dumpInner(filePath, needSandBox, isRawHeap) {
   if (!enabled) {
     return [];
   }
@@ -196,7 +196,7 @@ function dumpInner(filePath, needSandBox, isBinary) {
   }
   const fileTimeStamp = new Date().getTime().toString();
   try {
-    const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath, isBinary);
+    const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath, isRawHeap);
     let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let leakObjList = getLeakList();
     let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
