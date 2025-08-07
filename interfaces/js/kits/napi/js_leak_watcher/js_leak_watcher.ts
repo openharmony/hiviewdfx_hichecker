@@ -300,7 +300,7 @@ let jsLeakWatcher = {
       ArkTools.forceFullGC();
     });
     jsLeakWatcherNative.handleDumpTask(() => {
-      let fileArray = dumpInner(filePath, true, true);
+      let fileArray = dumpInner(filePath, true, false);
       callback(fileArray);
     });
     jsLeakWatcherNative.handleShutdownTask(() => {
