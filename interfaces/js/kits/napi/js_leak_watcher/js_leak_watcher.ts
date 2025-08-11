@@ -300,6 +300,10 @@ let jsLeakWatcher = {
       ArkTools.forceFullGC();
     });
     jsLeakWatcherNative.handleDumpTask(() => {
+      if (watchObjMap.size === 0) {
+        console.log('No js leak detected, no need to dump.');
+        return;
+      }
       let fileArray = dumpInner(filePath, true, true);
       callback(fileArray);
     });
