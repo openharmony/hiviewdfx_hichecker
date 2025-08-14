@@ -199,8 +199,13 @@ function dumpInner(filePath, needSandBox, isRawHeap) {
     const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath, isRawHeap);
     let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let leakObjList = getLeakList();
-    let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
-    fs.writeSync(file.fd, JSON.stringify(result));
+    if (isRawHeap) {
+      let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
+      fs.writeSync(file.fd, JSON.stringify(result));
+    } else {
+      let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
+      fs.writeSync(file.fd, JSON.stringify(result));
+    }
     fs.closeSync(file);
   } catch (error) {
     console.log('Dump heaoSnapShot or LeakList failed! ' + error);

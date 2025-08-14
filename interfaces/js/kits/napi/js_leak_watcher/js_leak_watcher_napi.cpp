@@ -27,7 +27,6 @@ using ArkUIRuntimeCallInfo = panda::JsiRuntimeCallInfo;
 
 constexpr uint32_t DUMP_EVENT_ID = 0;
 constexpr uint32_t GC_EVENT_ID = 1;
-constexpr uint32_t MAX_EXECUTE_COUNT = 10;
 constexpr uint32_t DUMP_DELAY_TIME = 30000; // 30s
 constexpr uint32_t GC_DELAY_TIME = 27000; // 27s
 constexpr uint32_t ONE_VALUE_LIMIT = 1;
@@ -45,20 +44,10 @@ public:
         auto eventId = event->GetInnerEventId();
         if (eventId == DUMP_EVENT_ID) {
             ExecuteJsFunc(dumpFuncRef_);
-            dumpCount_++;
-            if (dumpCount_ < MAX_EXECUTE_COUNT) {
-                SendEvent(DUMP_EVENT_ID, DUMP_DELAY_TIME, Priority::IDLE);
-            }
+            SendEvent(DUMP_EVENT_ID, DUMP_DELAY_TIME, Priority::IDLE);
         } else if (eventId == GC_EVENT_ID) {
             ExecuteJsFunc(gcFuncRef_);
-            gcCount_++;
-            if (gcCount_ < MAX_EXECUTE_COUNT) {
-                SendEvent(GC_EVENT_ID, GC_DELAY_TIME, Priority::IDLE);
-            }
-        }
-        if (dumpCount_ >= MAX_EXECUTE_COUNT && gcCount_ >= MAX_EXECUTE_COUNT) {
-            ExecuteJsFunc(shutdownFuncRef_);
-            SetJsLeakWatcherStatus(false);
+            SendEvent(GC_EVENT_ID, GC_DELAY_TIME, Priority::IDLE);
         }
     }
 
@@ -81,8 +70,6 @@ public:
     void SetJsLeakWatcherStatus(bool isRunning)
     {
         isRunning_ = isRunning;
-        dumpCount_ = 0;
-        gcCount_ = 0;
         if (!isRunning) {
             Reset();
         }
@@ -111,8 +98,6 @@ private:
     napi_ref dumpFuncRef_ = nullptr;
     napi_ref gcFuncRef_ = nullptr;
     napi_ref shutdownFuncRef_ = nullptr;
-    uint32_t dumpCount_ = 0;
-    uint32_t gcCount_ = 0;
     bool isRunning_ = false;
 };
 
@@ -361,7 +346,7 @@ static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
         return nullptr;
     }
     NativeEngine *engine = reinterpret_cast<NativeEngine*>(env);
-    engine->DumpHeapSnapshot(filePath, true, DumpFormat::BINARY, false, true);
+    engine->DumpHeapSnapshot(filePath, true, DumpFormat::BINARY, false, true, true);
     AppendMetaData(filePath);
     return CreateUndefined(env);
 }
