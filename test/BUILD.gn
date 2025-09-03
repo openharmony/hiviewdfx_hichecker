@@ -38,3 +38,19 @@ group("unittest") {
   testonly = true
   deps = [ ":HiCheckerNativeTest" ]
 }
+
+ohos_fuzztest("HicheckerFuzzTest") {
+  module_out_path = native_module_output_path
+  fuzz_config_file = "fuzztest/hichecker_fuzzer"
+  include_dirs = [
+    "fuzztest/hichecker_fuzzer",
+    "../interfaces/native/innerkits/include",
+  ]
+  sources = [ "fuzztest/hichecker_fuzzer/hichecker_fuzzer.cpp" ]
+  deps = [ "../interfaces/native/innerkits:libhichecker" ]
+}
+
+group("hichecker_fuzztest") {
+  testonly = true
+  deps = [ ":HicheckerFuzzTest" ]
+}
