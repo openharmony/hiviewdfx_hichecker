@@ -73,7 +73,10 @@
                     }
                   }
             ],
-            "test": [ "//base/hiviewdfx/hichecker/test:unittest" ]
+            "test": [
+              "//base/hiviewdfx/hichecker/test:unittest",
+              "//base/hiviewdfx/hichecker/test:hichecker_fuzztest"
+            ]
         }
     }
 }

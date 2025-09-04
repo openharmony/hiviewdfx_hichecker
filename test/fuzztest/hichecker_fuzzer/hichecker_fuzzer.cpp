@@ -20,7 +20,60 @@
 namespace HicheckerFuzz {
 constexpr uint8_t MAX_STR_LENGTH = 128;
 
-void HicheckerFuzzTest(const uint8_t* data, size_t size)
+void AddRuleFuzz(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    uint64_t rule = provider.ConsumeIntegral<uint64_t>();
+    OHOS::HiviewDFX::HiChecker::AddRule(rule);
+}
+
+void ContainsFuzz(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    uint64_t rule = provider.ConsumeIntegral<uint64_t>();
+    OHOS::HiviewDFX::HiChecker::Contains(rule);
+}
+
+void GetRuleFuzz(const uint8_t* data, size_t size)
+{
+    OHOS::HiviewDFX::HiChecker::GetRule();
+}
+
+void RemoveRuleFuzz(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    uint64_t rule = provider.ConsumeIntegral<uint64_t>();
+    OHOS::HiviewDFX::HiChecker::RemoveRule(rule);
+}
+
+void NotifySlowProcessFuzz(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    std::string str = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
+    OHOS::HiviewDFX::HiChecker::NotifySlowProcess(str);
+}
+
+void NotifySlowEventFuzz(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    std::string str = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
+    OHOS::HiviewDFX::HiChecker::NotifySlowEvent(str);
+}
+
+void NotifyAbilityConnectionLeakFuzz(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    uint64_t rule = provider.ConsumeIntegral<uint64_t>();
+    if (rule & OHOS::HiviewDFX::Rule::RULE_CAUTION_TRIGGER_CRASH) {
+        return;
+    }
+    std::string str = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
+    std::string msg = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
+    OHOS::HiviewDFX::Caution caution(rule, str, msg);
+    OHOS::HiviewDFX::HiChecker::NotifyAbilityConnectionLeak(caution);
+}
+
+void NotifyCautionFuzz(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
     uint64_t rule = provider.ConsumeIntegral<uint64_t>();
@@ -29,18 +82,22 @@ void HicheckerFuzzTest(const uint8_t* data, size_t size)
     }
     OHOS::HiviewDFX::HiChecker::AddRule(rule);
     std::string str = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
-    OHOS::HiviewDFX::HiChecker::NotifySlowProcess(str);
-    OHOS::HiviewDFX::HiChecker::NotifySlowEvent(str);
     std::string msg = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
     OHOS::HiviewDFX::Caution caution(rule, str, msg);
-    OHOS::HiviewDFX::HiChecker::NotifyAbilityConnectionLeak(caution);
     std::string tag = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
     OHOS::HiviewDFX::HiChecker::NotifyCaution(rule, tag, caution);
+}
+
+void NeedCheckSlowEventFuzz(const uint8_t* data, size_t size)
+{
     OHOS::HiviewDFX::HiChecker::NeedCheckSlowEvent();
+}
+
+void InitHicheckerParamFuzz(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    std::string str = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
     OHOS::HiviewDFX::HiChecker::InitHicheckerParam(str.c_str());
-    OHOS::HiviewDFX::HiChecker::Contains(rule);
-    OHOS::HiviewDFX::HiChecker::GetRule();
-    OHOS::HiviewDFX::HiChecker::RemoveRule(rule);
 }
 } // namespace HicheckerFuzz
 
@@ -50,6 +107,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (data == nullptr || size == 0) {
         return 0;
     }
-    HicheckerFuzz::HicheckerFuzzTest(data, size);
+    HicheckerFuzz::AddRuleFuzz(data, size);
+    HicheckerFuzz::ContainsFuzz(data, size);
+    HicheckerFuzz::GetRuleFuzz(data, size);
+    HicheckerFuzz::RemoveRuleFuzz(data, size);
+    HicheckerFuzz::NotifySlowProcessFuzz(data, size);
+    HicheckerFuzz::NotifySlowEventFuzz(data, size);
+    HicheckerFuzz::NotifyAbilityConnectionLeakFuzz(data, size);
+    HicheckerFuzz::NotifyCautionFuzz(data, size);
+    HicheckerFuzz::NeedCheckSlowEventFuzz(data, size);
+    HicheckerFuzz::InitHicheckerParamFuzz(data, size);
     return 0;
 }
