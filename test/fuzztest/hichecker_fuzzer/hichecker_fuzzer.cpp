@@ -34,11 +34,6 @@ void ContainsFuzz(const uint8_t* data, size_t size)
     OHOS::HiviewDFX::HiChecker::Contains(rule);
 }
 
-void GetRuleFuzz(const uint8_t* data, size_t size)
-{
-    OHOS::HiviewDFX::HiChecker::GetRule();
-}
-
 void RemoveRuleFuzz(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
@@ -88,11 +83,6 @@ void NotifyCautionFuzz(const uint8_t* data, size_t size)
     OHOS::HiviewDFX::HiChecker::NotifyCaution(rule, tag, caution);
 }
 
-void NeedCheckSlowEventFuzz(const uint8_t* data, size_t size)
-{
-    OHOS::HiviewDFX::HiChecker::NeedCheckSlowEvent();
-}
-
 void InitHicheckerParamFuzz(const uint8_t* data, size_t size)
 {
     FuzzedDataProvider provider(data, size);
@@ -109,13 +99,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     }
     HicheckerFuzz::AddRuleFuzz(data, size);
     HicheckerFuzz::ContainsFuzz(data, size);
-    HicheckerFuzz::GetRuleFuzz(data, size);
     HicheckerFuzz::RemoveRuleFuzz(data, size);
     HicheckerFuzz::NotifySlowProcessFuzz(data, size);
     HicheckerFuzz::NotifySlowEventFuzz(data, size);
     HicheckerFuzz::NotifyAbilityConnectionLeakFuzz(data, size);
     HicheckerFuzz::NotifyCautionFuzz(data, size);
-    HicheckerFuzz::NeedCheckSlowEventFuzz(data, size);
     HicheckerFuzz::InitHicheckerParamFuzz(data, size);
     return 0;
 }
