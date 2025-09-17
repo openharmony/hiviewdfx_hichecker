@@ -14,7 +14,7 @@
  */
 
 export default namespace hichecker {
-  loadLibrary("hichecker_ani");
+  loadLibraryWithPermissionCheck("hichecker_ani", "@ohos.hichecker");
   const RULE_CAUTION_PRINT_LOG: bigint = 9223372036854775808n; // 1 << 63
   const RULE_CAUTION_TRIGGER_CRASH: bigint = 4611686018427387904n; // 1 << 62
   const RULE_THREAD_CHECK_SLOW_PROCESS: bigint = 1n;
