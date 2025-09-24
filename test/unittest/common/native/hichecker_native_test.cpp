@@ -19,6 +19,7 @@
 
 #include "caution.h"
 #include "hichecker.h"
+#include "hichecker_wrapper.h"
 
 using namespace testing::ext;
 using namespace OHOS::HiviewDFX;
@@ -369,6 +370,8 @@ HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest001, TestSize.Level1)
     const char *processName = "checker_test111";
     HiChecker::InitHicheckerParam(processName);
     ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+    InitHicheckerParamWrapper(processName);
+    ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
 }
 
 /**
@@ -382,6 +385,8 @@ HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest002, TestSize.Level1)
     const char *processName = "checker_test";
     HiChecker::InitHicheckerParam(processName);
     ASSERT_TRUE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+    InitHicheckerParamWrapper(processName);
+    ASSERT_TRUE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
 }
 
 /**
@@ -393,6 +398,8 @@ HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest003, TestSize.Level1)
 {
     const char *processName = "test.process.name.maxlength.greatthan.eighteen.aaaaaaaaaaaaaaaaaaaaaaaaaaa";
     HiChecker::InitHicheckerParam(processName);
+    ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+    InitHicheckerParamWrapper(processName);
     ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
 }
 
@@ -406,6 +413,8 @@ HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest004, TestSize.Level1)
     system("param set hiviewdfx.hichecker.checker_test 1024");
     const char *processName = "checker_test";
     HiChecker::InitHicheckerParam(processName);
+    ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+    InitHicheckerParamWrapper(processName);
     ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
 }
 

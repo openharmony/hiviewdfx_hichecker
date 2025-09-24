@@ -89,6 +89,13 @@ void InitHicheckerParamFuzz(const uint8_t* data, size_t size)
     std::string str = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
     OHOS::HiviewDFX::HiChecker::InitHicheckerParam(str.c_str());
 }
+
+void InitHicheckerParamWrapperFuzz(const uint8_t* data, size_t size)
+{
+    FuzzedDataProvider provider(data, size);
+    std::string str = provider.ConsumeRandomLengthString(MAX_STR_LENGTH);
+    InitHicheckerParamWrapper(str.c_str());
+}
 } // namespace HicheckerFuzz
 
 /* Fuzzer entry point */
@@ -105,5 +112,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     HicheckerFuzz::NotifyAbilityConnectionLeakFuzz(data, size);
     HicheckerFuzz::NotifyCautionFuzz(data, size);
     HicheckerFuzz::InitHicheckerParamFuzz(data, size);
+    HicheckerFuzz::InitHicheckerParamWrapperFuzz(data, size);
     return 0;
 }
