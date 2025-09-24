@@ -17,6 +17,7 @@
 #define HICHECCKER_FUZZER_H
 
 #include "hichecker.h"
+#include "hichecker_wrapper.h"
 #include <cstddef>
 #include <cstdint>
 #include <string>
