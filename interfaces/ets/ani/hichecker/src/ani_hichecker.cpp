@@ -28,11 +28,11 @@
 namespace OHOS {
 namespace HiviewDFX {
 namespace {
-const char NAMESPACE_NAME_HICHECKER[] = "L@ohos/hichecker/hichecker;";
-const char CLASS_NAME_BUSINESSERROR[] = "L@ohos/base/BusinessError;";
-const char CLASS_NAME_BIGINT[] = "Lescompat/BigInt;";
+const char NAMESPACE_NAME_HICHECKER[] = "@ohos.hichecker.hichecker";
+const char CLASS_NAME_BUSINESSERROR[] = "@ohos.base.BusinessError";
+const char CLASS_NAME_BIGINT[] = "escompat.BigInt";
 const char FUNC_NAME_GETLONG[] = "getLong";
-const char BIGINT_CTOR_MANGLING[] = "Lstd/core/String;:V";
+const char BIGINT_CTOR_MANGLING[] = "C{std.core.String}:";
 constexpr uint64_t GET_RULE_PARAM_FAIL = 0;
 constexpr int ERR_PARAM = 401;
 }
@@ -57,7 +57,7 @@ uint64_t GetRuleParam(ani_env *env, ani_object rule)
         return GET_RULE_PARAM_FAIL;
     }
     ani_long value = 0;
-    if (ANI_OK != env->Object_CallMethodByName_Long(rule, FUNC_NAME_GETLONG, ":J", &value)) {
+    if (ANI_OK != env->Object_CallMethodByName_Long(rule, FUNC_NAME_GETLONG, ":l", &value)) {
         HILOG_ERROR(LOG_CORE, "Get bigint value failed.");
         return GET_RULE_PARAM_FAIL;
     }
@@ -106,7 +106,7 @@ void ThrowError(ani_env *env, int32_t errCode)
         return;
     }
     ani_method ctor {};
-    if (ANI_OK != env->Class_FindMethod(cls, "<ctor>", ":V", &ctor)) {
+    if (ANI_OK != env->Class_FindMethod(cls, "<ctor>", ":", &ctor)) {
         return;
     }
     ani_object error {};
