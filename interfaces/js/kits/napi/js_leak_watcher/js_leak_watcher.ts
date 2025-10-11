@@ -268,34 +268,34 @@ let jsLeakWatcher = {
       watchObjMap.clear();
     }
   },
-  enableLeakWatcher: (isEnable: boolean, config: Array<string>, callback: Callback<Array<string>>) => {
-    if (isEnable === undefined || isEnable === null) {
+  enableLeakWatcher: (isEnabled: boolean, configs: Array<string>, callback: Callback<Array<string>>) => {
+    if (isEnabled === undefined || isEnabled === null) {
       throw new BusinessError(ERROR_CODE_ENABLE_INVALID);
     }
-    if (config === undefined || config === null) {
+    if (configs === undefined || configs === null) {
       throw new BusinessError(ERROR_CODE_CONFIG_INVALID);
     }
     if (callback === undefined || callback === null) {
       throw new BusinessError(ERROR_CODE_CALLBACK_INVALID);
     }
-    if (isEnable === enabled) {
+    if (isEnabled === enabled) {
       console.log('JsLeakWatcher is already started or stopped.');
       return;
     }
-    enabled = isEnable;
-    if (!isEnable) {
+    enabled = isEnabled;
+    if (!isEnabled) {
       shutdownJsLeakWatcher();
       return;
     }
 
     const validConfig = ['CustomComponent', 'Window', 'NodeContainer', 'XComponent', 'Ability'];
-    for (let i = 0; i < config.length; i++) {
-      if (!validConfig.includes(config[i])) {
+    for (let i = 0; i < configs.length; i++) {
+      if (!validConfig.includes(configs[i])) {
         throw new BusinessError(ERROR_CODE_CONFIG_INVALID);
       }
     }
-    if (config.length === 0) {
-      config = validConfig;
+    if (configs.length === 0) {
+      configs = validConfig;
     }
 
     const context : Context = getContext(this);
@@ -316,7 +316,7 @@ let jsLeakWatcher = {
       enabled = false;
       shutdownJsLeakWatcher();
     });
-    executeRegister(config);
+    executeRegister(configs);
   }
 };
 
