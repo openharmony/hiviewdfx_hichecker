@@ -78,12 +78,15 @@ public:
 private:
     void ExecuteJsFunc(napi_ref callbackRef)
     {
+        napi_handle_scope scope = nullptr;
+        napi_open_handle_scope(env_, &scope);
         napi_value global = nullptr;
         napi_get_global(env_, &global);
         napi_value callback = nullptr;
         napi_get_reference_value(env_, callbackRef, &callback);
         napi_value argv[1] = {nullptr};
         napi_call_function(env_, global, callback, 1, argv, nullptr);
+        napi_close_handle_scope(env_, scope);
     }
     void Reset()
     {
@@ -105,6 +108,8 @@ class WindowLifeCycleListener : public IWindowLifeCycleListener {
 public:
     void OnWindowDestroyed(const WindowLifeCycleInfo& info, void* jsWindowNapiValue) override
     {
+        napi_handle_scope scope = nullptr;
+        napi_open_handle_scope(env_, &scope);
         napi_value global = nullptr;
         napi_get_global(env_, &global);
         napi_value callback = nullptr;
@@ -112,6 +117,7 @@ public:
         napi_value param = reinterpret_cast<napi_value>(jsWindowNapiValue);
         napi_value argv[1] = {param};
         napi_call_function(env_, global, callback, 1, argv, nullptr);
+        napi_close_handle_scope(env_, scope);
     }
 
     WindowLifeCycleListener() {}
@@ -223,13 +229,17 @@ static napi_value CreateUndefined(napi_env env)
 
 static bool GetCallbackRef(napi_env env, napi_callback_info info, napi_ref* ref)
 {
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
     size_t argc = ONE_VALUE_LIMIT;
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (argc != ONE_VALUE_LIMIT) {
+        napi_close_handle_scope(env, scope);
         return false;
     }
     napi_create_reference(env, argv[0], 1, ref);
+    napi_close_handle_scope(env, scope);
     return true;
 }
 
@@ -244,6 +254,8 @@ static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callba
         return nullptr;
     }
     uiContext->RegisterArkUIObjectLifecycleCallback([env](void* obj) {
+        napi_handle_scope scope = nullptr;
+        napi_open_handle_scope(env, &scope);
         ArkUIRuntimeCallInfo* arkUIRuntimeCallInfo = reinterpret_cast<ArkUIRuntimeCallInfo*>(obj);
         panda::Local<panda::JSValueRef> firstArg = arkUIRuntimeCallInfo->GetCallArgRef(0);
         napi_value param = reinterpret_cast<napi_value>(*firstArg);
@@ -253,6 +265,7 @@ static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callba
         napi_get_reference_value(env, g_callbackRef, &callback);
         napi_value argv[1] = {param};
         napi_call_function(env, global, callback, 1, argv, nullptr);
+        napi_close_handle_scope(env, scope);
     });
 
     return CreateUndefined(env);
@@ -332,22 +345,28 @@ static napi_value RemoveTask(napi_env env, napi_callback_info info)
 
 static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
 {
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
     size_t argc = ONE_VALUE_LIMIT;
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (argc != ONE_VALUE_LIMIT) {
+        napi_close_handle_scope(env, scope);
         return nullptr;
     }
     std::string filePath = "";
     if (!GetNapiStringValue(env, argv[0], filePath)) {
+        napi_close_handle_scope(env, scope);
         return nullptr;
     }
     if (!CreateFile(filePath)) {
+        napi_close_handle_scope(env, scope);
         return nullptr;
     }
     NativeEngine *engine = reinterpret_cast<NativeEngine*>(env);
     engine->DumpHeapSnapshot(filePath, true, DumpFormat::BINARY, false, true, true);
     AppendMetaData(filePath);
+    napi_close_handle_scope(env, scope);
     return CreateUndefined(env);
 }
 
