@@ -86,7 +86,7 @@ private:
         napi_get_reference_value(env_, callbackRef, &callback);
         napi_value argv[1] = {nullptr};
         napi_call_function(env_, global, callback, 1, argv, nullptr);
-        napi_close_handle_scope(env_, &scope);
+        napi_close_handle_scope(env_, scope);
     }
     void Reset()
     {
@@ -117,7 +117,7 @@ public:
         napi_value param = reinterpret_cast<napi_value>(jsWindowNapiValue);
         napi_value argv[1] = {param};
         napi_call_function(env_, global, callback, 1, argv, nullptr);
-        napi_close_handle_scope(env_, &scope);
+        napi_close_handle_scope(env_, scope);
     }
 
     WindowLifeCycleListener() {}
@@ -158,8 +158,6 @@ static bool CreateFile(const std::string& filePath)
 
 static bool GetNapiStringValue(napi_env env, napi_value value, std::string& str)
 {
-    napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
     size_t bufLen = 0;
     napi_status status = napi_get_value_string_utf8(env, value, nullptr, 0, &bufLen);
     if (status != napi_ok) {
@@ -171,7 +169,6 @@ static bool GetNapiStringValue(napi_env env, napi_value value, std::string& str)
     if (status != napi_ok) {
         return false;
     }
-    napi_close_handle_scope(env, &scope);
     return true;
 }
 
@@ -225,11 +222,8 @@ static bool AppendMetaData(const std::string& filePath)
 
 static napi_value CreateUndefined(napi_env env)
 {
-    napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
     napi_value result = nullptr;
     napi_get_undefined(env, &result);
-    napi_close_handle_scope(env, &scope);
     return result;
 }
 
@@ -241,17 +235,16 @@ static bool GetCallbackRef(napi_env env, napi_callback_info info, napi_ref* ref)
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (argc != ONE_VALUE_LIMIT) {
+        napi_close_handle_scope(env, scope);
         return false;
     }
     napi_create_reference(env, argv[0], 1, ref);
-    napi_close_handle_scope(env, &scope);
+    napi_close_handle_scope(env, scope);
     return true;
 }
 
 static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info)
 {
-    napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
     if (!GetCallbackRef(env, info, &g_callbackRef)) {
         return nullptr;
     }
@@ -261,6 +254,8 @@ static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callba
         return nullptr;
     }
     uiContext->RegisterArkUIObjectLifecycleCallback([env](void* obj) {
+        napi_handle_scope scope = nullptr;
+        napi_open_handle_scope(env, &scope);
         ArkUIRuntimeCallInfo* arkUIRuntimeCallInfo = reinterpret_cast<ArkUIRuntimeCallInfo*>(obj);
         panda::Local<panda::JSValueRef> firstArg = arkUIRuntimeCallInfo->GetCallArgRef(0);
         napi_value param = reinterpret_cast<napi_value>(*firstArg);
@@ -270,8 +265,8 @@ static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callba
         napi_get_reference_value(env, g_callbackRef, &callback);
         napi_value argv[1] = {param};
         napi_call_function(env, global, callback, 1, argv, nullptr);
+        napi_close_handle_scope(env, scope);
     });
-    napi_close_handle_scope(env, &scope);
 
     return CreateUndefined(env);
 }
@@ -356,26 +351,27 @@ static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
     if (argc != ONE_VALUE_LIMIT) {
+        napi_close_handle_scope(env, scope);
         return nullptr;
     }
     std::string filePath = "";
     if (!GetNapiStringValue(env, argv[0], filePath)) {
+        napi_close_handle_scope(env, scope);
         return nullptr;
     }
     if (!CreateFile(filePath)) {
+        napi_close_handle_scope(env, scope);
         return nullptr;
     }
     NativeEngine *engine = reinterpret_cast<NativeEngine*>(env);
     engine->DumpHeapSnapshot(filePath, true, DumpFormat::BINARY, false, true, true);
     AppendMetaData(filePath);
-    napi_close_handle_scope(env, &scope);
+    napi_close_handle_scope(env, scope);
     return CreateUndefined(env);
 }
 
 napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
 {
-    napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
     napi_property_descriptor desc[] = {
         DECLARE_NAPI_FUNCTION("registerArkUIObjectLifeCycleCallback", RegisterArkUIObjectLifeCycleCallback),
         DECLARE_NAPI_FUNCTION("unregisterArkUIObjectLifeCycleCallback", UnregisterArkUIObjectLifeCycleCallback),
@@ -388,7 +384,6 @@ napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("dumpRawHeap", DumpRawHeap),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
-    napi_close_handle_scope(env, &scope);
     return exports;
 }
 
