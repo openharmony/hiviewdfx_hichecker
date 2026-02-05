@@ -34,9 +34,48 @@ ohos_unittest("HiCheckerNativeTest") {
   deps = [ "../interfaces/native/innerkits:libhichecker" ]
 }
 
+config("js_leak_watcher_config_test") {
+  visibility = [ ":*" ]
+
+  include_dirs = [
+    ".",
+    "../interfaces/js/kits/napi/js_leak_watcher",
+  ]
+
+  defines = [ "JS_LEAK_WATCHER_TEST" ]
+}
+
+ohos_unittest("JsLeakWatcherNapiTest") {
+  module_out_path = native_module_output_path
+
+  configs = [ ":js_leak_watcher_config_test" ]
+
+  sources = [
+    "unittest/common/native/js_leak_watcher_napi_test.cpp",
+    "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.h",
+    "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.cpp",
+  ]
+
+  external_deps = [
+    "ace_engine:libace_compatible",
+    "c_utils:utils",
+    "ets_runtime:libark_jsruntime",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "napi:ace_napi",
+    "window_manager:libwm",
+  ]
+
+  cflags = [ "-fstack-protector-strong" ]
+}
+
 group("unittest") {
   testonly = true
-  deps = [ ":HiCheckerNativeTest" ]
+  deps = [
+    ":HiCheckerNativeTest",
+    ":JsLeakWatcherNapiTest",
+  ]
 }
 
 ohos_fuzztest("HicheckerFuzzTest") {
