@@ -68,6 +68,7 @@ ohos_shared_library("jsleakwatchernative") {
       "c_utils:utils",
       "ets_runtime:libark_jsruntime",
       "eventhandler:libeventhandler",
+      "hilog:libhilog",
       "ipc:ipc_single",
       "napi:ace_napi",
       "window_manager:libwm",
