@@ -14,127 +14,22 @@
  */
 
 #include <string>
-#include "event_handler.h"
-#include "event_runner.h"
-#include "native_engine/native_engine.h"
-#include "ui/view/ui_context.h"
-#include "window_manager.h"
+#include <unistd.h>
+#include "hilog/log.h"
+#include "js_leak_watcher_napi.h"
+
+#undef LOG_DOMAIN
+#define LOG_DOMAIN 0xD003D00
+#undef LOG_TAG
+#define LOG_TAG "JSLEAK_WATCHER_C"
 
 using namespace OHOS::Ace;
 using namespace OHOS::AppExecFwk;
 using namespace OHOS::Rosen;
 using ArkUIRuntimeCallInfo = panda::JsiRuntimeCallInfo;
 
-constexpr uint32_t DUMP_EVENT_ID = 0;
-constexpr uint32_t GC_EVENT_ID = 1;
-constexpr uint32_t DUMP_DELAY_TIME = 30000; // 30s
-constexpr uint32_t GC_DELAY_TIME = 27000; // 27s
-constexpr uint32_t ONE_VALUE_LIMIT = 1;
-
-
-class LeakWatcherEventHandler : public EventHandler {
-public:
-    explicit LeakWatcherEventHandler(const std::shared_ptr<EventRunner> &runner) : EventHandler(runner) {}
-
-    void ProcessEvent(const InnerEvent::Pointer &event) override
-    {
-        if (!isRunning_) {
-            return;
-        }
-        auto eventId = event->GetInnerEventId();
-        if (eventId == DUMP_EVENT_ID) {
-            ExecuteJsFunc(dumpFuncRef_);
-            SendEvent(DUMP_EVENT_ID, DUMP_DELAY_TIME, Priority::IDLE);
-        } else if (eventId == GC_EVENT_ID) {
-            ExecuteJsFunc(gcFuncRef_);
-            SendEvent(GC_EVENT_ID, GC_DELAY_TIME, Priority::IDLE);
-        }
-    }
-
-    void SetEnv(napi_env env)
-    {
-        env_ = env;
-    }
-    void SetDumpFuncRef(napi_ref ref)
-    {
-        dumpFuncRef_ = ref;
-    }
-    void SetGcFuncRef(napi_ref ref)
-    {
-        gcFuncRef_ = ref;
-    }
-    void SetShutdownFuncRef(napi_ref ref)
-    {
-        shutdownFuncRef_ = ref;
-    }
-    void SetJsLeakWatcherStatus(bool isRunning)
-    {
-        isRunning_ = isRunning;
-        if (!isRunning) {
-            Reset();
-        }
-    }
-
-private:
-    void ExecuteJsFunc(napi_ref callbackRef)
-    {
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env_, &scope);
-        napi_value global = nullptr;
-        napi_get_global(env_, &global);
-        napi_value callback = nullptr;
-        napi_get_reference_value(env_, callbackRef, &callback);
-        napi_value argv[1] = {nullptr};
-        napi_call_function(env_, global, callback, 1, argv, nullptr);
-        napi_close_handle_scope(env_, scope);
-    }
-    void Reset()
-    {
-        napi_delete_reference(env_, dumpFuncRef_);
-        napi_delete_reference(env_, gcFuncRef_);
-        napi_delete_reference(env_, shutdownFuncRef_);
-        dumpFuncRef_ = nullptr;
-        gcFuncRef_ = nullptr;
-        shutdownFuncRef_ = nullptr;
-    }
-    napi_env env_ = nullptr;
-    napi_ref dumpFuncRef_ = nullptr;
-    napi_ref gcFuncRef_ = nullptr;
-    napi_ref shutdownFuncRef_ = nullptr;
-    bool isRunning_ = false;
-};
-
-class WindowLifeCycleListener : public IWindowLifeCycleListener {
-public:
-    void OnWindowDestroyed(const WindowLifeCycleInfo& info, void* jsWindowNapiValue) override
-    {
-        napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env_, &scope);
-        napi_value global = nullptr;
-        napi_get_global(env_, &global);
-        napi_value callback = nullptr;
-        napi_get_reference_value(env_, callbackRef_, &callback);
-        napi_value param = reinterpret_cast<napi_value>(jsWindowNapiValue);
-        napi_value argv[1] = {param};
-        napi_call_function(env_, global, callback, 1, argv, nullptr);
-        napi_close_handle_scope(env_, scope);
-    }
-
-    WindowLifeCycleListener() {}
-    void SetEnvAndCallback(napi_env env, napi_ref callbackRef)
-    {
-        env_ = env;
-        callbackRef_ = callbackRef;
-    }
-    void Reset()
-    {
-        napi_delete_reference(env_, callbackRef_);
-        env_ = nullptr;
-        callbackRef_ = nullptr;
-    }
-private:
-    napi_env env_ = nullptr;
-    napi_ref callbackRef_ = nullptr;
+struct TsfnContext {
+    napi_threadsafe_function tsfn;
 };
 
 auto g_runner = EventRunner::Current();
@@ -243,6 +138,41 @@ static bool GetCallbackRef(napi_env env, napi_callback_info info, napi_ref* ref)
     return true;
 }
 
+static void MainThreadExec(napi_env env, napi_value jscb, void* context, void* data)
+{
+    HILOG_INFO(LOG_CORE, "main thread callback starts");
+    uint8_t* pData = static_cast<uint8_t*>(data);
+    if (!pData) {
+        HILOG_ERROR(LOG_CORE, "MainThreadExec pData is nulltr!");
+        return;
+    }
+    uint8_t value = *pData;
+
+    napi_value argv[1];
+    napi_value global = nullptr;
+    if (napi_get_global(env, &global) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "MainThreadExec napi_get_global failed");
+        delete pData;
+        return;
+    }
+    if (napi_create_uint32(env, value, &argv[0]) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "MainThreadExec napi_create_uint32 failed");
+        delete pData;
+        return;
+    }
+    napi_call_function(env, global, jscb, 1, argv, nullptr);
+
+    if (context == nullptr) {
+        HILOG_ERROR(LOG_CORE, "MainThreadExec context is nullptr");
+    } else {
+        auto tsfnContext = static_cast<TsfnContext*>(context);
+        if (napi_release_threadsafe_function(tsfnContext->tsfn, napi_tsfn_release) != napi_status::napi_ok) {
+            HILOG_ERROR(LOG_CORE, "MainThreadExec release_threadsafe_function failed");
+        }
+    }
+    delete pData;
+}
+
 static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info)
 {
     if (!GetCallbackRef(env, info, &g_callbackRef)) {
@@ -310,7 +240,50 @@ static napi_value HandleDumpTask(napi_env env, napi_callback_info info)
     g_handler->SetEnv(env);
     g_handler->SetDumpFuncRef(ref);
     g_handler->SetJsLeakWatcherStatus(true);
-    g_handler->SendEvent(DUMP_EVENT_ID, DUMP_DELAY_TIME, LeakWatcherEventHandler::Priority::IDLE);
+    return CreateUndefined(env);
+}
+
+static napi_value SetDumpDelay(napi_env env, napi_callback_info info)
+{
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    size_t argc = ONE_VALUE_LIMIT;
+    napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (argc != ONE_VALUE_LIMIT) {
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
+    uint32_t delay = 0;
+    if (napi_get_value_uint32(env, argv[0], &delay) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "SetDumpDelay napi_get_value_uint32 failed");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
+    g_handler->SetDumpDelayTime(delay);
+    napi_close_handle_scope(env, scope);
+    return CreateUndefined(env);
+}
+
+static napi_value SetGcDelay(napi_env env, napi_callback_info info)
+{
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    size_t argc = ONE_VALUE_LIMIT;
+    napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (argc != ONE_VALUE_LIMIT) {
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
+    uint32_t delay = 0;
+    if (napi_get_value_uint32(env, argv[0], &delay) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "SetGcDelay napi_get_value_uint32 failed");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
+    g_handler->SetGcDelayTime(delay);
+    napi_close_handle_scope(env, scope);
     return CreateUndefined(env);
 }
 
@@ -322,7 +295,7 @@ static napi_value HandleGCTask(napi_env env, napi_callback_info info)
     }
     g_handler->SetEnv(env);
     g_handler->SetGcFuncRef(ref);
-    g_handler->SendEvent(GC_EVENT_ID, GC_DELAY_TIME, LeakWatcherEventHandler::Priority::IDLE);
+    g_handler->SendEvent(GC_EVENT_ID, g_handler->GetGcDelayTime(), LeakWatcherEventHandler::Priority::IDLE);
     return CreateUndefined(env);
 }
 
@@ -343,7 +316,68 @@ static napi_value RemoveTask(napi_env env, napi_callback_info info)
     return CreateUndefined(env);
 }
 
+static void DumpRawHeapImpl(TsfnContext* tsfnContext, napi_callback_info info, std::string& filePath)
+{
+    panda::ecmascript::DumpSnapShotOption dumpOption;
+    dumpOption.isVmMode = true;
+    dumpOption.isJSLeakWatcher = true;
+    dumpOption.isSync = false;
+    dumpOption.dumpFormat = panda::ecmascript::DumpFormat::BINARY;
+    auto cbinfo = reinterpret_cast<panda::JsiRuntimeCallInfo*>(info);
+    panda::DFXJSNApi::DumpHeapSnapshot(cbinfo->GetVM(), filePath, dumpOption,
+                                       [tsfnContext, filePath](uint8_t retcode) {
+        HILOG_INFO(LOG_CORE, "DumpRawHeapImpl callback get retcode: %{public}d", retcode);
+        uint8_t* pData = new uint8_t(retcode);
+        if (tsfnContext == nullptr || tsfnContext->tsfn == nullptr) {
+            HILOG_INFO(LOG_CORE, "DumpRawHeapImpl callback tsfnContext invalid!");
+            delete pData;
+        } else {
+            napi_call_threadsafe_function(tsfnContext->tsfn, pData, napi_tsfn_nonblocking);
+        }
+        AppendMetaData(filePath);
+    });
+}
+
 static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
+{
+    HILOG_INFO(LOG_CORE, "DumpRawHeap begin!");
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    size_t argc = TWO_LIMIT;
+    napi_value argv[TWO_LIMIT] = {nullptr};
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (argc != TWO_LIMIT) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap argc invalid");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
+    std::string filePath = "";
+    if (!GetNapiStringValue(env, argv[0], filePath)) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap GetNapiStringValue failed");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
+    if (!CreateFile(filePath)) {
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
+    TsfnContext* tsfnContext = new TsfnContext();
+    if (napi_create_threadsafe_function(env, argv[1], nullptr, CreateUndefined(env), 0, 1, nullptr,
+                                        [](napi_env, void* finalizeData, void* context) {
+                                            delete static_cast<TsfnContext*>(finalizeData);
+                                        }, tsfnContext, MainThreadExec, &tsfnContext->tsfn)
+        != napi_status::napi_ok) {
+            HILOG_ERROR(LOG_CORE, "DumpRawHeap create_threadsafe func failed");
+            delete tsfnContext;
+            napi_close_handle_scope(env, scope);
+            return CreateUndefined(env);
+    }
+    DumpRawHeapImpl(tsfnContext, info, filePath);
+    napi_close_handle_scope(env, scope);
+    return CreateUndefined(env);
+}
+
+static napi_value DumpRawHeapSync(napi_env env, napi_callback_info info)
 {
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
@@ -382,6 +416,9 @@ napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("handleGCTask", HandleGCTask),
         DECLARE_NAPI_FUNCTION("handleShutdownTask", HandleShutdownTask),
         DECLARE_NAPI_FUNCTION("dumpRawHeap", DumpRawHeap),
+        DECLARE_NAPI_FUNCTION("dumpRawHeapSync", DumpRawHeapSync),
+        DECLARE_NAPI_FUNCTION("setGcDelay", SetGcDelay),
+        DECLARE_NAPI_FUNCTION("setDumpDelay", SetDumpDelay),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
@@ -396,4 +433,25 @@ static napi_module _module = {
 extern "C" __attribute__((constructor)) void NAPI_hiviewdfx_jsLeakWatcher_AutoRegister()
 {
     napi_module_register(&_module);
+}
+
+//for test
+std::shared_ptr<LeakWatcherEventHandler> GetTestHandler()
+{
+    return g_handler;
+}
+
+bool TestCreateFile(const std::string& filePath)
+{
+    return CreateFile(filePath);
+}
+
+uint64_t TestGetFileSize(const std::string& filePath)
+{
+    return GetFileSize(filePath);
+}
+
+bool TestAppendMetaData(const std::string& filePath)
+{
+    return AppendMetaData(filePath);
 }
