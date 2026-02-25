@@ -143,7 +143,7 @@ static void MainThreadExec(napi_env env, napi_value jscb, void* context, void* d
     HILOG_INFO(LOG_CORE, "main thread callback starts");
     uint8_t* pData = static_cast<uint8_t*>(data);
     if (!pData) {
-        HILOG_ERROR(LOG_CORE, "MainThreadExec pData is nulltr!");
+        HILOG_ERROR(LOG_CORE, "MainThreadExec pData is nullptr!");
         return;
     }
     uint8_t value = *pData;
@@ -362,7 +362,7 @@ static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
         return nullptr;
     }
     TsfnContext* tsfnContext = new TsfnContext();
-    if (napi_create_threadsafe_function(env, argv[1], nullptr, CreateUndefined(env), 0, 1, nullptr,
+    if (napi_create_threadsafe_function(env, argv[1], nullptr, CreateUndefined(env), 0, 1, tsfnContext,
                                         [](napi_env, void* finalizeData, void* context) {
                                             delete static_cast<TsfnContext*>(finalizeData);
                                         }, tsfnContext, MainThreadExec, &tsfnContext->tsfn)

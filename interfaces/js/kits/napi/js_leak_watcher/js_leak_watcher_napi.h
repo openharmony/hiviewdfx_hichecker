@@ -122,7 +122,7 @@ private:
     napi_ref gcFuncRef_ = nullptr;
     napi_ref shutdownFuncRef_ = nullptr;
     bool isRunning_ = false;
-    uint32_t dumpDelayTime_ = 30000; // 30s
+    uint32_t dumpDelayTime_ = 3000; // 3s
     uint32_t gcDelayTime_ = 27000; // 27s
 };
 

@@ -158,7 +158,8 @@ function setDumpFileSaveAmount(configs): void {
 }
 
 function setMonitoredIDAndObjectType(configs): void {
-  leakWatcherConfig.objectUniqueIDs = [...configs.objectUniqueIDs];
+  leakWatcherConfig.objectUniqueIDs =
+      Array.isArray(configs.objectUniqueIDs) ? [...configs.objectUniqueIDs] : [];
   if (leakWatcherConfig.objectUniqueIDs && leakWatcherConfig.objectUniqueIDs.length > 0) {
     leakWatcherConfig.objectWatcher = 'CustomComponent';
   } else {
@@ -167,7 +168,7 @@ function setMonitoredIDAndObjectType(configs): void {
 }
 
 function setWhiteList(configs): void {
-  leakWatcherConfig.whiteList = configs.whiteList;
+  leakWatcherConfig.whiteList = Array.isArray(configs.whiteList) ? configs.whiteList : [];
 }
 
 function setForegroundAndBackgroundThreshold(configs): void {
