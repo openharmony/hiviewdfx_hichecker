@@ -25,6 +25,7 @@ let jsLeakWatcherNative = requireNapi('hiviewdfx.jsleakwatchernative');
 let application = requireNapi('app.ability.application');
 let bundleManager = requireNapi('bundle.bundleManager');
 
+const SANDBOX_PATH = '/data/storage/el2/base/files/';
 const JSLEAK_ROOT_DIR_NAME = 'jsleak';
 const ERROR_CODE_INVALID_PARAM = 401;
 const ERROR_MSG_INVALID_PARAM = 'Parameter error. Please check!';
@@ -283,7 +284,7 @@ function createHeapDumpFile(fileName, filePath, isRawHeap, isSync, dumpCallback 
     }
   } else {
     hidebug.dumpJsHeapData(fileName);
-    fs.moveFileSync('/data/storage/el2/base/files/' + heapDumpFileName, desFilePath, 0);
+    fs.moveFileSync(SANDBOX_PATH + heapDumpFileName, desFilePath, 0);
   }
 }
 
@@ -573,10 +574,10 @@ let jsLeakWatcher = {
       return;
     }
     let context : Context = getContext(this);
-    let filePath : string = context ? context.filesDir : '/data/storage/el2/base/files/';
+    let filePath : string = context ? context.filesDir : SANDBOX_PATH;
     if (!Array.isArray(configs)) {
       context = appState.applicationContext;
-      filePath = `${context.filesDir}/${JSLEAK_ROOT_DIR_NAME}`;
+      filePath = context ? `${context.filesDir}/${JSLEAK_ROOT_DIR_NAME}` : SANDBOX_PATH;
     }
     if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
       fs.mkdirSync(filePath);
