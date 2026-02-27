@@ -572,8 +572,12 @@ let jsLeakWatcher = {
       console.log('enableLeakWatcher applicationContext is undefined');
       return;
     }
-    const context: Context = appState.applicationContext;
-    const filePath : string = `${context.filesDir}/${JSLEAK_ROOT_DIR_NAME}`;
+    let context : Context = getContext(this);
+    let filePath : string = context ? context.filesDir : '/data/storage/el2/base/files/';
+    if (!Array.isArray(configs)) {
+      context = appState.applicationContext;
+      filePath = `${context.filesDir}/${JSLEAK_ROOT_DIR_NAME}`;
+    }
     if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
       fs.mkdirSync(filePath);
     }
