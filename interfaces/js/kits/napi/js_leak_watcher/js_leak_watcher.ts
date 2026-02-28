@@ -37,7 +37,7 @@ const ERROR_CODE_CALLBACK_INVALID = 10801003;
 const ERROR_MSG_CALLBACK_INVALID = 'The parameter callback invalid. Please check!';
 
 interface LeakWatcherConfig {
-  objectWatcher: string;
+  objectWatcher: Array<string>;
   objectUniqueIDs: Array<number>;
   checkInterval: number;
   retainedVisibleThreshold: number;
@@ -48,7 +48,7 @@ interface LeakWatcherConfig {
 }
 
 let leakWatcherConfig: LeakWatcherConfig = {
-  objectWatcher: '',
+  objectWatcher: [],
   objectUniqueIDs: [],
   checkInterval: 30000,
   retainedVisibleThreshold: 5,
@@ -160,8 +160,10 @@ function setDumpFileSaveAmount(configs): void {
 
 function setMonitoredIDAndObjectType(configs): void {
   leakWatcherConfig.objectUniqueIDs = [...configs.objectUniqueIDs];
+  leakWatcherConfig.objectWatcher =
+    Array.isArray(configs.objectWatcher) ? [...configs.objectWatcher] : [];
   if (leakWatcherConfig.objectUniqueIDs && leakWatcherConfig.objectUniqueIDs.length > 0) {
-    leakWatcherConfig.objectWatcher = 'CustomComponent';
+    leakWatcherConfig.objectWatcher = [...'CustomComponent'];
   } else {
     leakWatcherConfig.objectWatcher = configs.objectWatcher;
   }
@@ -558,7 +560,7 @@ let jsLeakWatcher = {
     const validConfig = ['CustomComponent', 'Window', 'NodeContainer', 'XComponent', 'Ability'];
     let configArray: string[] = Array.isArray(configs) ?
         configs : leakWatcherConfig.objectWatcher ?
-        [leakWatcherConfig.objectWatcher] : [];
+        leakWatcherConfig.objectWatcher : [];
 
     for (let i = 0; i < configArray.length; i++) {
       if (!validConfig.includes(configArray[i])) {
