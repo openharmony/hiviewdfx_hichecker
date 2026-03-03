@@ -159,7 +159,8 @@ function setDumpFileSaveAmount(configs): void {
 }
 
 function setMonitoredIDAndObjectType(configs): void {
-  leakWatcherConfig.objectUniqueIDs = [...configs.objectUniqueIDs];
+  leakWatcherConfig.objectUniqueIDs =
+    Array.isArray(configs.objectUniqueIDs) ? [...configs.objectUniqueIDs] : [];
   leakWatcherConfig.objectWatcher =
     Array.isArray(configs.objectWatcher) ? [...configs.objectWatcher] : [];
   if (leakWatcherConfig.objectUniqueIDs && leakWatcherConfig.objectUniqueIDs.length > 0) {
@@ -170,7 +171,7 @@ function setMonitoredIDAndObjectType(configs): void {
 }
 
 function setWhiteList(configs): void {
-  leakWatcherConfig.whiteList = configs.whiteList;
+  leakWatcherConfig.whiteList = Array.isArray(configs.whiteList) ? configs.whiteList : [];
 }
 
 function setForegroundAndBackgroundThreshold(configs): void {
