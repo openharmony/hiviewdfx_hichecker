@@ -25,6 +25,7 @@ let jsLeakWatcherNative = requireNapi('hiviewdfx.jsleakwatchernative');
 let application = requireNapi('app.ability.application');
 let bundleManager = requireNapi('bundle.bundleManager');
 
+const SANDBOX_PATH = '/data/storage/el2/base/files/';
 const JSLEAK_ROOT_DIR_NAME = 'jsleak';
 const ERROR_CODE_INVALID_PARAM = 401;
 const ERROR_MSG_INVALID_PARAM = 'Parameter error. Please check!';
@@ -35,26 +36,35 @@ const ERROR_MSG_CONFIG_INVALID = 'The parameter config invalid. Please check!';
 const ERROR_CODE_CALLBACK_INVALID = 10801003;
 const ERROR_MSG_CALLBACK_INVALID = 'The parameter callback invalid. Please check!';
 
+enum MonitorObjectType {
+  ALL = 1 << 0,
+  CUSTOM_COMPONENT = 1 << 1,
+  WINDOW = 1 << 2,
+  NODE_CONTAINER = 1 << 3,
+  X_COMPONENT = 1 << 4,
+  ABILITY = 1 << 5
+}
+
 interface LeakWatcherConfig {
-  objectWatcher: string;
+  monitorObjectTypes: MonitorObjectType;
   objectUniqueIDs: Array<number>;
   checkInterval: number;
-  retainedVisibleThreshold: number;
-  retainedInvisibleThreshold: number;
+  fgLeakCountThreshold: number;
+  bgLeakCountThreshold: number;
   maxStoredHeapDumps: number;
   dumpHeapWaitTimeMs: number;
-  whiteList: Array<string>;
+  filterNames: Array<string>;
 }
 
 let leakWatcherConfig: LeakWatcherConfig = {
-  objectWatcher: '',
+  monitorObjectTypes: MonitorObjectType.ALL,
   objectUniqueIDs: [],
   checkInterval: 30000,
-  retainedVisibleThreshold: 5,
-  retainedInvisibleThreshold: 1,
+  fgLeakCountThreshold: 5,
+  bgLeakCountThreshold: 1,
   maxStoredHeapDumps: 10,
   dumpHeapWaitTimeMs: 5000,
-  whiteList: []
+  filterNames: []
 };
 
 const stateForeground = 1;
@@ -68,6 +78,7 @@ interface AppStateInformation {
   applicationState: number;
   exists: any[];
   currentLeakList: any[];
+  duplicateLeakList: any[];
   isConfigObj: boolean;
   isGC: boolean;
   stateForeground: number;
@@ -82,6 +93,7 @@ let appState: AppStateInformation = {
   applicationState: 2,
   exists: [],
   currentLeakList: [],
+  duplicateLeakList: [],
   isConfigObj: false,
   isGC: true,
   stateForeground: 1,
@@ -127,6 +139,27 @@ function getApplicationContext(): Context | undefined {
   }
 }
 
+function convertToMask(types) {
+  if (!types || types.length === 0) {
+      return MonitorObjectType.ALL;
+  }
+
+  const typeMap = {
+      "CustomComponent": MonitorObjectType.CUSTOM_COMPONENT,
+      "Window":          MonitorObjectType.WINDOW,
+      "NodeContainer":   MonitorObjectType.NODE_CONTAINER,
+      "XComponent":      MonitorObjectType.X_COMPONENT,
+      "Ability":         MonitorObjectType.ABILITY
+  };
+
+  let mask = 0;
+  types.forEach(type => {
+      const bitValue = typeMap[type] || 0; 
+      mask |= bitValue;
+  });
+  return mask;
+}
+
 function getProcessName(): void {
   try {
     let data = bundleManager.getBundleInfoForSelfSync(appState.bundleFlags);
@@ -158,22 +191,22 @@ function setDumpFileSaveAmount(configs): void {
 }
 
 function setMonitoredIDAndObjectType(configs): void {
-  leakWatcherConfig.objectUniqueIDs =
+  if (configs.monitorObjectTypes & MonitorObjectType.CUSTOM_COMPONENT ||
+      configs.monitorObjectTypes & MonitorObjectType.ALL) {
+    leakWatcherConfig.objectUniqueIDs =
       Array.isArray(configs.objectUniqueIDs) ? [...configs.objectUniqueIDs] : [];
-  if (leakWatcherConfig.objectUniqueIDs && leakWatcherConfig.objectUniqueIDs.length > 0) {
-    leakWatcherConfig.objectWatcher = 'CustomComponent';
-  } else {
-    leakWatcherConfig.objectWatcher = configs.objectWatcher;
+    leakWatcherConfig.monitorObjectTypes = configs.monitorObjectTypes;
   }
 }
 
 function setWhiteList(configs): void {
-  leakWatcherConfig.whiteList = Array.isArray(configs.whiteList) ? configs.whiteList : [];
+  leakWatcherConfig.filterNames =
+    Array.isArray(configs.filterNames) ? configs.filterNames : [];
 }
 
 function setForegroundAndBackgroundThreshold(configs): void {
-  leakWatcherConfig.retainedVisibleThreshold = configs.retainedVisibleThreshold;
-  leakWatcherConfig.retainedInvisibleThreshold = configs.retainedInvisibleThreshold;
+  leakWatcherConfig.fgLeakCountThreshold = configs.fgLeakCountThreshold;
+  leakWatcherConfig.bgLeakCountThreshold = configs.bgLeakCountThreshold;
 }
 
 function getCustomAttribute(configs): void {
@@ -182,7 +215,6 @@ function getCustomAttribute(configs): void {
     setLeakWatcherConfig(configs);
   }
 }
-
 
 function setLeakWatcherConfig(configs): void {
   setWhiteList(configs);
@@ -199,9 +231,9 @@ function monitorLeakIDandWhitelist(obj): boolean {
       console.log(`The ID of the monitored object does not exist.`);
       return true;
   }
-  if (leakWatcherConfig.whiteList.some(item => item.toLowerCase() === obj.constructor.name.toLowerCase()) &&
+  if (leakWatcherConfig.filterNames.some(item => item.toLowerCase() === obj.constructor.name.toLowerCase()) &&
       !leakWatcherConfig.objectUniqueIDs.includes(obj.__nativeId__Internal)) {
-    console.log(`Whitelist detection: ${leakWatcherConfig.whiteList}`);
+    console.log(`Whitelist detection: ${leakWatcherConfig.filterNames}`);
     return true;
   }
   return false;
@@ -214,19 +246,19 @@ function startGCtask(context): void {
     appState.exists = appState.processInformation.find(item => item.processName === appState.bundleName);
     if (appState.processInformation && appState.processInformation.length > 0 && appState.exists) {
       appState.applicationState = appState.exists.state;
-      if (appState.currentLeakList.length < leakWatcherConfig.retainedVisibleThreshold &&
+      if (appState.currentLeakList.length < leakWatcherConfig.fgLeakCountThreshold &&
           appState.applicationState === appState.stateForeground) {
         appState.isGC = false;
         console.log(`The number of startGCtask foreground leaks: ${(appState.currentLeakList.length)}` +
-                    `is less than the threshold.`);
+                    ` is less than the threshold.`);
         return;
       }
 
-      if (appState.currentLeakList.length < leakWatcherConfig.retainedInvisibleThreshold &&
+      if (appState.currentLeakList.length < leakWatcherConfig.bgLeakCountThreshold &&
           appState.applicationState === appState.stateBackground) {
         appState.isGC = false;
         console.log(`The number of startGCtask background leaks: ${(appState.currentLeakList.length)}` +
-                    `is less than the threshold.`);
+                    ` is less than the threshold.`);
         return;
       }
       ArkTools.forceFullGC();
@@ -245,22 +277,35 @@ function startDumptask(filePath, callback): void {
     return;
   }
 
+  const isLengthEqual = appState.currentLeakList.length === appState.duplicateLeakList.length;
+  const hashEqual = isLengthEqual &&
+    appState.currentLeakList.every((item, index) => {
+      const isDuplicateLeakList = appState.duplicateLeakList[index];
+      if (!isDuplicateLeakList) return false;
+      if (item.hash === null || isDuplicateLeakList.hash === null) return false;
+      return item.hash === isDuplicateLeakList.hash;
+    });
+  if (hashEqual) {
+    console.log("No new leakage objects were added."); 
+    return;
+  }
   const intersection = getLeakList().filter(item1 =>
     appState.currentLeakList.some(item2 => item2.hash === item1.hash)
   );
+  appState.duplicateLeakList = intersection;
 
   if (appState.processInformation && appState.processInformation.length > 0 && appState.exists) {
-    if (intersection.length < leakWatcherConfig.retainedVisibleThreshold &&
+    if (intersection.length < leakWatcherConfig.fgLeakCountThreshold &&
       appState.applicationState === appState.stateForeground) {
       console.log(`The number of startDumptask foreground leaks: ${intersection.length}` +
-                  `is less than the threshold.`);
+                  ` is less than the threshold.`);
       return;
     }
 
-    if (intersection.length < leakWatcherConfig.retainedInvisibleThreshold &&
+    if (intersection.length < leakWatcherConfig.bgLeakCountThreshold &&
         appState.applicationState === appState.stateBackground) {
       console.log(`The number of startDumptask background leaks: ${intersection.length}` +
-                  `is less than the threshold.`);
+                  ` is less than the threshold.`);
       return;
     }
     dumpInner(filePath, true, true, callback);
@@ -284,7 +329,7 @@ function createHeapDumpFile(fileName, filePath, isRawHeap, isSync, dumpCallback 
     }
   } else {
     hidebug.dumpJsHeapData(fileName);
-    fs.moveFileSync('/data/storage/el2/base/files/' + heapDumpFileName, desFilePath, 0);
+    fs.moveFileSync(SANDBOX_PATH + heapDumpFileName, desFilePath, 0);
   }
 }
 
@@ -338,9 +383,7 @@ function registerObject(obj, msg) {
   if (!obj) {
     return;
   }
-  if (appState.isConfigObj && monitorLeakIDandWhitelist(obj)) {
-    return;
-  }
+
   let objMsg = { hash: util.getHash(obj), name: obj.constructor.name, msg: msg };
   watchObjMap.set(objMsg.hash, objMsg);
   registry.register(obj, objMsg.hash);
@@ -372,22 +415,30 @@ function unregisterAbilityLifecycleCallback() {
   });
 }
 
-function executeRegister(config: Array<string>) {
-  if (config.includes('CustomComponent')) {
+function executeRegister(config: MonitorObjectType) {
+  console.log(`jwx config:${config}`);
+  if (config & MonitorObjectType.CUSTOM_COMPONENT ||
+      config & MonitorObjectType.ALL) {
     registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
       if (!weakRef) {
         return;
       }
       let obj = weakRef.deref();
+      if (appState.isConfigObj && monitorLeakIDandWhitelist(obj)) {
+        return;
+      }
       registerObject(obj, msg);
     });
   }
-  if (config.includes('Window')) {
+  if (config & MonitorObjectType.WINDOW ||
+      config & MonitorObjectType.ALL) {
     jsLeakWatcherNative.registerWindowLifeCycleCallback((obj) => {
       registerObject(obj, '');
     });
   }
-  if (config.includes('NodeContainer') || config.includes('XComponent')) {
+    if (config & MonitorObjectType.NODE_CONTAINER ||
+        config & MonitorObjectType.X_COMPONENT ||
+        config & MonitorObjectType.ALL) {
     jsLeakWatcherNative.registerArkUIObjectLifeCycleCallback((weakRef) => {
       if (!weakRef) {
         return;
@@ -396,7 +447,8 @@ function executeRegister(config: Array<string>) {
       registerObject(obj, '');
     });
   }
-  if (config.includes('Ability')) {
+  if (config & MonitorObjectType.ABILITY ||
+      config & MonitorObjectType.ALL) {
     registerAbilityLifecycleCallback();
   }
 }
@@ -557,24 +609,27 @@ let jsLeakWatcher = {
 
     const validConfig = ['CustomComponent', 'Window', 'NodeContainer', 'XComponent', 'Ability'];
     let configArray: string[] = Array.isArray(configs) ?
-        configs : leakWatcherConfig.objectWatcher ?
-        [leakWatcherConfig.objectWatcher] : [];
+        configs : []
 
-    for (let i = 0; i < configArray.length; i++) {
-      if (!validConfig.includes(configArray[i])) {
+    for (let i = 0; i < configs.length; i++) {
+      if (!validConfig.includes(configs[i])) {
         throw new BusinessError(ERROR_CODE_CONFIG_INVALID);
       }
     }
-    if (configArray.length === 0) {
-      configArray = validConfig;
+    if (configs.length === 0) {
+      configs = validConfig;
     }
     
     if (appState.applicationContext === undefined) {
       console.log('enableLeakWatcher applicationContext is undefined');
       return;
     }
-    const context: Context = appState.applicationContext;
-    const filePath : string = `${context.filesDir}/${JSLEAK_ROOT_DIR_NAME}`;
+    let context : Context = getContext(this);
+    let filePath : string = context ? context.filesDir : SANDBOX_PATH;
+    if (!Array.isArray(configs)) {
+      context = appState.applicationContext;
+      filePath = context ? `${context.filesDir}/${JSLEAK_ROOT_DIR_NAME}` : SANDBOX_PATH;
+    }
     if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
       fs.mkdirSync(filePath);
     }
@@ -601,7 +656,10 @@ let jsLeakWatcher = {
       enabled = false;
       shutdownJsLeakWatcher();
     });
-    executeRegister(configArray);
+    if (Array.isArray(configs)) {
+      leakWatcherConfig.monitorObjectTypes = convertToMask(configArray);
+    }
+    executeRegister(leakWatcherConfig.monitorObjectTypes);
   }
 };
 
