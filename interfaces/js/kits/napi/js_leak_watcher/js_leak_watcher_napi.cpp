@@ -78,7 +78,11 @@ static uint64_t GetFileSize(const std::string& filePath)
 
 static bool AppendMetaData(const std::string& filePath)
 {
+#ifdef __aarch64__
     const char* metaDataPath = "/system/lib64/module/arkcompiler/metadata.json";
+#else
+    const char* metaDataPath = "/system/lib/module/arkcompiler/metadata.json";
+#endif
     auto rawHeapFileSize = static_cast<uint32_t>(GetFileSize(filePath));
     auto metaDataFileSize = static_cast<uint32_t>(GetFileSize(metaDataPath));
     FILE* targetFile = fopen(filePath.c_str(), "ab");
