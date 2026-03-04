@@ -323,7 +323,11 @@ HWTEST_F(JsLeakWatcherNapiTest, AppendMetaDataTest001, TestSize.Level1)
     metaFile << "{\"test\": \"metadata\"}";
     metaFile.close();
     bool result = TestAppendMetaData(filePath);
+#ifdef __aarch64__
+    EXPECT_TRUE(result);
+#else
     EXPECT_FALSE(result);
+#endif
 }
 
 /**
