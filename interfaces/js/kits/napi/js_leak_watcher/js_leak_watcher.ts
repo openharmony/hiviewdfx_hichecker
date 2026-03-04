@@ -25,6 +25,7 @@ let jsLeakWatcherNative = requireNapi('hiviewdfx.jsleakwatchernative');
 let application = requireNapi('app.ability.application');
 let bundleManager = requireNapi('bundle.bundleManager');
 
+const SANDBOX_PATH = '/data/storage/el2/base/files/';
 const JSLEAK_ROOT_DIR_NAME = 'jsleak';
 const ERROR_CODE_INVALID_PARAM = 401;
 const ERROR_MSG_INVALID_PARAM = 'Parameter error. Please check!';
@@ -36,7 +37,7 @@ const ERROR_CODE_CALLBACK_INVALID = 10801003;
 const ERROR_MSG_CALLBACK_INVALID = 'The parameter callback invalid. Please check!';
 
 interface LeakWatcherConfig {
-  objectWatcher: string;
+  objectWatcher: Array<string>;
   objectUniqueIDs: Array<number>;
   checkInterval: number;
   retainedVisibleThreshold: number;
@@ -47,7 +48,7 @@ interface LeakWatcherConfig {
 }
 
 let leakWatcherConfig: LeakWatcherConfig = {
-  objectWatcher: '',
+  objectWatcher: [],
   objectUniqueIDs: [],
   checkInterval: 30000,
   retainedVisibleThreshold: 5,
@@ -159,9 +160,11 @@ function setDumpFileSaveAmount(configs): void {
 
 function setMonitoredIDAndObjectType(configs): void {
   leakWatcherConfig.objectUniqueIDs =
-      Array.isArray(configs.objectUniqueIDs) ? [...configs.objectUniqueIDs] : [];
+    Array.isArray(configs.objectUniqueIDs) ? [...configs.objectUniqueIDs] : [];
+  leakWatcherConfig.objectWatcher =
+    Array.isArray(configs.objectWatcher) ? [...configs.objectWatcher] : [];
   if (leakWatcherConfig.objectUniqueIDs && leakWatcherConfig.objectUniqueIDs.length > 0) {
-    leakWatcherConfig.objectWatcher = 'CustomComponent';
+    leakWatcherConfig.objectWatcher = [...'CustomComponent'];
   } else {
     leakWatcherConfig.objectWatcher = configs.objectWatcher;
   }
@@ -284,7 +287,7 @@ function createHeapDumpFile(fileName, filePath, isRawHeap, isSync, dumpCallback 
     }
   } else {
     hidebug.dumpJsHeapData(fileName);
-    fs.moveFileSync('/data/storage/el2/base/files/' + heapDumpFileName, desFilePath, 0);
+    fs.moveFileSync(SANDBOX_PATH + heapDumpFileName, desFilePath, 0);
   }
 }
 
@@ -558,7 +561,7 @@ let jsLeakWatcher = {
     const validConfig = ['CustomComponent', 'Window', 'NodeContainer', 'XComponent', 'Ability'];
     let configArray: string[] = Array.isArray(configs) ?
         configs : leakWatcherConfig.objectWatcher ?
-        [leakWatcherConfig.objectWatcher] : [];
+        leakWatcherConfig.objectWatcher : [];
 
     for (let i = 0; i < configArray.length; i++) {
       if (!validConfig.includes(configArray[i])) {
@@ -573,8 +576,12 @@ let jsLeakWatcher = {
       console.log('enableLeakWatcher applicationContext is undefined');
       return;
     }
-    const context: Context = appState.applicationContext;
-    const filePath : string = `${context.filesDir}/${JSLEAK_ROOT_DIR_NAME}`;
+    let context : Context = getContext(this);
+    let filePath : string = context ? context.filesDir : SANDBOX_PATH;
+    if (!Array.isArray(configs)) {
+      context = appState.applicationContext;
+      filePath = context ? `${context.filesDir}/${JSLEAK_ROOT_DIR_NAME}` : SANDBOX_PATH;
+    }
     if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
       fs.mkdirSync(filePath);
     }
