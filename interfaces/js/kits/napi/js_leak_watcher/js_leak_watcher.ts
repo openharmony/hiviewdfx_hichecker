@@ -53,7 +53,7 @@ interface LeakWatcherConfig {
   bgLeakCountThreshold: number;
   maxStoredHeapDumps: number;
   dumpHeapWaitTimeMs: number;
-  filterNames: Array<string>;
+  exclusionList: Array<string>;
 }
 
 let leakWatcherConfig: LeakWatcherConfig = {
@@ -64,7 +64,7 @@ let leakWatcherConfig: LeakWatcherConfig = {
   bgLeakCountThreshold: 1,
   maxStoredHeapDumps: 10,
   dumpHeapWaitTimeMs: 5000,
-  filterNames: []
+  exclusionList: []
 };
 
 const stateForeground = 1;
@@ -200,8 +200,8 @@ function setMonitoredIDAndObjectType(configs): void {
 }
 
 function setWhiteList(configs): void {
-  leakWatcherConfig.filterNames =
-    Array.isArray(configs.filterNames) ? configs.filterNames : [];
+  leakWatcherConfig.exclusionList =
+    Array.isArray(configs.exclusionList) ? configs.exclusionList : [];
 }
 
 function setForegroundAndBackgroundThreshold(configs): void {
@@ -231,9 +231,9 @@ function monitorLeakIDandWhitelist(obj): boolean {
       console.log(`The ID of the monitored object does not exist.`);
       return true;
   }
-  if (leakWatcherConfig.filterNames.some(item => item.toLowerCase() === obj.constructor.name.toLowerCase()) &&
+  if (leakWatcherConfig.exclusionList.some(item => item.toLowerCase() === obj.constructor.name.toLowerCase()) &&
       !leakWatcherConfig.objectUniqueIDs.includes(obj.__nativeId__Internal)) {
-    console.log(`Whitelist detection: ${leakWatcherConfig.filterNames}`);
+    console.log(`Whitelist detection: ${leakWatcherConfig.exclusionList}`);
     return true;
   }
   return false;
