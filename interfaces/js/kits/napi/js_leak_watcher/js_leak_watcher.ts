@@ -37,12 +37,12 @@ const ERROR_CODE_CALLBACK_INVALID = 10801003;
 const ERROR_MSG_CALLBACK_INVALID = 'The parameter callback invalid. Please check!';
 
 enum MonitorObjectType {
-  ALL = 1 << 0,
-  CUSTOM_COMPONENT = 1 << 1,
-  WINDOW = 1 << 2,
-  NODE_CONTAINER = 1 << 3,
-  X_COMPONENT = 1 << 4,
-  ABILITY = 1 << 5
+  ALL = -1,
+  CUSTOM_COMPONENT = 1 << 0,
+  WINDOW = 1 << 1,
+  NODE_CONTAINER = 1 << 2,
+  X_COMPONENT = 1 << 3,
+  ABILITY = 1 << 4
 }
 
 interface LeakWatcherConfig {
@@ -139,8 +139,8 @@ function getApplicationContext(): Context | undefined {
   }
 }
 
-function convertToMask(types) {
-  if (!types || types.length === 0) {
+function convertToMask(configArray) {
+  if (!configArray || configArray.length === 0) {
       return MonitorObjectType.ALL;
   }
 
@@ -153,8 +153,8 @@ function convertToMask(types) {
   };
 
   let mask = 0;
-  types.forEach(type => {
-      const bitValue = typeMap[type] || 0; 
+  configArray.forEach(configArray => {
+      const bitValue = typeMap[configArray] || 0; 
       mask |= bitValue;
   });
   return mask;
@@ -416,7 +416,6 @@ function unregisterAbilityLifecycleCallback() {
 }
 
 function executeRegister(config: MonitorObjectType) {
-  console.log(`jwx config:${config}`);
   if (config & MonitorObjectType.CUSTOM_COMPONENT ||
       config & MonitorObjectType.ALL) {
     registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
