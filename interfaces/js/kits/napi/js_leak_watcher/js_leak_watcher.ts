@@ -139,24 +139,25 @@ function getApplicationContext(): Context | undefined {
   }
 }
 
-function convertToMask(configArray) {
+function convertToMask(configArray: string[]): number {
   if (!configArray || configArray.length === 0) {
       return MonitorObjectType.ALL;
   }
 
   const typeMap = {
-      "CustomComponent": MonitorObjectType.CUSTOM_COMPONENT,
-      "Window":          MonitorObjectType.WINDOW,
-      "NodeContainer":   MonitorObjectType.NODE_CONTAINER,
-      "XComponent":      MonitorObjectType.X_COMPONENT,
-      "Ability":         MonitorObjectType.ABILITY
+      'CustomComponent': MonitorObjectType.CUSTOM_COMPONENT,
+      'Window':          MonitorObjectType.WINDOW,
+      'NodeContainer':   MonitorObjectType.NODE_CONTAINER,
+      'XComponent':      MonitorObjectType.X_COMPONENT,
+      'Ability':         MonitorObjectType.ABILITY
   };
 
   let mask = 0;
-  configArray.forEach(configArray => {
-      const bitValue = typeMap[configArray] || 0; 
+  configArray.forEach(item => {
+      const bitValue = typeMap[item] || 0; 
       mask |= bitValue;
   });
+
   return mask;
 }
 
@@ -281,8 +282,12 @@ function startDumptask(filePath, callback): void {
   const hashEqual = isLengthEqual &&
     appState.currentLeakList.every((item, index) => {
       const isDuplicateLeakList = appState.duplicateLeakList[index];
-      if (!isDuplicateLeakList) return false;
-      if (item.hash === null || isDuplicateLeakList.hash === null) return false;
+      if (!isDuplicateLeakList) {
+        return false;
+      }
+      if (item.hash === null || isDuplicateLeakList.hash === null) {
+        return false;
+      }
       return item.hash === isDuplicateLeakList.hash;
     });
   if (hashEqual) {
