@@ -192,12 +192,11 @@ function setDumpFileSaveAmount(configs): void {
 }
 
 function setMonitoredIDAndObjectType(configs): void {
-  if (configs.monitorObjectTypes & MonitorObjectType.CUSTOM_COMPONENT ||
-      configs.monitorObjectTypes & MonitorObjectType.ALL) {
+  if (configs.monitorObjectTypes & MonitorObjectType.CUSTOM_COMPONENT) {
     leakWatcherConfig.objectUniqueIDs =
       Array.isArray(configs.objectUniqueIDs) ? [...configs.objectUniqueIDs] : [];
-    leakWatcherConfig.monitorObjectTypes = configs.monitorObjectTypes;
   }
+  leakWatcherConfig.monitorObjectTypes = configs.monitorObjectTypes;
 }
 
 function setWhiteList(configs): void {
@@ -421,8 +420,7 @@ function unregisterAbilityLifecycleCallback() {
 }
 
 function executeRegister(config: MonitorObjectType) {
-  if (config & MonitorObjectType.CUSTOM_COMPONENT ||
-      config & MonitorObjectType.ALL) {
+  if (config & MonitorObjectType.CUSTOM_COMPONENT) {
     registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
       if (!weakRef) {
         return;
@@ -434,15 +432,13 @@ function executeRegister(config: MonitorObjectType) {
       registerObject(obj, msg);
     });
   }
-  if (config & MonitorObjectType.WINDOW ||
-      config & MonitorObjectType.ALL) {
+  if (config & MonitorObjectType.WINDOW) {
     jsLeakWatcherNative.registerWindowLifeCycleCallback((obj) => {
       registerObject(obj, '');
     });
   }
     if (config & MonitorObjectType.NODE_CONTAINER ||
-        config & MonitorObjectType.X_COMPONENT ||
-        config & MonitorObjectType.ALL) {
+        config & MonitorObjectType.X_COMPONENT) {
     jsLeakWatcherNative.registerArkUIObjectLifeCycleCallback((weakRef) => {
       if (!weakRef) {
         return;
@@ -451,8 +447,7 @@ function executeRegister(config: MonitorObjectType) {
       registerObject(obj, '');
     });
   }
-  if (config & MonitorObjectType.ABILITY ||
-      config & MonitorObjectType.ALL) {
+  if (config & MonitorObjectType.ABILITY) {
     registerAbilityLifecycleCallback();
   }
 }
