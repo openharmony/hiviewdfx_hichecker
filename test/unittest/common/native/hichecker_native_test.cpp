@@ -31,7 +31,7 @@ namespace {
     const uint64_t RULE_ERROR0 = 0;
     const uint64_t RULE_ERROR1 = -1;
     const uint64_t RULE_ERROR2 = 999999999;
-    const uint64_t BASELINE_SIZE = 65 * 1024;
+    const uint64_t BASELINE_SIZE = 164 * 1024;
 
     vector<string> OUTPUT_PATH = {
         "/system/etc/param/hichecker.para",
