@@ -397,7 +397,12 @@ let lifecycleId;
 function registerAbilityLifecycleCallback() {
   let abilityLifecycleCallback = {
     onAbilityDestroy(ability) {
-      registerObject(ability, '');
+      if (appState.isConfigObj &&
+        leakWatcherConfig.exclusionList.some(item => item.toLowerCase() === ability.name.toLowerCase())) {
+        console.log(`ability ${ability.name} in exclusionList`);
+      } else {
+        registerObject(ability, '');
+      }
     }
   }
   if (appState.applicationContext === undefined) {
@@ -434,7 +439,12 @@ function executeRegister(config: MonitorObjectType) {
   }
   if (config & MonitorObjectType.WINDOW) {
     jsLeakWatcherNative.registerWindowLifeCycleCallback((obj) => {
-      registerObject(obj, '');
+      if (appState.isConfigObj && leakWatcherConfig.exclusionList.some(
+        item => item.toLowerCase() === obj.getWindowProperties().name.toLowerCase())) {
+        console.log(`window ${obj.getWindowProperties().name} in exclusionList`);
+      } else {
+        registerObject(obj, '');
+      }
     });
   }
     if (config & MonitorObjectType.NODE_CONTAINER ||
