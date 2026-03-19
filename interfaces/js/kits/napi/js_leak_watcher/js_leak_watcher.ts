@@ -20,6 +20,7 @@ declare function unregisterArkUIObjectLifeCycleCallback();
 let util = requireNapi('util');
 let fs = requireNapi('file.fs');
 let hidebug = requireNapi('hidebug');
+let process = requireNapi('process');
 let cryptoFramework = requireNapi('security.cryptoFramework');
 let jsLeakWatcherNative = requireNapi('hiviewdfx.jsleakwatchernative');
 let application = requireNapi('app.ability.application');
@@ -121,6 +122,8 @@ class BusinessError extends Error {
 
 let enabled = false;
 let watchObjMap = new Map();
+let firstDump = true;
+let curTimeStamp = '';
 
 const registry = new FinalizationRegistry((hash) => {
   if (watchObjMap.has(hash)) {
@@ -321,7 +324,88 @@ function getLeakList() {
   return Array.from(watchObjMap.values());
 }
 
-function createHeapDumpFile(fileName, filePath, isRawHeap, isSync, dumpCallback = undefined): void {
+function getTimestampByFileName(fileName: string): number {
+  const regex = /(\d+)\.(heapsnapshot|jsleaklist|rawheap)/;
+  const fileMatch = fileName.match(regex);
+  return fileMatch ? parseInt(fileMatch[1]) : 0;
+}
+
+function getHeapPrefix(): string {
+  return `jsleakwatcher-${process.pid}-${process.tid}-`;
+}
+
+function getHeapBaseName(update: boolean): string {
+  if (update) {
+    curTimeStamp = new Date().getTime().toString();
+  }
+  return `${getHeapPrefix()}${curTimeStamp}`;
+}
+
+function deleteLastOldFile(filePath: string): void {
+  let listFileOption = {
+    recursion: false,
+    listNum: 0,
+    filter: {
+      suffix: ['.jsleaklist'],
+    }
+  };
+  let files = fs.listFileSync(filePath, listFileOption);
+  if (files.length <= 0) {
+    return;
+  }
+  files.sort((a, b) => {
+    return getTimestampByFileName(b) - getTimestampByFileName(a);
+  });
+  let prefix = getHeapPrefix();
+  if (!files[0].startsWith(prefix)) {
+    return;
+  }
+  let fileBaseName = prefix + getTimestampByFileName(files[0]);
+  try {
+    fs.unlinkSync(filePath + '/' + fileBaseName + '.jsleaklist');
+    fs.unlinkSync(filePath + '/' + fileBaseName + '.rawheap');
+  } catch (e) {
+    console.log('Delete files failed! ' + e);
+    return;
+  }
+  console.log(`delete same process heap files ${fileBaseName}`);
+}
+
+function deleteUnMatchDumpFile(filePath: string): void {
+  let listFileOption = {
+    recursion: false,
+    listNum: 0,
+    filter: {
+      suffix: ['.rawheap'],
+    }
+  };
+  let files = fs.listFileSync(filePath, listFileOption);
+  for (let i = 0; i < files.length; i++) {
+    let suffixOffset = files[i].lastIndexOf('.rawheap');
+    if (suffixOffset <= 0) {
+      continue;
+    }
+    let listFilePath = filePath + '/' + files[i].substring(0, suffixOffset) + '.jsleaklist';
+    if (!fs.accessSync(listFilePath, fs.AccessModeType.EXIST)) {
+      try {
+        fs.unlinkSync(filePath + '/' + files[i]);
+      } catch (e) {
+        console.log('Delete files failed! ' + e);
+        return;
+      }
+      console.warn(`delete ${files[i]} which no match jsleaklist`);
+    }
+  }
+}
+
+function createHeapDumpFile(filePath, isRawHeap, isSync, dumpCallback = undefined): void {
+  if (firstDump) {
+    firstDump = false;
+    deleteUnMatchDumpFile(filePath);
+  } else {
+    deleteLastOldFile(filePath);
+  }
+  let fileName = getHeapBaseName(true);
   let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
   let heapDumpFileName = fileName + suffix;
   let desFilePath = filePath + '/' + heapDumpFileName;
@@ -368,13 +452,8 @@ function deleteOldFile(filePath) {
   };
   let files = fs.listFileSync(filePath, listFileOption);
   if (files.length > maxFileNum) {
-    const regex = /(\d+)\.(heapsnapshot|jsleaklist|rawheap)/;
     files.sort((a, b) => {
-      const matchA = a.match(regex);
-      const matchB = b.match(regex);
-      const timeStampA = matchA ? parseInt(matchA[1]) : 0;
-      const timeStampB = matchB ? parseInt(matchB[1]) : 0;
-      return timeStampA - timeStampB;
+      return getTimestampByFileName(a) - getTimestampByFileName(b);
     });
     for (let i = 0; i < files.length - maxFileNum; i++) {
       fs.unlinkSync(filePath + '/' + files[i]);
@@ -469,10 +548,9 @@ function dumpInnerSync(filePath, needSandBox, isRawHeap) {
   if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
     throw new BusinessError(ERROR_CODE_INVALID_PARAM);
   }
-  const fileTimeStamp = new Date().getTime().toString();
   try {
-    const heapDumpSHA256 = createHeapDumpFile(fileTimeStamp, filePath, isRawHeap, true);
-    let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+    const heapDumpSHA256 = createHeapDumpFile(filePath, isRawHeap, true);
+    let file = fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let leakObjList = getLeakList();
     if (isRawHeap) {
       let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
@@ -494,9 +572,9 @@ function dumpInnerSync(filePath, needSandBox, isRawHeap) {
     return [];
   }
   if (needSandBox) {
-    return [filePath + '/' + fileTimeStamp + '.jsleaklist', filePath + '/' + fileTimeStamp + '.rawheap'];
+    return [filePath + '/' + getHeapBaseName(false) + '.jsleaklist', filePath + '/' + getHeapBaseName(false) + '.rawheap'];
   } else {
-    return [fileTimeStamp + '.jsleaklist', fileTimeStamp + '.heapsnapshot'];
+    return [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
   }
 }
 
@@ -507,14 +585,13 @@ function dumpInner(filePath, needSandBox, isRawHeap, jsCallback: Callback<Array<
   if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
     throw new BusinessError(ERROR_CODE_INVALID_PARAM);
   }
-  const fileTimeStamp = new Date().getTime().toString();
   try {
-    createHeapDumpFile(fileTimeStamp, filePath, isRawHeap, false, (code) => {
+    createHeapDumpFile(filePath, isRawHeap, false, (code) => {
       console.log('createHeapDumpFile begin!');
-      let file = fs.openSync(filePath + '/' + fileTimeStamp + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+      let file = fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
       let leakObjList = getLeakList();
       let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
-      let heapDumpFileName = fileTimeStamp + suffix;
+      let heapDumpFileName = getHeapBaseName(false) + suffix;
       let desFilePath = filePath + '/' + heapDumpFileName;
       const heapDumpSHA256 = getHeapDumpSHA256(desFilePath);
 
@@ -536,9 +613,9 @@ function dumpInner(filePath, needSandBox, isRawHeap, jsCallback: Callback<Array<
       
       let fileList: string[] = [];
       if (needSandBox) {
-        fileList = [filePath + '/' + fileTimeStamp + '.jsleaklist', filePath + '/' + fileTimeStamp + '.rawheap'];
+        fileList = [filePath + '/' + getHeapBaseName(false) + '.jsleaklist', filePath + '/' + getHeapBaseName(false) + '.rawheap'];
       } else {
-        fileList = [fileTimeStamp + '.jsleaklist', fileTimeStamp + '.heapsnapshot'];
+        fileList = [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
       }
 
       if (jsCallback) {
