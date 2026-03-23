@@ -44,7 +44,7 @@ static bool CreateFile(const std::string& filePath)
     }
     const mode_t defaultMode = S_IRUSR | S_IWUSR | S_IRGRP; // -rw-r-----
     int fd = creat(filePath.c_str(), defaultMode);
-    fdsan_exchange_owner_tag(fd, 0, TAG);
+    fdsan_exchange_owner_tag(fd, 0, FDTAG);
     if (fd == -1) {
         return false;
     }
