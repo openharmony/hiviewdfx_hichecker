@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 
-config("jsleakwatcher_native_config") {
+config("hichecker_native_config") {
   visibility = [ ":*" ]
 
   include_dirs = [ "include" ]
@@ -68,9 +68,12 @@ ohos_shared_library("jsleakwatcher") {
 ohos_shared_library("jsleakwatchernative") {
   if (support_jsapi) {
     sources = [ "js_leak_watcher_napi.cpp" ]
-    public_configs = [ ":jsleakwatcher_native_config" ]
+    public_configs = [ ":hichecker_native_config" ]
 
-    deps = [ "../../../../native/innerkits:libhichecker" ]
+    deps = [
+      ":hichecker_etc",
+      "../../../../../frameworks/native:libhichecker_source",
+    ]
 
     external_deps = [
       "ace_engine:libace_compatible",
