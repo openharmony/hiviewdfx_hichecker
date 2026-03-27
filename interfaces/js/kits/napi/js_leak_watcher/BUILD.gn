@@ -13,6 +13,12 @@
 
 import("//build/ohos.gni")
 
+config("jsleakwatcher_native_config") {
+  visibility = [ ":*" ]
+
+  include_dirs = [ "include" ]
+}
+
 if (support_jsapi) {
   import("//build/config/components/ets_frontend/es2abc_config.gni")
 }
@@ -62,6 +68,9 @@ ohos_shared_library("jsleakwatcher") {
 ohos_shared_library("jsleakwatchernative") {
   if (support_jsapi) {
     sources = [ "js_leak_watcher_napi.cpp" ]
+    public_configs = [ ":jsleakwatcher_native_config" ]
+
+    deps = [ "../../../../native/innerkits:libhichecker" ]
 
     external_deps = [
       "ace_engine:libace_compatible",
@@ -69,6 +78,7 @@ ohos_shared_library("jsleakwatchernative") {
       "ets_runtime:libark_jsruntime",
       "eventhandler:libeventhandler",
       "hilog:libhilog",
+      "init:libbegetutil",
       "ipc:ipc_single",
       "napi:ace_napi",
       "window_manager:libwm",

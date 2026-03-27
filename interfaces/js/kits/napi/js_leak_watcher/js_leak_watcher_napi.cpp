@@ -17,11 +17,14 @@
 #include <unistd.h>
 #include "hilog/log.h"
 #include "js_leak_watcher_napi.h"
+#include "sys_param.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD003D00
 #undef LOG_TAG
 #define LOG_TAG "JSLEAK_WATCHER_C"
+
+#define JSLEAK_WATCHER_NAME_LEN 256
 
 using namespace OHOS::Ace;
 using namespace OHOS::AppExecFwk;
@@ -179,13 +182,16 @@ static void MainThreadExec(napi_env env, napi_value jscb, void* context, void* d
 
 static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info)
 {
+    napi_value ret;
     if (!GetCallbackRef(env, info, &g_callbackRef)) {
-        return nullptr;
+        napi_get_boolean(env, false, &ret);
+        return ret;
     }
 
     RefPtr<Kit::UIContext> uiContext = Kit::UIContext::Current();
     if (uiContext == nullptr) {
-        return nullptr;
+        napi_get_boolean(env, false, &ret);
+        return ret;
     }
     uiContext->RegisterArkUIObjectLifecycleCallback([env](void* obj) {
         napi_handle_scope scope = nullptr;
@@ -202,7 +208,8 @@ static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callba
         napi_close_handle_scope(env, scope);
     });
 
-    return CreateUndefined(env);
+    napi_get_boolean(env, true, &ret);
+    return ret;
 }
 
 static napi_value UnregisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info)
@@ -220,12 +227,15 @@ static napi_value UnregisterArkUIObjectLifeCycleCallback(napi_env env, napi_call
 static napi_value RegisterWindowLifeCycleCallback(napi_env env, napi_callback_info info)
 {
     napi_ref ref = nullptr;
+    napi_value ret;
     if (!GetCallbackRef(env, info, &ref)) {
-        return nullptr;
+        napi_get_boolean(env, false, &ret);
+        return ret;
     }
     g_listener->SetEnvAndCallback(env, ref);
     WindowManager::GetInstance().RegisterWindowLifeCycleCallback(g_listener);
-    return CreateUndefined(env);
+    napi_get_boolean(env, true, &ret);
+    return ret;
 }
 
 static napi_value UnregisterWindowLifeCycleCallback(napi_env env, napi_callback_info info)
@@ -289,6 +299,32 @@ static napi_value SetGcDelay(napi_env env, napi_callback_info info)
     g_handler->SetGcDelayTime(delay);
     napi_close_handle_scope(env, scope);
     return CreateUndefined(env);
+}
+
+static napi_value GetDumpStatus(napi_env env, napi_callback_info info)
+{
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+
+    napi_value result;
+    char para_name[JSLEAK_WATCHER_NAME_LEN] = "hiviewdfx.hichecker.jsleakwatcher.dump";
+    CachedHandle app_enable_handle = CachedParameterCreate(para_name, "true");
+    if (app_enable_handle == nullptr) {
+        napi_get_boolean(env, true, &result);
+        napi_close_handle_scope(env, scope);
+        return result;
+    }
+    const char *param_value = CachedParameterGet(app_enable_handle);
+    CachedParameterDestroy(app_enable_handle);
+    if (param_value != nullptr && strlen(param_value) != 0 && strcmp(param_value, "false") == 0) {
+        napi_get_boolean(env, false, &result);
+        napi_close_handle_scope(env, scope);
+        return result;
+    }
+
+    napi_get_boolean(env, true, &result);
+    napi_close_handle_scope(env, scope);
+    return result;
 }
 
 static napi_value HandleGCTask(napi_env env, napi_callback_info info)
@@ -423,6 +459,7 @@ napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("dumpRawHeapSync", DumpRawHeapSync),
         DECLARE_NAPI_FUNCTION("setGcDelay", SetGcDelay),
         DECLARE_NAPI_FUNCTION("setDumpDelay", SetDumpDelay),
+        DECLARE_NAPI_FUNCTION("getDumpStatus", GetDumpStatus),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
