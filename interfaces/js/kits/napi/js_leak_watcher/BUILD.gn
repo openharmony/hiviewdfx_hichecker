@@ -61,7 +61,7 @@ ohos_shared_library("jsleakwatcher") {
 
 ohos_shared_library("jsleakwatchernative") {
   if (support_jsapi) {
-    include_dirs = [ "../../../../../binarys/base/startup/init/innerapis/libbegetutil/includes", ]
+    include_dirs = [ "//base/startup/init/interfaces/innerkits/include/param/sys_param.h" ]
 
     sources = [ "js_leak_watcher_napi.cpp" ]
 
