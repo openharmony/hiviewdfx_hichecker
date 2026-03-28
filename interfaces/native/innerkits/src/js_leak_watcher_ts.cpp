@@ -62,7 +62,8 @@ inline napi_value CreateJsUndefined(napi_env env)
     return result;
 }
 
-napi_value InternalCallback(napi_env env, napi_callback_info info) {
+napi_value InternalCallback(napi_env env, napi_callback_info info)
+{
     size_t argc = 1;
     napi_value argv[1];
     napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
@@ -70,7 +71,8 @@ napi_value InternalCallback(napi_env env, napi_callback_info info) {
     return nullptr;
 }
 
-void CreateCallbackObject(napi_env env, napi_value* js_callback) {
+void CreateCallbackObject(napi_env env, napi_value* js_callback)
+{
     napi_status status = napi_create_function(env,
         "myInternalCallback",
         NAPI_AUTO_LENGTH,
