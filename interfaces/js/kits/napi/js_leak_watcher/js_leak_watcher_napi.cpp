@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include "hilog/log.h"
 #include "js_leak_watcher_napi.h"
-#include "sys_param.h"
+#include "base/startup/init/interfaces/innerkits/include/param/sys_param.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD003D00
