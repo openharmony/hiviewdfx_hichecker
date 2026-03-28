@@ -29,26 +29,26 @@
 
 #define JSLEAK_WATCHER_NAME_LEN 256
 
-bool checkJsLeakWatcherParam(const char* bundleName)
+bool CheckJsLeakWatcherParam(const char* bundleName)
 {
     if (!bundleName) {
         return false;
     }
-    char para_name[JSLEAK_WATCHER_NAME_LEN] = "hiviewdfx.hichecker.jsleakwatcher.";
+    char paraName[JSLEAK_WATCHER_NAME_LEN] = "hiviewdfx.hichecker.jsleakwatcher.";
     errno_t err = 0;
-    err = strcat_s(para_name, sizeof(para_name), bundleName);
+    err = strcat_s(paraName, sizeof(paraName), bundleName);
     if (err != EOK) {
         HILOG_INFO(LOG_CORE, "checker jsLeakwatcherparam strcat_s query name failed.");
         return false;
     }
-    CachedHandle app_enable_handle = CachedParameterCreate(para_name, "false");
-    if (app_enable_handle == nullptr) {
+    CachedHandle appEnableHandle = CachedParameterCreate(paraName, "false");
+    if (appEnableHandle == nullptr) {
         return false;
     }
-    const char *param_value = CachedParameterGet(app_enable_handle);
-    CachedParameterDestroy(app_enable_handle);
-    if (param_value != nullptr) {
-        if (strcmp(param_value, "true") == 0) {
+    const char *paramValue = CachedParameterGet(appEnableHandle);
+    CachedParameterDestroy(appEnableHandle);
+    if (paramValue != nullptr) {
+        if (strcmp(paramValue, "true") == 0) {
             return true;
         }
     }
@@ -71,11 +71,11 @@ napi_value InternalCallback(napi_env env, napi_callback_info info) {
 }
 
 void CreateCallbackObject(napi_env env, napi_value* js_callback) {
-    napi_status status = napi_create_function(env, 
-        "myInternalCallback", 
-        NAPI_AUTO_LENGTH, 
-        InternalCallback, 
-        nullptr, 
+    napi_status status = napi_create_function(env,
+        "myInternalCallback",
+        NAPI_AUTO_LENGTH,
+        InternalCallback,
+        nullptr,
         js_callback);
 
     if (status != napi_ok) {
@@ -86,7 +86,7 @@ void CreateCallbackObject(napi_env env, napi_value* js_callback) {
 void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
 {
     HITRACE_METER_NAME(HITRACE_TAG_APP, __PRETTY_FUNCTION__);
-    if (!checkJsLeakWatcherParam(bundleName.c_str())) {
+    if (!CheckJsLeakWatcherParam(bundleName.c_str())) {
         return;
     }
 

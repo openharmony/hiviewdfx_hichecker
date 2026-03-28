@@ -307,16 +307,16 @@ static napi_value GetDumpStatus(napi_env env, napi_callback_info info)
     napi_open_handle_scope(env, &scope);
 
     napi_value result;
-    char para_name[JSLEAK_WATCHER_NAME_LEN] = "hiviewdfx.hichecker.jsleakwatcher.dump";
-    CachedHandle app_enable_handle = CachedParameterCreate(para_name, "true");
-    if (app_enable_handle == nullptr) {
+    char paraName[JSLEAK_WATCHER_NAME_LEN] = "hiviewdfx.hichecker.jsleakwatcher.dump";
+    CachedHandle appEnableHandle = CachedParameterCreate(paraName, "true");
+    if (appEnableHandle == nullptr) {
         napi_get_boolean(env, true, &result);
         napi_close_handle_scope(env, scope);
         return result;
     }
-    const char *param_value = CachedParameterGet(app_enable_handle);
-    CachedParameterDestroy(app_enable_handle);
-    if (param_value != nullptr && strlen(param_value) != 0 && strcmp(param_value, "false") == 0) {
+    const char *paramValue = CachedParameterGet(appEnableHandle);
+    CachedParameterDestroy(appEnableHandle);
+    if (paramValue != nullptr && strlen(paramValue) != 0 && strcmp(paramValue, "false") == 0) {
         napi_get_boolean(env, false, &result);
         napi_close_handle_scope(env, scope);
         return result;
