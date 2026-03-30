@@ -68,12 +68,6 @@ let leakWatcherConfig: LeakWatcherConfig = {
   exclusionList: []
 };
 
-let dumpStatus: boolean = jsLeakWatcherNative.getDumpStatus();
-
-let retryMonitorObjectTypes: MonitorObjectType | undefined = undefined;
-const ATTEMPT_COUNT = 2;
-let currentAttempt = 1;
-
 const stateForeground = 1;
 const stateBackground = 3;
 
@@ -86,7 +80,6 @@ interface AppStateInformation {
   exists: any[];
   currentLeakList: any[];
   duplicateLeakList: any[];
-  intersection: any[];
   isConfigObj: boolean;
   isGC: boolean;
   stateForeground: number;
@@ -102,7 +95,6 @@ let appState: AppStateInformation = {
   exists: [],
   currentLeakList: [],
   duplicateLeakList: [],
-  intersection: [],
   isConfigObj: false,
   isGC: true,
   stateForeground: 1,
@@ -170,52 +162,6 @@ function convertToMask(configArray: string[]): number {
   });
 
   return mask;
-}
-
-function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
-  if (!dumpStatus) {
-    if (firstDump) {
-      firstDump = false;
-      deleteUnMatchDumpFile(filePath);
-    } else {
-      deleteLastOldFile(filePath);
-    }
-  }
-  let file = dumpStatus ? fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE) :
-    fs.openSync(filePath + '/' + getHeapBaseName(true) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE)
-  let leakObjList = appState.intersection;;
-  let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
-  let heapDumpFileName = getHeapBaseName(false) + suffix;
-  let desFilePath = filePath + '/' + heapDumpFileName;
-  const heapDumpSHA256 = dumpStatus ? getHeapDumpSHA256(desFilePath) : '';
-
-  if (isRawHeap) {
-    let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
-    fs.writeSync(file.fd, JSON.stringify(result));
-  } else {
-    let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
-    fs.writeSync(file.fd, JSON.stringify(result));
-  }
-  fs.closeSync(file);
-
-  try {
-    deleteOldFile(filePath);
-  } catch (e) {
-    console.log('Delete old files failed! ' + e);
-    return [];
-  }
-  
-  let fileList: string[] = [];
-  if (needSandBox) {
-    fileList = [filePath + '/' + getHeapBaseName(false) + '.jsleaklist', dumpStatus ? filePath + '/' + getHeapBaseName(false) + '.rawheap' : ''];
-  } else {
-    fileList = [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
-  }
-
-  if (jsCallback) {
-    jsCallback(fileList);
-  }
-  return [];
 }
 
 function getProcessName(): void {
@@ -350,22 +296,22 @@ function startDumptask(filePath, callback): void {
     console.log("No new leakage objects were added."); 
     return;
   }
-  appState.intersection = getLeakList().filter(item1 =>
+  const intersection = getLeakList().filter(item1 =>
     appState.currentLeakList.some(item2 => item2.hash === item1.hash)
   );
-  appState.duplicateLeakList = appState.intersection;
+  appState.duplicateLeakList = intersection;
 
   if (appState.processInformation && appState.processInformation.length > 0 && appState.exists) {
-    if (appState.intersection.length < leakWatcherConfig.fgLeakCountThreshold &&
+    if (intersection.length < leakWatcherConfig.fgLeakCountThreshold &&
       appState.applicationState === appState.stateForeground) {
-      console.log(`The number of startDumptask foreground leaks: ${appState.intersection.length}` +
+      console.log(`The number of startDumptask foreground leaks: ${intersection.length}` +
                   ` is less than the threshold.`);
       return;
     }
 
-    if (appState.intersection.length < leakWatcherConfig.bgLeakCountThreshold &&
+    if (intersection.length < leakWatcherConfig.bgLeakCountThreshold &&
         appState.applicationState === appState.stateBackground) {
-      console.log(`The number of startDumptask background leaks: ${appState.intersection.length}` +
+      console.log(`The number of startDumptask background leaks: ${intersection.length}` +
                   ` is less than the threshold.`);
       return;
     }
@@ -540,11 +486,10 @@ function registerAbilityLifecycleCallback() {
   }
   if (appState.applicationContext === undefined) {
     console.error(`registerAbilityLifecycleCallback getApplicationContext failed`);
-    return false;
+    return;
   }
   let applicationContext = appState.applicationContext;
   lifecycleId = applicationContext.registerAbilityLifecycleCallback(abilityLifecycleCallback);
-  return true;
 }
 
 function unregisterAbilityLifecycleCallback() {
@@ -558,8 +503,7 @@ function unregisterAbilityLifecycleCallback() {
   });
 }
 
-function executeRegister(config: MonitorObjectType, currentAttempt = 0) {
-  retryMonitorObjectTypes = undefined;
+function executeRegister(config: MonitorObjectType) {
   if (config & MonitorObjectType.CUSTOM_COMPONENT) {
     registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
       if (!weakRef) {
@@ -573,7 +517,7 @@ function executeRegister(config: MonitorObjectType, currentAttempt = 0) {
     });
   }
   if (config & MonitorObjectType.WINDOW) {
-    let ret = jsLeakWatcherNative.registerWindowLifeCycleCallback((obj) => {
+    jsLeakWatcherNative.registerWindowLifeCycleCallback((obj) => {
       if (appState.isConfigObj && leakWatcherConfig.exclusionList.some(
         item => item.toLowerCase() === obj.getWindowProperties().name.toLowerCase())) {
         console.log(`window ${obj.getWindowProperties().name} in exclusionList`);
@@ -581,28 +525,19 @@ function executeRegister(config: MonitorObjectType, currentAttempt = 0) {
         registerObject(obj, '');
       }
     });
-    if (!ret) {
-      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ? MonitorObjectType.WINDOW : retryMonitorObjectTypes | MonitorObjectType.WINDOW;
-    }
   }
     if (config & MonitorObjectType.NODE_CONTAINER ||
         config & MonitorObjectType.X_COMPONENT) {
-    let ret = jsLeakWatcherNative.registerArkUIObjectLifeCycleCallback((weakRef) => {
+    jsLeakWatcherNative.registerArkUIObjectLifeCycleCallback((weakRef) => {
       if (!weakRef) {
         return;
       }
       let obj = weakRef.deref();
       registerObject(obj, '');
     });
-    if (!ret) {
-      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ? MonitorObjectType.NODE_CONTAINER : retryMonitorObjectTypes | MonitorObjectType.NODE_CONTAINER;
-      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ? MonitorObjectType.WINDOW : retryMonitorObjectTypes | MonitorObjectType.X_COMPONENT;
-    }
   }
   if (config & MonitorObjectType.ABILITY) {
-    if (!registerAbilityLifecycleCallback()) {
-      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ? MonitorObjectType.ABILITY : retryMonitorObjectTypes | MonitorObjectType.ABILITY;
-    }
+    registerAbilityLifecycleCallback();
   }
 }
 
@@ -644,21 +579,48 @@ function dumpInnerSync(filePath, needSandBox, isRawHeap) {
 }
 
 function dumpInner(filePath, needSandBox, isRawHeap, jsCallback: Callback<Array<string>> = undefined) {
-  dumpStatus = jsLeakWatcherNative.getDumpStatus();
   if (!enabled) {
     return [];
   }
   if (!fs.accessSync(filePath, fs.AccessModeType.EXIST)) {
     throw new BusinessError(ERROR_CODE_INVALID_PARAM);
   }
-  if (!dumpStatus) {
-    getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback);
-    return [];
-  }
   try {
     createHeapDumpFile(filePath, isRawHeap, false, (code) => {
       console.log('createHeapDumpFile begin!');
-      getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback);
+      let file = fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+      let leakObjList = getLeakList();
+      let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
+      let heapDumpFileName = getHeapBaseName(false) + suffix;
+      let desFilePath = filePath + '/' + heapDumpFileName;
+      const heapDumpSHA256 = getHeapDumpSHA256(desFilePath);
+
+      if (isRawHeap) {
+        let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
+        fs.writeSync(file.fd, JSON.stringify(result));
+      } else {
+        let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
+        fs.writeSync(file.fd, JSON.stringify(result));
+      }
+      fs.closeSync(file);
+
+      try {
+        deleteOldFile(filePath);
+      } catch (e) {
+        console.log('Delete old files failed! ' + e);
+        return [];
+      }
+      
+      let fileList: string[] = [];
+      if (needSandBox) {
+        fileList = [filePath + '/' + getHeapBaseName(false) + '.jsleaklist', filePath + '/' + getHeapBaseName(false) + '.rawheap'];
+      } else {
+        fileList = [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
+      }
+
+      if (jsCallback) {
+        jsCallback(fileList);
+      }
       return [];
     });
   } catch (error) {
@@ -759,10 +721,6 @@ let jsLeakWatcher = {
     }
 
     jsLeakWatcherNative.handleGCTask(() => {
-      if (currentAttempt <= ATTEMPT_COUNT && retryMonitorObjectTypes !== undefined) {
-        executeRegister(retryMonitorObjectTypes, currentAttempt);
-        currentAttempt += 1;
-      }
       if (appState.isConfigObj) {
         startGCtask(context);
       } else {

@@ -50,7 +50,6 @@ group("hichecker_etc") {
 }
 
 ohos_shared_library("libhichecker") {
-  sources = [ "src/js_leak_watcher_ts.cpp" ]
   branch_protector_ret = "pac_ret"
   public_configs = [ ":hichecker_native_config" ]
 
@@ -58,12 +57,7 @@ ohos_shared_library("libhichecker") {
     ":hichecker_etc",
     "../../../frameworks/native:libhichecker_source",
   ]
-  external_deps = [ 
-    "napi:ace_napi",
-    "hilog:libhilog", 
-    "init:libbegetutil",
-    "hitrace:hitrace_meter",
-  ]
+  external_deps = [ "hilog:libhilog" ]
 
   output_extension = "so"
   innerapi_tags = [ "platformsdk" ]

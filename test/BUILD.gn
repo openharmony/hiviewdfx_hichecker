@@ -62,7 +62,6 @@ ohos_unittest("JsLeakWatcherNapiTest") {
     "ets_runtime:libark_jsruntime",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
-    "init:libbegetutil",
     "ipc:ipc_single",
     "napi:ace_napi",
     "window_manager:libwm",
