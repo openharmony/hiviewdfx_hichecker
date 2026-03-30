@@ -315,13 +315,14 @@ static napi_value GetDumpStatus(napi_env env, napi_callback_info info)
         return result;
     }
     const char *paramValue = CachedParameterGet(appEnableHandle);
-    CachedParameterDestroy(appEnableHandle);
     if (paramValue != nullptr && strlen(paramValue) != 0 && strcmp(paramValue, "false") == 0) {
+        CachedParameterDestroy(appEnableHandle);
         napi_get_boolean(env, false, &result);
         napi_close_handle_scope(env, scope);
         return result;
     }
 
+    CachedParameterDestroy(appEnableHandle);
     napi_get_boolean(env, true, &result);
     napi_close_handle_scope(env, scope);
     return result;
