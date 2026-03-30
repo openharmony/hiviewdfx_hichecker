@@ -46,12 +46,13 @@ bool CheckJsLeakWatcherParam(const char* bundleName)
         return false;
     }
     const char *paramValue = CachedParameterGet(appEnableHandle);
-    CachedParameterDestroy(appEnableHandle);
     if (paramValue != nullptr) {
         if (strcmp(paramValue, "true") == 0) {
+            CachedParameterDestroy(appEnableHandle);
             return true;
         }
     }
+    CachedParameterDestroy(appEnableHandle);
     return false;
 }
 

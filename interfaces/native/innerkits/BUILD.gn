@@ -58,7 +58,8 @@ ohos_shared_library("libhichecker") {
     ":hichecker_etc",
     "../../../frameworks/native:libhichecker_source",
   ]
-  external_deps = [ 
+  external_deps = [
+    "c_utils:utils",
     "napi:ace_napi",
     "hilog:libhilog", 
     "init:libbegetutil",
