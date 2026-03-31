@@ -32,6 +32,7 @@
                 "hilog",
                 "init",
                 "hitrace",
+                "hisysevent",
                 "napi",
                 "runtime_core",
                 "ace_engine",
@@ -40,6 +41,9 @@
                 "ipc"
             ]
         },
+        "hisysevent_config": [
+            "//base/hiviewdfx/hichecker/hichecker.yaml"
+        ],
         "build": {
             "sub_component": [
                 "//base/hiviewdfx/hichecker/interfaces/native/innerkits:libhichecker",

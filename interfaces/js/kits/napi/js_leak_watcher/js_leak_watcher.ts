@@ -109,6 +109,28 @@ let appState: AppStateInformation = {
   stateBackground: 3
 };
 
+interface ReportRawHeap {
+  pid: number;
+  happenTime: string;
+  module: string;
+  leakList: string;
+  dynamicRawheapPath: string;
+  staticRawheapPath: string;
+  leakListPath: string;
+  leakObjectCount: number;
+}
+
+let report: ReportRawHeap = {
+  pid: process.pid,
+  happenTime: new Date().getTime().toString(),
+  module: '',
+  leakList: '',
+  dynamicRawheapPath: '',
+  staticRawheapPath: '',
+  leakListPath: '',
+  leakObjectCount: 0
+};
+
 let errMap = new Map();
 errMap.set(ERROR_CODE_INVALID_PARAM, ERROR_MSG_INVALID_PARAM);
 errMap.set(ERROR_CODE_ENABLE_INVALID, ERROR_MSG_ENABLE_INVALID);
@@ -215,6 +237,9 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
   if (jsCallback) {
     jsCallback(fileList);
   }
+
+  setReportData();
+  jsLeakWatcherNative.reportRawHeap(report);
   return [];
 }
 
@@ -280,6 +305,17 @@ function setLeakWatcherConfig(configs): void {
   setForegroundAndBackgroundThreshold(configs);
   setDumpFileSaveAmount(configs);
   getProcessName();
+}
+
+function setReportData(): void {
+  report.pid = process.pid;
+  report.happenTime = new Date().getTime().toString();
+  report.module = appState.bundleName;
+  report.leakList = JSON.stringify(appState.intersection);
+  report.dynamicRawheapPath = JSON.stringify(appState.leakListPath);
+  report.staticRawheapPath = JSON.stringify(appState.leakListPath);
+  report.leakListPath = JSON.stringify(appState.leakListPath);
+  report.leakObjectCount = appState.intersection.length;
 }
 
 function monitorLeakIDandWhitelist(obj): boolean {
