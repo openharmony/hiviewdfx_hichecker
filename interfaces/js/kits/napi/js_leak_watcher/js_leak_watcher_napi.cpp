@@ -362,10 +362,12 @@ static void DumpRawHeapImpl(TsfnContext* tsfnContext, napi_callback_info info, s
     panda::ecmascript::DumpSnapShotOption dumpOption;
     dumpOption.isVmMode = true;
     dumpOption.isJSLeakWatcher = true;
+    dumpOption.isFullGC = false;
     dumpOption.isSync = false;
     dumpOption.dumpFormat = panda::ecmascript::DumpFormat::BINARY;
     auto cbinfo = reinterpret_cast<panda::JsiRuntimeCallInfo*>(info);
-    panda::DFXJSNApi::DumpHeapSnapshot(cbinfo->GetVM(), filePath, dumpOption,
+    auto vm = cbinfo->GetVM();
+    panda::DFXJSNApi::DumpHeapSnapshot(vm, filePath, dumpOption,
                                        [tsfnContext, filePath](uint8_t retcode) {
         HILOG_INFO(LOG_CORE, "DumpRawHeapImpl callback get retcode: %{public}d", retcode);
         uint8_t* pData = new uint8_t(retcode);
@@ -377,6 +379,7 @@ static void DumpRawHeapImpl(TsfnContext* tsfnContext, napi_callback_info info, s
         }
         AppendMetaData(filePath);
     });
+    panda::DFXJSNApi::DestroyHeapProfiler(vm);
 }
 
 static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
