@@ -87,6 +87,7 @@ interface AppStateInformation {
   currentLeakList: any[];
   duplicateLeakList: any[];
   intersection: any[];
+  leakListPath: string[];
   isConfigObj: boolean;
   isGC: boolean;
   stateForeground: number;
@@ -103,10 +104,33 @@ let appState: AppStateInformation = {
   currentLeakList: [],
   duplicateLeakList: [],
   intersection: [],
+  leakListPath: [],
   isConfigObj: false,
   isGC: true,
   stateForeground: 1,
   stateBackground: 3
+};
+
+interface ReportRawHeap {
+  pid: number;
+  happenTime: string;
+  module: string;
+  leakList: string;
+  dynamicRawheapPath: string;
+  staticRawheapPath: string;
+  leakListPath: string;
+  leakObjectCount: number;
+}
+
+let report: ReportRawHeap = {
+  pid: process.pid,
+  happenTime: new Date().getTime().toString(),
+  module: '',
+  leakList: '',
+  dynamicRawheapPath: '',
+  staticRawheapPath: '',
+  leakListPath: '',
+  leakObjectCount: 0
 };
 
 let errMap = new Map();
@@ -212,9 +236,13 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
     fileList = [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
   }
 
+  appState.leakListPath = fileList;
   if (jsCallback) {
     jsCallback(fileList);
   }
+
+  setReportData();
+  jsLeakWatcherNative.reportRawHeap(report);
   return [];
 }
 
@@ -280,6 +308,17 @@ function setLeakWatcherConfig(configs): void {
   setForegroundAndBackgroundThreshold(configs);
   setDumpFileSaveAmount(configs);
   getProcessName();
+}
+
+function setReportData(): void {
+  report.pid = process.pid;
+  report.happenTime = new Date().getTime().toString();
+  report.module = appState.bundleName;
+  report.leakList = JSON.stringify(appState.intersection);
+  report.dynamicRawheapPath = JSON.stringify(appState.leakListPath);
+  report.staticRawheapPath = JSON.stringify(appState.leakListPath);
+  report.leakListPath = JSON.stringify(appState.leakListPath);
+  report.leakObjectCount = appState.intersection.length;
 }
 
 function monitorLeakIDandWhitelist(obj): boolean {

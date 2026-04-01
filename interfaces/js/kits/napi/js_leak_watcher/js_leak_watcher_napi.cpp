@@ -19,6 +19,8 @@
 #include "js_leak_watcher_napi.h"
 #include "sys_param.h"
 
+#include "hisysevent.h"
+
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD003D00
 #undef LOG_TAG
@@ -329,6 +331,63 @@ static napi_value GetDumpStatus(napi_env env, napi_callback_info info)
     return result;
 }
 
+static napi_value ReportRawHeap(napi_env env, napi_callback_info info)
+{
+    napi_handle_scope scope = nullptr;
+    napi_open_handle_scope(env, &scope);
+    size_t argc = ONE_VALUE_LIMIT;
+    napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
+    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (argc != ONE_VALUE_LIMIT) {
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
+
+    napi_value value;
+    int32_t pid;
+    napi_get_named_property(env, argv[0], "pid", &value);
+    napi_get_value_int32(env, value, &pid);
+
+    auto getStringProperty = [](napi_env env, napi_value obj, const char* propertyName) -> std::string {
+        napi_value propValue;
+        if (napi_get_named_property(env, obj, propertyName, &propValue) != napi_ok) {
+            return {};
+        }
+
+        size_t strLength = 0;
+        napi_get_value_string_utf8(env, propValue, nullptr, 0, &strLength);
+
+        std::string str;
+        str.resize(strLength);
+        napi_get_value_string_utf8(env, propValue, str.data(), strLength + 1, nullptr);
+        return str;
+    };
+
+    std::string happenTime = getStringProperty(env, argv[0], "happenTime");
+    std::string module = getStringProperty(env, argv[0], "module");
+    std::string leakList = getStringProperty(env, argv[0], "leakList");
+    std::string dynamicRawHeapPath = getStringProperty(env, argv[0], "dynamicRawheapPath");
+    std::string staticRawHeapPath = getStringProperty(env, argv[0], "staticRawheapPath");
+    std::string leakListPath = getStringProperty(env, argv[0], "leakListPath");
+
+    int32_t leakObjectCount;
+    napi_get_named_property(env, argv[0], "leakObjectCount", &value);
+    napi_get_value_int32(env, value, &leakObjectCount);
+
+    int ret = HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::RELIABILITY, "MEMORY_LEAK_JS_LEAK_WATCHER",
+        OHOS::HiviewDFX::HiSysEvent::EventType::FAULT,
+        "PID", pid, "HAPPEN_TIME", happenTime, "MODULE", module, "LEAK_LIST", leakList,
+        "DYNAMIC_RAWHEAP_PATH", dynamicRawHeapPath, "STATIC_RAWHEAP_PATH", staticRawHeapPath,
+        "LEAK_LIST_PATH", leakListPath, "LEAK_OBJECT_COUNT", leakObjectCount);
+    if (ret != 0) {
+        HILOG_ERROR(LOG_CORE, "hisysevent report failed! ret %{public}d.", ret);
+    }
+
+    HILOG_INFO(LOG_CORE, "hisysevent reportrawheap sucess");
+    napi_close_handle_scope(env, scope);
+    return CreateUndefined(env);
+}
+
 static napi_value HandleGCTask(napi_env env, napi_callback_info info)
 {
     napi_ref ref = nullptr;
@@ -363,10 +422,12 @@ static void DumpRawHeapImpl(TsfnContext* tsfnContext, napi_callback_info info, s
     panda::ecmascript::DumpSnapShotOption dumpOption;
     dumpOption.isVmMode = true;
     dumpOption.isJSLeakWatcher = true;
+    dumpOption.isFullGC = false;
     dumpOption.isSync = false;
     dumpOption.dumpFormat = panda::ecmascript::DumpFormat::BINARY;
     auto cbinfo = reinterpret_cast<panda::JsiRuntimeCallInfo*>(info);
-    panda::DFXJSNApi::DumpHeapSnapshot(cbinfo->GetVM(), filePath, dumpOption,
+    auto vm = cbinfo->GetVM();
+    panda::DFXJSNApi::DumpHeapSnapshot(vm, filePath, dumpOption,
                                        [tsfnContext, filePath](uint8_t retcode) {
         HILOG_INFO(LOG_CORE, "DumpRawHeapImpl callback get retcode: %{public}d", retcode);
         uint8_t* pData = new uint8_t(retcode);
@@ -378,6 +439,7 @@ static void DumpRawHeapImpl(TsfnContext* tsfnContext, napi_callback_info info, s
         }
         AppendMetaData(filePath);
     });
+    panda::DFXJSNApi::DestroyHeapProfiler(vm);
 }
 
 static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
@@ -462,6 +524,7 @@ napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setGcDelay", SetGcDelay),
         DECLARE_NAPI_FUNCTION("setDumpDelay", SetDumpDelay),
         DECLARE_NAPI_FUNCTION("getDumpStatus", GetDumpStatus),
+        DECLARE_NAPI_FUNCTION("reportRawHeap", ReportRawHeap),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;
