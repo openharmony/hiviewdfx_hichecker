@@ -87,6 +87,7 @@ interface AppStateInformation {
   currentLeakList: any[];
   duplicateLeakList: any[];
   intersection: any[];
+  leakListPath: string[];
   isConfigObj: boolean;
   isGC: boolean;
   stateForeground: number;
@@ -103,6 +104,7 @@ let appState: AppStateInformation = {
   currentLeakList: [],
   duplicateLeakList: [],
   intersection: [],
+  leakListPath: [],
   isConfigObj: false,
   isGC: true,
   stateForeground: 1,
@@ -234,6 +236,7 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
     fileList = [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
   }
 
+  appState.leakListPath = fileList;
   if (jsCallback) {
     jsCallback(fileList);
   }
