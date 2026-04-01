@@ -163,5 +163,6 @@ std::shared_ptr<LeakWatcherEventHandler> GetTestHandler();
 bool TestCreateFile(const std::string& filePath);
 uint64_t TestGetFileSize(const std::string& filePath);
 bool TestAppendMetaData(const std::string& filePath);
+const uint64_t FDTAG = 0xD002D0B;
 
 #endif // JS_LEAK_WATCHER_NAPI_H
