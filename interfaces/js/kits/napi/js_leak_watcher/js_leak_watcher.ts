@@ -614,7 +614,7 @@ function executeRegister(config: MonitorObjectType, currentAttempt = 0) {
   if (config & MonitorObjectType.WINDOW) {
     let ret = jsLeakWatcherNative.registerWindowLifeCycleCallback((obj) => {
       if (appState.isConfigObj && leakWatcherConfig.exclusionList.some(
-        item => item.toLowerCase() === obj.getWindowProperties().name.toLowerCase())) {
+        item => obj !== undefined && item.toLowerCase() === obj.getWindowProperties().name.toLowerCase())) {
         console.log(`window ${obj.getWindowProperties().name} in exclusionList`);
       } else {
         registerObject(obj, '');
