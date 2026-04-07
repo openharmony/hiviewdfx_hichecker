@@ -99,6 +99,15 @@ void HiChecker::NotifySlowProcess(const std::string& tag)
     HandleCaution(caution);
 }
 
+void HiChecker::NotifyNetWorkUsage()
+{
+    if ((threadLocalRules_ & Rule::RULE_THREAD_NETWORK_USAGE) == 0) {
+        return;
+    }
+    Caution caution(Rule::RULE_THREAD_NETWORK_USAGE, "trigger:RULE_THREAD_NETWORK_USAGE");
+    HandleCaution(caution);
+}
+
 void HiChecker::NotifySlowEvent(const std::string& tag)
 {
     if ((processRules_ & Rule::RULE_CHECK_SLOW_EVENT) == 0) {
@@ -134,6 +143,9 @@ void HiChecker::NotifyCaution(uint64_t rule, const std::string& tag, Caution& ca
             break;
         case Rule::RULE_CHECK_ARKUI_PERFORMANCE:
             msg = "trigger:RULE_CHECK_ARKUI_PERFORMANCE," + tag;
+            break;
+        case Rule::RULE_THREAD_NETWORK_USAGE:
+            msg = "trigger:RULE_THREAD_NETWORK_USAGE";
             break;
         default:
             break;

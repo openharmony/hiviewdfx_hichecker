@@ -15,6 +15,8 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <thread>
+#include <atomic>
 #include <gtest/gtest.h>
 
 #include "caution.h"
@@ -433,6 +435,41 @@ HWTEST_F(HiCheckerNativeTest, HicheckerRomTest001, TestSize.Level1)
     }
     std::cout << "realSize = " << realSize << std::endl;
     EXPECT_LT(realSize, BASELINE_SIZE);
+}
+
+/**
+  * @tc.name: MultiThreadAddRuleTest001
+  * @tc.desc: test AddRule in multi-thread scenario
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, MultiThreadAddRuleTest001, TestSize.Level1)
+{
+    HiChecker::AddRule(Rule::RULE_THREAD_NETWORK_USAGE);
+    ASSERT_TRUE(HiChecker::Contains(Rule::RULE_THREAD_NETWORK_USAGE));
+    ASSERT_EQ(HiChecker::GetRule(), Rule::RULE_THREAD_NETWORK_USAGE);
+    HiChecker::RemoveRule(Rule::RULE_THREAD_NETWORK_USAGE);
+}
+
+/**
+  * @tc.name: MultiThreadNotifyNetWorkUsageTest001
+  * @tc.desc: test NotifyNetWorkUsage in multi-thread scenario
+  * @tc.type: FUNC
+*/
+HWTEST_F(HiCheckerNativeTest, MultiThreadNotifyNetWorkUsageTest001, TestSize.Level1)
+{
+    HiChecker::AddRule(Rule::RULE_THREAD_NETWORK_USAGE | Rule::RULE_CAUTION_PRINT_LOG);
+    
+    std::thread childThread([]() {
+        HiChecker::NotifyNetWorkUsage();
+        ASSERT_FALSE(HiChecker::Contains(Rule::RULE_THREAD_NETWORK_USAGE));
+    });
+    
+    HiChecker::NotifyNetWorkUsage();
+    ASSERT_TRUE(HiChecker::Contains(Rule::RULE_THREAD_NETWORK_USAGE));
+    
+    childThread.join();
+    
+    HiChecker::RemoveRule(Rule::RULE_THREAD_NETWORK_USAGE);
 }
 } // namespace HiviewDFX
 } // namespace OHOS
