@@ -54,6 +54,7 @@ The following table lists the APIs provided by HiChecker.
 | HiChecker | BigInt RULE_CAUTION_PRINT_LOG = 1<<63;              | Defines a caution rule, which is programmed to print a log when an alarm is generated.      |
 |           | BigInt RULE_CAUTION_TRIGGER_CRASH = 1<<62;          | Defines a caution rule, which is programmed to force an application to exit when an alarm is generated.      |
 |           | BigInt RULE_THREAD_CHECK_SLOW_PROCESS = 1;          | Defines a check rule, which is programmed to check whether any time-consuming function is called.|
+|           | BigInt RULE_THREAD_NETWORK_USAGE = 1<<1;            | Defines a check rule, which is programmed to detect whether the thread is using the network. |
 |           | BigInt RULE_CHECK_ABILITY_CONNECTION_LEAK = 1<<33;  | Defines a check rule, which is programmed to check ability leakage. |
 |           | BigInt RULE_CHECK_ARKUI_PERFORMANCE = 1<<34;        | Defines a check rule, which is programmed to check Arkui performance detection. |
 |           | addRule(BigInt rule) : void                         | Adds one or more rules.      |
@@ -62,6 +63,7 @@ The following table lists the APIs provided by HiChecker.
 |           | contains(BigInt rule) : boolean                     | Checks whether a rule exists.    |
 |           | NotifySlowProcess(std::string) : void               | Sends a notification of a time-consuming function call.            |
 |           | NotifySlowEvent(std::string) : void                 | Sends a notification of a time-consuming function call event.            |
+|           | NotifyNetWorkUsage() : void                         | Sends a notification of a thread is using the network.          |
 |           | NotifyAbilityConnectionLeak(Caution caution) : void | Sends a notification of ability leakage.         |
 |           | NotifyCaution(uint64_t rule, const std::string& tag, Caution& caution) : void | Common APIs for Rule Detection   |
 | Caution   | GetTriggerRule() : BigInt                           | Obtains the rule that triggers the current alarm.|

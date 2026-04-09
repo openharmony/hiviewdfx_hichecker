@@ -18,6 +18,7 @@ export default namespace hichecker {
   const RULE_CAUTION_PRINT_LOG: bigint = 9223372036854775808n; // 1 << 63
   const RULE_CAUTION_TRIGGER_CRASH: bigint = 4611686018427387904n; // 1 << 62
   const RULE_THREAD_CHECK_SLOW_PROCESS: bigint = 1n;
+  const RULE_THREAD_NETWORK_USAGE: bigint = 2n; // 1 << 1
   const RULE_CHECK_SLOW_EVENT: bigint = 4294967296n; // 1 << 32
   const RULE_CHECK_ABILITY_CONNECTION_LEAK: bigint = 8589934592n; // 1 << 33
   const RULE_CHECK_ARKUI_PERFORMANCE: bigint = 17179869184n; // 1 << 34
