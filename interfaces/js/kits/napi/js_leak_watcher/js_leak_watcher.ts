@@ -207,7 +207,7 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
   }
   let file = dumpStatus ? fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE) :
     fs.openSync(filePath + '/' + getHeapBaseName(true) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE)
-  let leakObjList = appState.intersection;;
+  let leakObjList = getLeakList();
   let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
   let heapDumpFileName = getHeapBaseName(false) + suffix;
   let desFilePath = filePath + '/' + heapDumpFileName;
