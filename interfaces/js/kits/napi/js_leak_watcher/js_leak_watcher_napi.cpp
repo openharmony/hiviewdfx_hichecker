@@ -374,7 +374,6 @@ static napi_value ReportRawHeap(napi_env env, napi_callback_info info)
     std::string dynamicRawHeapPath = getStringProperty(env, argv[0], "dynamicRawheapPath");
     std::string staticRawHeapPath = getStringProperty(env, argv[0], "staticRawheapPath");
     std::string leakListPath = getStringProperty(env, argv[0], "leakListPath");
-
     int32_t leakObjectCount;
     napi_get_named_property(env, argv[0], "leakObjectCount", &value);
     napi_get_value_int32(env, value, &leakObjectCount);
