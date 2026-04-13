@@ -65,11 +65,7 @@ void SetjsLeakWatcherEnableStatus(bool checkStatus)
 
 bool GetjsLeakWatcherEnableStatus()
 {
-    if (g_enableStatus) {
-        return g_enableStatus;
-    }
-
-    return false;
+    return g_enableStatus;
 }
 
 inline napi_value CreateJsUndefined(napi_env env)
@@ -106,10 +102,10 @@ void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
 {
     HITRACE_METER_NAME(HITRACE_TAG_APP, __PRETTY_FUNCTION__);
     bool ret = CheckJsLeakWatcherParam(bundleName.c_str());
+    SetjsLeakWatcherEnableStatus(ret);
     if (!ret) {
         return;
     }
-    SetjsLeakWatcherEnableStatus(ret);
 
     napi_handle_scope scope;
     napi_open_handle_scope(env, &scope);
