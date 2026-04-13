@@ -548,13 +548,14 @@ function deleteOldFile(filePath) {
     files.sort((a, b) => {
       return getTimestampByFileName(a) - getTimestampByFileName(b);
     });
-    for (let i = 0; i < files.length - maxFileNum; i++) {
+    for (let i = 0; i < files.length - maxFileNum;) {
       fs.unlinkSync(filePath + '/' + files[i]);
       console.log(`File: ${files[i]} is deleted.`);
-      let split = files[i].replace(/\.rawheap$/, '');
+      let timeStamp = getTimestampByFileName(files[i]).toString();
       if (files[i + 1].includes(split)) {
         fs.unlinkSync(filePath + '/' + files[i + 1]);
         files = fs.listFileSync(filePath, listFileOption);
+        i++;
       }
     }
   }  
