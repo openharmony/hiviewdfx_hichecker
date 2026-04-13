@@ -551,6 +551,11 @@ function deleteOldFile(filePath) {
     for (let i = 0; i < files.length - maxFileNum; i++) {
       fs.unlinkSync(filePath + '/' + files[i]);
       console.log(`File: ${files[i]} is deleted.`);
+      let split = files[i].replace(/\.rawheap$/, '');
+      if (files[i + 1].includes(split)) {
+        fs.unlinkSync(filePath + '/' + files[i + 1]);
+        files = fs.listFileSync(filePath, listFileOption);
+      }
     }
   }  
 }
