@@ -29,7 +29,7 @@
 
 #define JSLEAK_WATCHER_NAME_LEN 256
 
-static bool g_enableStatus = false; 
+static bool g_enableStatus = false;
 
 bool CheckJsLeakWatcherParam(const char* bundleName)
 {
