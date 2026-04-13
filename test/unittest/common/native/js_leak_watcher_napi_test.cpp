@@ -25,6 +25,7 @@
 #include "event_handler.h"
 #include "event_runner.h"
 #include "js_leak_watcher_napi.h"
+#include "js_leak_watcher_ts.h"
 
 using namespace testing::ext;
 using namespace OHOS::AppExecFwk;

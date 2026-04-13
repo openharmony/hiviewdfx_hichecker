@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include "hilog/log.h"
 #include "js_leak_watcher_napi.h"
+#include "js_leak_watcher_ts.h"
 #include "sys_param.h"
 
 #include "hisysevent.h"
@@ -333,6 +334,10 @@ static napi_value GetDumpStatus(napi_env env, napi_callback_info info)
 
 static napi_value ReportRawHeap(napi_env env, napi_callback_info info)
 {
+    HILOG_INFO(LOG_CORE, "hisysevent reportrawheap begin!");
+    if (!GetjsLeakWatcherEnableStatus()) {
+        return nullptr;
+    }
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     size_t argc = ONE_VALUE_LIMIT;
@@ -383,7 +388,7 @@ static napi_value ReportRawHeap(napi_env env, napi_callback_info info)
         HILOG_ERROR(LOG_CORE, "hisysevent report failed! ret %{public}d.", ret);
     }
 
-    HILOG_INFO(LOG_CORE, "hisysevent reportrawheap sucess");
+    HILOG_INFO(LOG_CORE, "hisysevent reportrawheap end!");
     napi_close_handle_scope(env, scope);
     return CreateUndefined(env);
 }

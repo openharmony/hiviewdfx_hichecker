@@ -40,6 +40,7 @@ config("js_leak_watcher_config_test") {
   include_dirs = [
     ".",
     "../interfaces/js/kits/napi/js_leak_watcher",
+    "../interfaces/native/innerkits/include",
   ]
 
   defines = [ "JS_LEAK_WATCHER_TEST" ]
@@ -54,6 +55,7 @@ ohos_unittest("JsLeakWatcherNapiTest") {
     "unittest/common/native/js_leak_watcher_napi_test.cpp",
     "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.h",
     "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.cpp",
+    "../interfaces/native/innerkits/src/js_leak_watcher_ts.cpp",
   ]
 
   external_deps = [
@@ -64,6 +66,7 @@ ohos_unittest("JsLeakWatcherNapiTest") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "init:libbegetutil",
+    "hitrace:hitrace_meter",
     "ipc:ipc_single",
     "napi:ace_napi",
     "window_manager:libwm",

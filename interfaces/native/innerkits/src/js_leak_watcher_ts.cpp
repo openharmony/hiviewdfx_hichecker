@@ -29,6 +29,8 @@
 
 #define JSLEAK_WATCHER_NAME_LEN 256
 
+static bool enableStatus = false;
+
 bool CheckJsLeakWatcherParam(const char* bundleName)
 {
     if (!bundleName) {
@@ -53,6 +55,20 @@ bool CheckJsLeakWatcherParam(const char* bundleName)
         }
     }
     CachedParameterDestroy(appEnableHandle);
+    return false;
+}
+
+void SetjsLeakWatcherEnableStatus(bool checkStatus)
+{
+    enableStatus = checkStatus;
+}
+
+bool GetjsLeakWatcherEnableStatus()
+{
+    if (enableStatus) {
+        return enableStatus;
+    }
+
     return false;
 }
 
@@ -89,9 +105,11 @@ void CreateCallbackObject(napi_env env, napi_value* js_callback)
 void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
 {
     HITRACE_METER_NAME(HITRACE_TAG_APP, __PRETTY_FUNCTION__);
-    if (!CheckJsLeakWatcherParam(bundleName.c_str())) {
+    bool ret = CheckJsLeakWatcherParam(bundleName.c_str());
+    if (!ret) {
         return;
     }
+    SetjsLeakWatcherEnableStatus(ret);
 
     napi_handle_scope scope;
     napi_open_handle_scope(env, &scope);
