@@ -61,16 +61,9 @@ ohos_shared_library("jsleakwatcher") {
 
 ohos_shared_library("jsleakwatchernative") {
   if (support_jsapi) {
-    include_dirs = [
-      "./",
-      "../../../../native/innerkits/include",
-    ]
+    sources = [ "js_leak_watcher_napi.cpp" ]
 
-    sources = [
-      "js_leak_watcher_napi.cpp",
-      "../../../../native/innerkits/include/js_leak_watcher_ts.h",
-      "../../../../native/innerkits/src/js_leak_watcher_ts.cpp"
-    ]
+    deps = [ "../../../../native/innerkits:libhichecker" ]
 
     external_deps = [
       "ace_engine:libace_compatible",
@@ -80,7 +73,6 @@ ohos_shared_library("jsleakwatchernative") {
       "hilog:libhilog",
       "hisysevent:libhisysevent",
       "init:libbegetutil",
-      "hitrace:hitrace_meter",
       "ipc:ipc_single",
       "napi:ace_napi",
       "window_manager:libwm",
