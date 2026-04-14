@@ -21,4 +21,8 @@
 
 void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName);
 
+void SetjsLeakWatcherEnableStatus(bool checkStatus);
+
+bool GetjsLeakWatcherEnableStatus();
+
 #endif //HIVIEWDFX_HICHECKER_JS_LEAK_WATCHER_TS_H

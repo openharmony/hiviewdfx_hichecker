@@ -207,7 +207,7 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
   }
   let file = dumpStatus ? fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE) :
     fs.openSync(filePath + '/' + getHeapBaseName(true) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE)
-  let leakObjList = appState.intersection;;
+  let leakObjList = getLeakList();
   let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
   let heapDumpFileName = getHeapBaseName(false) + suffix;
   let desFilePath = filePath + '/' + heapDumpFileName;
@@ -551,6 +551,11 @@ function deleteOldFile(filePath) {
     for (let i = 0; i < files.length - maxFileNum; i++) {
       fs.unlinkSync(filePath + '/' + files[i]);
       console.log(`File: ${files[i]} is deleted.`);
+      let timeStamp = getTimestampByFileName(files[i]).toString();
+      if (files[i + 1].includes(timeStamp)) {
+        fs.unlinkSync(filePath + '/' + files[i + 1]);
+        i++;
+      }
     }
   }  
 }

@@ -56,6 +56,8 @@ ohos_unittest("JsLeakWatcherNapiTest") {
     "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.cpp",
   ]
 
+  deps = [ "../interfaces/native/innerkits:libhichecker" ]
+
   external_deps = [
     "ace_engine:libace_compatible",
     "c_utils:utils",
