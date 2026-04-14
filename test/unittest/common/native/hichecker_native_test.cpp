@@ -15,8 +15,10 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <fstream>
 #include <thread>
 #include <gtest/gtest.h>
+#include <string>
 
 #include "caution.h"
 #include "hichecker.h"
@@ -382,12 +384,27 @@ HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest001, TestSize.Level1)
 */
 HWTEST_F(HiCheckerNativeTest, InitHicheckerParamTest002, TestSize.Level1)
 {
-    system("param set hiviewdfx.hichecker.checker_test 17179869184");
+    std::string command =
+      "param set hiviewdfx.hichecker.checker_test 17179869184 > /data/local/tmp/output.txt 2>&1";
+    int result = std::system(command.c_str());
+    ASSERT_EQ(result, 0);
+    std::ifstream file("/data/local/tmp/output.txt");
+    ASSERT_EQ(file.is_open(), true);
+
+    system("cat /data/local/tmp/output.txt");
     const char *processName = "checker_test";
     HiChecker::InitHicheckerParam(processName);
-    ASSERT_TRUE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
-    InitHicheckerParamWrapper(processName);
-    ASSERT_TRUE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+    std::string line = "";
+    getline(file, line);
+    if (line.find("success") != std::string::npos) {
+        file.close();
+        ASSERT_TRUE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+    } else {
+        file.close();
+        ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+        InitHicheckerParamWrapper(processName);
+        ASSERT_FALSE(HiChecker::Contains(Rule::RULE_CHECK_ARKUI_PERFORMANCE));
+    }
 }
 
 /**

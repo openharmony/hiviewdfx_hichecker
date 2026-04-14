@@ -63,6 +63,8 @@ ohos_shared_library("jsleakwatchernative") {
   if (support_jsapi) {
     sources = [ "js_leak_watcher_napi.cpp" ]
 
+    deps = [ "../../../../native/innerkits:libhichecker" ]
+
     external_deps = [
       "ace_engine:libace_compatible",
       "c_utils:utils",
