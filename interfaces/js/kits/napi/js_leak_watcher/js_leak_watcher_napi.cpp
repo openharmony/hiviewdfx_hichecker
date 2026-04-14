@@ -367,14 +367,12 @@ static napi_value ReportRawHeap(napi_env env, napi_callback_info info)
         napi_get_value_string_utf8(env, propValue, str.data(), strLength + 1, nullptr);
         return str;
     };
-
     std::string happenTime = getStringProperty(env, argv[0], "happenTime");
     std::string module = getStringProperty(env, argv[0], "module");
     std::string leakList = getStringProperty(env, argv[0], "leakList");
     std::string dynamicRawHeapPath = getStringProperty(env, argv[0], "dynamicRawheapPath");
     std::string staticRawHeapPath = getStringProperty(env, argv[0], "staticRawheapPath");
     std::string leakListPath = getStringProperty(env, argv[0], "leakListPath");
-
     int32_t leakObjectCount;
     napi_get_named_property(env, argv[0], "leakObjectCount", &value);
     napi_get_value_int32(env, value, &leakObjectCount);
