@@ -36,6 +36,7 @@ const ERROR_CODE_CONFIG_INVALID = 10801002;
 const ERROR_MSG_CONFIG_INVALID = 'The parameter config invalid. Please check!';
 const ERROR_CODE_CALLBACK_INVALID = 10801003;
 const ERROR_MSG_CALLBACK_INVALID = 'The parameter callback invalid. Please check!';
+const MIN_CHECK_INTERVAL = 90000;
 
 enum MonitorObjectType {
   ALL = -1,
@@ -60,7 +61,7 @@ interface LeakWatcherConfig {
 let leakWatcherConfig: LeakWatcherConfig = {
   monitorObjectTypes: MonitorObjectType.ALL,
   objectUniqueIDs: [],
-  checkInterval: 30000,
+  checkInterval: MIN_CHECK_INTERVAL,
   fgLeakCountThreshold: 5,
   bgLeakCountThreshold: 1,
   maxStoredHeapDumps: 10,
@@ -258,7 +259,7 @@ function getProcessName(): void {
 }
 
 function setGcDelayAndDumpDelay(configs): void {
-  if (configs.checkInterval && configs.checkInterval > 0 &&
+  if (configs.checkInterval && configs.checkInterval > MIN_CHECK_INTERVAL &&
       configs.dumpHeapWaitTimeMs && configs.dumpHeapWaitTimeMs < configs.checkInterval) {
     jsLeakWatcherNative.setGcDelay(configs.checkInterval);
     jsLeakWatcherNative.setDumpDelay(configs.dumpHeapWaitTimeMs);
@@ -576,7 +577,6 @@ function registerAbilityLifecycleCallback() {
     onAbilityDestroy(ability) {
       if (appState.isConfigObj &&
         leakWatcherConfig.exclusionList.some(item => item.toLowerCase() === ability.name.toLowerCase())) {
-        console.log(`ability ${ability.name} in exclusionList`);
       } else {
         registerObject(ability, '');
       }
@@ -620,7 +620,6 @@ function executeRegister(config: MonitorObjectType, currentAttempt = 0) {
     let ret = jsLeakWatcherNative.registerWindowLifeCycleCallback((obj) => {
       if (appState.isConfigObj && leakWatcherConfig.exclusionList.some(
         item => obj !== undefined && item.toLowerCase() === obj.getWindowProperties().name.toLowerCase())) {
-        console.log(`window ${obj.getWindowProperties().name} in exclusionList`);
       } else {
         registerObject(obj, '');
       }
