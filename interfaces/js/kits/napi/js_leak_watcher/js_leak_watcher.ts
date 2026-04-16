@@ -658,9 +658,13 @@ function dumpInnerSync(filePath, needSandBox, isRawHeap) {
     throw new BusinessError(ERROR_CODE_INVALID_PARAM);
   }
   try {
-    const heapDumpSHA256 = createHeapDumpFile(filePath, isRawHeap, true);
+    createHeapDumpFile(filePath, isRawHeap, true);
     let file = fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let leakObjList = getLeakList();
+    let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
+    let heapDumpFileName = getHeapBaseName(false) + suffix;
+    let desFilePath = filePath + '/' + heapDumpFileName;
+    const heapDumpSHA256 = getHeapDumpSHA256(desFilePath);
     if (isRawHeap) {
       let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
       fs.writeSync(file.fd, JSON.stringify(result));
