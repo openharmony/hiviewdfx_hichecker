@@ -123,7 +123,7 @@ private:
     napi_ref shutdownFuncRef_ = nullptr;
     bool isRunning_ = false;
     uint32_t dumpDelayTime_ = 3000; // 3s
-    uint32_t gcDelayTime_ = 27000; // 27s
+    uint32_t gcDelayTime_ = 90000; // 90s
 };
 
 class WindowLifeCycleListener : public OHOS::Rosen::IWindowLifeCycleListener {
