@@ -426,6 +426,7 @@ static void DumpRawHeapImpl(TsfnContext* tsfnContext, napi_callback_info info, s
     dumpOption.isVmMode = true;
     dumpOption.isJSLeakWatcher = true;
     dumpOption.isFullGC = false;
+    dumpOption.isBeforeFill = false;
     dumpOption.isSync = false;
     dumpOption.dumpFormat = panda::ecmascript::DumpFormat::BINARY;
     auto cbinfo = reinterpret_cast<panda::JsiRuntimeCallInfo*>(info);
