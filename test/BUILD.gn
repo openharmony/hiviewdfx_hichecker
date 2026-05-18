@@ -45,41 +45,43 @@ config("js_leak_watcher_config_test") {
   defines = [ "JS_LEAK_WATCHER_TEST" ]
 }
 
-ohos_unittest("JsLeakWatcherNapiTest") {
-  module_out_path = native_module_output_path
+if (support_jsapi) {
+  ohos_unittest("JsLeakWatcherNapiTest") {
+    module_out_path = native_module_output_path
 
-  configs = [ ":js_leak_watcher_config_test" ]
+    configs = [ ":js_leak_watcher_config_test" ]
 
-  sources = [
-    "unittest/common/native/js_leak_watcher_napi_test.cpp",
-    "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.h",
-    "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.cpp",
-  ]
+    sources = [
+      "unittest/common/native/js_leak_watcher_napi_test.cpp",
+      "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.h",
+      "../interfaces/js/kits/napi/js_leak_watcher/js_leak_watcher_napi.cpp",
+    ]
 
-  deps = [ "../interfaces/native/innerkits:libhichecker" ]
+    deps = [ "../interfaces/native/innerkits:libhichecker" ]
 
-  external_deps = [
-    "ace_engine:libace_compatible",
-    "c_utils:utils",
-    "ets_runtime:libark_jsruntime",
-    "eventhandler:libeventhandler",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "init:libbegetutil",
-    "ipc:ipc_single",
-    "napi:ace_napi",
-    "window_manager:libwm",
-  ]
+    external_deps = [
+      "ace_engine:libace_compatible",
+      "c_utils:utils",
+      "ets_runtime:libark_jsruntime",
+      "eventhandler:libeventhandler",
+      "hilog:libhilog",
+      "hisysevent:libhisysevent",
+      "init:libbegetutil",
+      "ipc:ipc_single",
+      "napi:ace_napi",
+      "window_manager:libwm",
+    ]
 
-  cflags = [ "-fstack-protector-strong" ]
+    cflags = [ "-fstack-protector-strong" ]
+  }
 }
 
 group("unittest") {
   testonly = true
-  deps = [
-    ":HiCheckerNativeTest",
-    ":JsLeakWatcherNapiTest",
-  ]
+  deps = [ ":HiCheckerNativeTest" ]
+  if (support_jsapi) {
+    deps += [ ":JsLeakWatcherNapiTest" ]
+  }
 }
 
 ohos_fuzztest("HicheckerFuzzTest") {
