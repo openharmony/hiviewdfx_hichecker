@@ -36,20 +36,16 @@ bool CheckJsLeakWatcherParam(const char* bundleName)
     if (!bundleName) {
         return false;
     }
-    char paraName[JSLEAK_WATCHER_NAME_LEN] = "hiviewdfx.hichecker.jsleakwatcher.";
-    errno_t err = 0;
-    err = strcat_s(paraName, sizeof(paraName), bundleName);
-    if (err != EOK) {
-        HILOG_INFO(LOG_CORE, "checker jsLeakwatcherparam strcat_s query name failed.");
-        return false;
-    }
-    CachedHandle appEnableHandle = CachedParameterCreate(paraName, "false");
+    char paraName[JSLEAK_WATCHER_NAME_LEN] = "hiviewdfx.hichecker.jsleakwatcher.leak.check";
+    const std::string disable = "disable." + std::string(bundleName);
+    CachedHandle appEnableHandle = CachedParameterCreate(paraName, disable.c_str());
     if (appEnableHandle == nullptr) {
         return false;
     }
     const char *paramValue = CachedParameterGet(appEnableHandle);
     if (paramValue != nullptr) {
-        if (strcmp(paramValue, "true") == 0) {
+        const std::string enable = "enable." + std::string(bundleName);
+        if (strcmp(paramValue, enable.c_str()) == 0) {
             CachedParameterDestroy(appEnableHandle);
             return true;
         }
