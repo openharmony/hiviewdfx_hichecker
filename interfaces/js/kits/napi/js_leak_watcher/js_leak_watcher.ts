@@ -724,6 +724,8 @@ function shutdownJsLeakWatcher() {
 }
 
 let jsLeakWatcher = {
+  MonitorObjectType: MonitorObjectType,
+  LeakWatcherConfig: {} as LeakWatcherConfig,
   watch: (obj, msg) => {
     if (obj === undefined || obj === null || msg === undefined || msg === null) {
       throw new BusinessError(ERROR_CODE_INVALID_PARAM);
