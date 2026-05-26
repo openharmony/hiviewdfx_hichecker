@@ -456,8 +456,16 @@ function deleteLastOldFile(filePath: string): void {
   }
   let fileBaseName = prefix + getTimestampByFileName(files[0]);
   try {
-    fs.unlinkSync(filePath + '/' + fileBaseName + '.jsleaklist');
-    fs.unlinkSync(filePath + '/' + fileBaseName + '.rawheap');
+    let jsleaklistPath = filePath + '/' + fileBaseName + '.jsleaklist';
+    if (fs.accessSync(jsleaklistPath)) {
+      fs.unlinkSync(jsleaklistPath);
+    }
+    let rawheapPath = filePath + '/' + fileBaseName + '.rawheap';
+    if (fs.accessSync(rawheapPath)) {
+      fs.unlinkSync(rawheapPath);
+    } else {
+      fs.unlinkSync(filePath + '/' + fileBaseName + '.heapsnapshot');
+    }
   } catch (e) {
     console.log('Delete files failed! ' + e);
     return;
