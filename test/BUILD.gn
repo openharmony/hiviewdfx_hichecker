@@ -74,13 +74,42 @@ if (support_jsapi) {
 
     cflags = [ "-fstack-protector-strong" ]
   }
+
+  ohos_unittest("JsLeakWatcherTsTest") {
+    module_out_path = native_module_output_path
+
+    configs = [ ":js_leak_watcher_config_test" ]
+
+    sources = [
+      "unittest/common/native/js_leak_watcher_ts_test.cpp",
+      "../interfaces/native/innerkits/include/js_leak_watcher_ts.h",
+      "../interfaces/native/innerkits/src/js_leak_watcher_ts.cpp"
+    ]
+
+    deps = [ "../interfaces/native/innerkits:libhichecker" ]
+
+    external_deps = [
+      "c_utils:utils",
+      "napi:ace_napi",
+      "hilog:libhilog", 
+      "init:libbegetutil",
+      "hitrace:hitrace_meter",
+    ]
+
+    cflags = [ "-fstack-protector-strong" ]
+  }
 }
 
 group("unittest") {
   testonly = true
-  deps = [ ":HiCheckerNativeTest" ]
+  deps = [
+    ":HiCheckerNativeTest"
+  ]
   if (support_jsapi) {
-    deps += [ ":JsLeakWatcherNapiTest" ]
+    deps += [
+      ":JsLeakWatcherNapiTest",
+      ":JsLeakWatcherTsTest",
+    ]
   }
 }
 
