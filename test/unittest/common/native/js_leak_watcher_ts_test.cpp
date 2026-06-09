@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,30 +13,156 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-#include <cstring>
-#include <string>
-
 #include "js_leak_watcher_ts.h"
+#include <string>
+#include <gtest/gtest.h>
+#include "hichecker.h"
 
 using namespace testing::ext;
 
 namespace OHOS {
 namespace HiviewDFX {
-
 class JsLeakWatcherTsTest : public testing::Test {
 public:
-    static void SetUpTestCase() {}
-    static void TearDownTestCase() {}
-    void SetUp()
-    {
-        SetjsLeakWatcherEnableStatus(false);
-    }
-    void TearDown()
-    {
-        SetjsLeakWatcherEnableStatus(false);
-    }
+    static void SetUpTestCase();
+    static void TearDownTestCase();
+    void SetUp();
+    void TearDown();
 };
+
+void JsLeakWatcherTsTest::SetUpTestCase()
+{
+}
+
+void JsLeakWatcherTsTest::TearDownTestCase()
+{
+}
+
+void JsLeakWatcherTsTest::SetUp()
+{
+    SetjsLeakWatcherEnableStatus(false);
+}
+
+void JsLeakWatcherTsTest::TearDown()
+{
+    SetjsLeakWatcherEnableStatus(false);
+}
+
+/**
+ * @tc.name: JSLeakWatcherEarlyInitDisabled001
+ * @tc.desc: Test JSLeakWatcherEarlyInit with disabled status
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, JSLeakWatcherEarlyInitDisabled001, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(false);
+    std::string bundleName = "com.test.bundle1";
+    JSLeakWatcherEarlyInit(nullptr, bundleName);
+    EXPECT_FALSE(GetjsLeakWatcherEnableStatus());
+}
+
+/**
+ * @tc.name: JSLeakWatcherEarlyInitEnabled002
+ * @tc.desc: Test JSLeakWatcherEarlyInit when system param not set (status becomes false)
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, JSLeakWatcherEarlyInitEnabled002, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(true);
+    std::string bundleName = "com.test.bundle2";
+    JSLeakWatcherEarlyInit(nullptr, bundleName);
+    // JSLeakWatcherEarlyInit calls CheckJsLeakWatcherParam which returns false
+    // when system param is not set, so status becomes false
+    EXPECT_FALSE(GetjsLeakWatcherEnableStatus());
+}
+
+/**
+ * @tc.name: JSLeakWatcherEarlyInitEmpty003
+ * @tc.desc: Test JSLeakWatcherEarlyInit with empty bundle name
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, JSLeakWatcherEarlyInitEmpty003, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(true);
+    std::string bundleName = "";
+    JSLeakWatcherEarlyInit(nullptr, bundleName);
+}
+
+/**
+ * @tc.name: JSLeakWatcherEarlyInitLong004
+ * @tc.desc: Test JSLeakWatcherEarlyInit with long bundle name
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, JSLeakWatcherEarlyInitLong004, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(true);
+    std::string bundleName(256, 'a');
+    JSLeakWatcherEarlyInit(nullptr, bundleName);
+}
+
+/**
+ * @tc.name: JSLeakWatcherEarlyInitMultiple005
+ * @tc.desc: Test JSLeakWatcherEarlyInit called multiple times
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, JSLeakWatcherEarlyInitMultiple005, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(true);
+    std::string bundleName1 = "com.test.first";
+    std::string bundleName2 = "com.test.second";
+    JSLeakWatcherEarlyInit(nullptr, bundleName1);
+    JSLeakWatcherEarlyInit(nullptr, bundleName2);
+}
+
+/**
+ * @tc.name: JSLeakWatcherEarlyInitUnderscore006
+ * @tc.desc: Test JSLeakWatcherEarlyInit with bundle name containing underscores
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, JSLeakWatcherEarlyInitUnderscore006, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(true);
+    std::string bundleName = "com.test.bundle_name_test";
+    JSLeakWatcherEarlyInit(nullptr, bundleName);
+}
+
+/**
+ * @tc.name: JSLeakWatcherEarlyInitSpecialChars007
+ * @tc.desc: Test JSLeakWatcherEarlyInit with bundle name containing special chars
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, JSLeakWatcherEarlyInitSpecialChars007, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(true);
+    std::string bundleName = "com.test.bundle-name.123";
+    JSLeakWatcherEarlyInit(nullptr, bundleName);
+}
+
+/**
+ * @tc.name: GetJsLeakWatcherEnableStatus008
+ * @tc.desc: Test GetjsLeakWatcherEnableStatus returns correct value
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, GetJsLeakWatcherEnableStatus008, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(false);
+    EXPECT_FALSE(GetjsLeakWatcherEnableStatus());
+    SetjsLeakWatcherEnableStatus(true);
+    EXPECT_TRUE(GetjsLeakWatcherEnableStatus());
+}
+
+/**
+ * @tc.name: SetJsLeakWatcherEnableStatus009
+ * @tc.desc: Test SetjsLeakWatcherEnableStatus sets value correctly
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherTsTest, SetJsLeakWatcherEnableStatus009, TestSize.Level1)
+{
+    SetjsLeakWatcherEnableStatus(true);
+    EXPECT_TRUE(GetjsLeakWatcherEnableStatus());
+    SetjsLeakWatcherEnableStatus(false);
+    EXPECT_FALSE(GetjsLeakWatcherEnableStatus());
+}
 
 /**
  * @tc.name: GetjsLeakWatcherEnableStatusTest001
@@ -214,6 +340,5 @@ HWTEST_F(JsLeakWatcherTsTest, EnableStatusIntegrationTest003, TestSize.Level1)
     SetjsLeakWatcherEnableStatus(ret);
     ASSERT_FALSE(GetjsLeakWatcherEnableStatus());
 }
-
 } // namespace HiviewDFX
 } // namespace OHOS
