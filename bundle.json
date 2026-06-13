@@ -25,6 +25,7 @@
         "ram": "~100KB",
         "deps": {
             "components": [
+                "api_metrics",
                 "c_utils",
                 "ets_frontend",
                 "ets_runtime",

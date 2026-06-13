@@ -19,8 +19,10 @@
 #include "js_leak_watcher_napi.h"
 #include "js_leak_watcher_ts.h"
 #include "sys_param.h"
-
 #include "hisysevent.h"
+#ifdef ENABLE_API_METRICS
+#include "histogram_plugin_macros.h"
+#endif
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD003D00
@@ -512,6 +514,32 @@ static napi_value DumpRawHeapSync(napi_env env, napi_callback_info info)
     return CreateUndefined(env);
 }
 
+static napi_value ApiRecord(napi_env env, napi_callback_info info)
+{
+#ifdef ENABLE_API_METRICS
+    size_t argc = 1;
+    napi_value args[1] = {nullptr};
+    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    napi_valuetype valType;
+    napi_typeof(env, args[0], &valType);
+    if (valType != napi_string) {
+        napi_throw_type_error(env, nullptr, "String expected");
+        return nullptr;
+    }
+
+    size_t strLen = 0;
+    napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
+
+    std::string value(strLen + 1, '\0');
+    napi_get_value_string_utf8(env, args[0], value.data(), strLen + 1, &strLen);
+
+    value.resize(strLen);
+
+    HISTOGRAM_BOOLEAN("PerformanceAnalysisKit.ApiCall." + value, 1);
+#endif
+    return CreateUndefined(env);
+}
+
 napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -529,6 +557,7 @@ napi_value DeclareJsLeakWatcherInterface(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("setDumpDelay", SetDumpDelay),
         DECLARE_NAPI_FUNCTION("getDumpStatus", GetDumpStatus),
         DECLARE_NAPI_FUNCTION("reportRawHeap", ReportRawHeap),
+        DECLARE_NAPI_FUNCTION("apiRecord", ApiRecord),
     };
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
     return exports;

@@ -13,4 +13,8 @@
 
 declare_args() {
   hichecker_support_asan = true
+  hichecker_hiviewdfx_api_metrics_enable = false
+  if (defined(global_parts_info) && defined(global_parts_info.hiviewdfx_api_metrics)) {
+    hichecker_hiviewdfx_api_metrics_enable = true
+  }
 }
