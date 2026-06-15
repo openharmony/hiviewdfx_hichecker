@@ -132,7 +132,9 @@ void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
 }
 
 //for test
+#ifdef JSLEAKWATHCER_UNITTEST
 bool TestCheckJsLeakWatcherParam(const char* bundleName)
 {
     return CheckJsLeakWatcherParam(bundleName);
 }
+#endif

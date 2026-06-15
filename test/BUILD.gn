@@ -96,7 +96,10 @@ if (support_jsapi) {
       "hitrace:hitrace_meter",
     ]
 
-    cflags = [ "-fstack-protector-strong" ]
+    cflags = [
+      "-fstack-protector-strong",
+      "-DJSLEAKWATHCER_UNITTEST"
+    ]
   }
 }
 
