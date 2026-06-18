@@ -772,7 +772,6 @@ let jsLeakWatcher = {
     }
   },
   enableLeakWatcher: (isEnabled: boolean, configs: Array<string> | LeakWatcherConfig, callback: Callback<Array<string>>) => {
-    jsLeakWatcherNative.apiRecord('enableLeakWatcher');
     if (isEnabled === undefined || isEnabled === null) {
       throw new BusinessError(ERROR_CODE_ENABLE_INVALID);
     }
@@ -791,6 +790,7 @@ let jsLeakWatcher = {
       shutdownJsLeakWatcher();
       return;
     }
+    jsLeakWatcherNative.apiRecord('enableLeakWatcher');
     getCustomAttribute(configs);
 
     const validConfig = ['CustomComponent', 'Window', 'NodeContainer', 'XComponent', 'Ability'];
