@@ -735,7 +735,7 @@ let jsLeakWatcher = {
   MonitorObjectType: MonitorObjectType,
   LeakWatcherConfig: {} as LeakWatcherConfig,
   watch: (obj, msg) => {
-    jsLeakWatcherNative.apiRecord("watch");
+    jsLeakWatcherNative.apiRecord('watch');
     if (obj === undefined || obj === null || msg === undefined || msg === null) {
       throw new BusinessError(ERROR_CODE_INVALID_PARAM);
     }
@@ -747,7 +747,7 @@ let jsLeakWatcher = {
     registry.register(obj, objMsg.hash);
   },
   check: () => {
-    jsLeakWatcherNative.apiRecord("check");
+    jsLeakWatcherNative.apiRecord('check');
     if (!enabled) {
       return '';
     }
@@ -755,14 +755,14 @@ let jsLeakWatcher = {
     return JSON.stringify(leakObjList);
   },
   dump: (filePath) => {
-    jsLeakWatcherNative.apiRecord("dump");
+    jsLeakWatcherNative.apiRecord('dump');
     if (filePath === undefined || filePath === null) {
       throw new BusinessError(ERROR_CODE_INVALID_PARAM);
     }
     return dumpInnerSync(filePath, false, false);
   },
   enable: (isEnable) => {
-    jsLeakWatcherNative.apiRecord("enable");
+    jsLeakWatcherNative.apiRecord('enable');
     if (isEnable === undefined || isEnable === null) {
       throw new BusinessError(ERROR_CODE_INVALID_PARAM);
     }
@@ -772,7 +772,7 @@ let jsLeakWatcher = {
     }
   },
   enableLeakWatcher: (isEnabled: boolean, configs: Array<string> | LeakWatcherConfig, callback: Callback<Array<string>>) => {
-    jsLeakWatcherNative.apiRecord("enableLeakWatcher");
+    jsLeakWatcherNative.apiRecord('enableLeakWatcher');
     if (isEnabled === undefined || isEnabled === null) {
       throw new BusinessError(ERROR_CODE_ENABLE_INVALID);
     }
