@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//base/hiviewdfx/hichecker/hichecker.gni")
 
 if (support_jsapi) {
   import("//build/config/components/ets_frontend/es2abc_config.gni")
@@ -77,6 +78,12 @@ ohos_shared_library("jsleakwatchernative") {
       "napi:ace_napi",
       "window_manager:libwm",
     ]
+    if (hichecker_hiviewdfx_api_metrics_enable) {
+      defines = [ "ENABLE_API_METRICS" ]
+      external_deps += [
+        "api_metrics:histogrammanager"
+      ]
+    }
     cflags = [ "-fstack-protector-strong" ]
     relative_install_dir = "module/hiviewdfx"
     subsystem_name = "hiviewdfx"
