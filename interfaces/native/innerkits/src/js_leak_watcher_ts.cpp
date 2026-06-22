@@ -130,3 +130,11 @@ void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
     napi_call_function(env, nvJsLeakWatcher, jsFuncEnableLeakWatcher, 3, args, &result);
     napi_close_handle_scope(env, scope);
 }
+
+//for test
+#ifdef JSLEAKWATHCER_UNITTEST
+bool TestCheckJsLeakWatcherParam(const char* bundleName)
+{
+    return CheckJsLeakWatcherParam(bundleName);
+}
+#endif
