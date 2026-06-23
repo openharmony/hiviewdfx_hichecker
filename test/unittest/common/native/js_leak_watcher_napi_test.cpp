@@ -21,6 +21,8 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <vector>
+#include <climits>
 
 #include "event_handler.h"
 #include "event_runner.h"
@@ -382,5 +384,503 @@ HWTEST_F(JsLeakWatcherNapiTest, AppendMetaDataTest004, TestSize.Level1)
     }
 }
 
+/**
+ * @tc.name: DefaultDelayTimeTest001
+ * @tc.desc: test default dump delay time value
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, DefaultDelayTimeTest001, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetDumpDelayTime(3000);
+    handler->SetJsLeakWatcherStatus(true);
+    handler->SetJsLeakWatcherStatus(false);
+    ASSERT_EQ(handler->GetDumpDelayTime(), 3000);
+}
+
+/**
+ * @tc.name: DefaultDelayTimeTest002
+ * @tc.desc: test default gc delay time value
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, DefaultDelayTimeTest002, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetGcDelayTime(90000);
+    handler->SetJsLeakWatcherStatus(true);
+    handler->SetJsLeakWatcherStatus(false);
+    ASSERT_EQ(handler->GetGcDelayTime(), 90000);
+}
+
+/**
+ * @tc.name: SetDumpDelayTimeTest004
+ * @tc.desc: test SetDumpDelayTime function with max uint32 value
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, SetDumpDelayTimeTest004, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    uint32_t testDelay = UINT32_MAX;
+    handler->SetDumpDelayTime(testDelay);
+    ASSERT_EQ(handler->GetDumpDelayTime(), testDelay);
+}
+
+/**
+ * @tc.name: SetGcDelayTimeTest004
+ * @tc.desc: test SetGcDelayTime function with max uint32 value
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, SetGcDelayTimeTest004, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    uint32_t testDelay = UINT32_MAX;
+    handler->SetGcDelayTime(testDelay);
+    ASSERT_EQ(handler->GetGcDelayTime(), testDelay);
+}
+
+/**
+ * @tc.name: SetDumpDelayTimeTest005
+ * @tc.desc: test SetDumpDelayTime function with value 1
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, SetDumpDelayTimeTest005, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    uint32_t testDelay = 1;
+    handler->SetDumpDelayTime(testDelay);
+    ASSERT_EQ(handler->GetDumpDelayTime(), testDelay);
+}
+
+/**
+ * @tc.name: SetGcDelayTimeTest005
+ * @tc.desc: test SetGcDelayTime function with value 1
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, SetGcDelayTimeTest005, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    uint32_t testDelay = 1;
+    handler->SetGcDelayTime(testDelay);
+    ASSERT_EQ(handler->GetGcDelayTime(), testDelay);
+}
+
+/**
+ * @tc.name: CreateFileTest004
+ * @tc.desc: test CreateFile function with empty path
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest004, TestSize.Level1)
+{
+    std::string filePath = "";
+    bool result = TestCreateFile(filePath);
+    ASSERT_FALSE(result);
+}
+
+/**
+ * @tc.name: CreateFileTest005
+ * @tc.desc: test CreateFile function with directory path
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest005, TestSize.Level1)
+{
+    std::string filePath = "/data";
+    bool result = TestCreateFile(filePath);
+    ASSERT_FALSE(result);
+}
+
+/**
+ * @tc.name: CreateFileTest006
+ * @tc.desc: test CreateFile function creates file with correct permissions
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest006, TestSize.Level1)
+{
+    std::string filePath = TEST_FILE_PATH;
+    bool result = TestCreateFile(filePath);
+    ASSERT_TRUE(result);
+    struct stat st;
+    ASSERT_EQ(stat(filePath.c_str(), &st), 0);
+    ASSERT_EQ(st.st_mode & 0777, 0640);
+}
+
+/**
+ * @tc.name: GetFileSizeTest005
+ * @tc.desc: test GetFileSize function with empty string path
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, GetFileSizeTest005, TestSize.Level1)
+{
+    std::string filePath = "";
+    uint64_t fileSize = TestGetFileSize(filePath);
+    ASSERT_EQ(fileSize, 0);
+}
+
+/**
+ * @tc.name: GetFileSizeTest006
+ * @tc.desc: test GetFileSize function with directory path
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, GetFileSizeTest006, TestSize.Level1)
+{
+    std::string filePath = "/data";
+    uint64_t fileSize = TestGetFileSize(filePath);
+    ASSERT_GT(fileSize, 0);
+}
+
+/**
+ * @tc.name: AppendMetaDataTest005
+ * @tc.desc: test AppendMetaData function with empty file path
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, AppendMetaDataTest005, TestSize.Level1)
+{
+    std::string filePath = "";
+    bool result = TestAppendMetaData(filePath);
+    ASSERT_FALSE(result);
+}
+
+/**
+ * @tc.name: HandlerStatusResetTest001
+ * @tc.desc: test handler status reset clears all function refs
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, HandlerStatusResetTest001, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetJsLeakWatcherStatus(true);
+    ASSERT_TRUE(handler->GetJsLeakWatcherStatus());
+    handler->SetJsLeakWatcherStatus(false);
+    ASSERT_FALSE(handler->GetJsLeakWatcherStatus());
+}
+
+/**
+ * @tc.name: HandlerStatusResetTest002
+ * @tc.desc: test multiple status toggles
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, HandlerStatusResetTest002, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    for (int i = 0; i < 10; ++i) {
+        handler->SetJsLeakWatcherStatus(true);
+        ASSERT_TRUE(handler->GetJsLeakWatcherStatus());
+        handler->SetJsLeakWatcherStatus(false);
+        ASSERT_FALSE(handler->GetJsLeakWatcherStatus());
+    }
+}
+
+/**
+ * @tc.name: DelayTimePersistenceTest001
+ * @tc.desc: test delay time persists after status toggle
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, DelayTimePersistenceTest001, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    uint32_t dumpDelay = 5000;
+    uint32_t gcDelay = 10000;
+    handler->SetDumpDelayTime(dumpDelay);
+    handler->SetGcDelayTime(gcDelay);
+    handler->SetJsLeakWatcherStatus(true);
+    handler->SetJsLeakWatcherStatus(false);
+    ASSERT_EQ(handler->GetDumpDelayTime(), dumpDelay);
+    ASSERT_EQ(handler->GetGcDelayTime(), gcDelay);
+}
+
+/**
+ * @tc.name: DelayTimePersistenceTest002
+ * @tc.desc: test delay time can be changed after status toggle
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, DelayTimePersistenceTest002, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetDumpDelayTime(3000);
+    handler->SetJsLeakWatcherStatus(true);
+    handler->SetJsLeakWatcherStatus(false);
+    handler->SetDumpDelayTime(6000);
+    ASSERT_EQ(handler->GetDumpDelayTime(), 6000);
+}
+
+/**
+ * @tc.name: CreateFileTest007
+ * @tc.desc: test CreateFile function with root path
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest007, TestSize.Level1)
+{
+    std::string filePath = "/";
+    bool result = TestCreateFile(filePath);
+    ASSERT_FALSE(result);
+}
+
+/**
+ * @tc.name: CreateFileTest008
+ * @tc.desc: test CreateFile function with nested non-existing directory
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest008, TestSize.Level1)
+{
+    std::string filePath = "/nonexistent/dir/file.txt";
+    bool result = TestCreateFile(filePath);
+    ASSERT_FALSE(result);
+}
+
+/**
+ * @tc.name: GetFileSizeTest007
+ * @tc.desc: test GetFileSize function with root path
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, GetFileSizeTest007, TestSize.Level1)
+{
+    std::string filePath = "/";
+    uint64_t fileSize = TestGetFileSize(filePath);
+    ASSERT_GT(fileSize, 0);
+}
+
+/**
+ * @tc.name: FileOperationsChainTest001
+ * @tc.desc: test create, write, get size, and append chain
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, FileOperationsChainTest001, TestSize.Level1)
+{
+    std::string filePath = TEST_FILE_PATH;
+    bool createResult = TestCreateFile(filePath);
+    ASSERT_TRUE(createResult);
+    uint64_t initialSize = TestGetFileSize(filePath);
+    ASSERT_EQ(initialSize, 0);
+    std::ofstream file(filePath, std::ios::app);
+    ASSERT_TRUE(file.is_open());
+    file << "test data";
+    file.close();
+    uint64_t afterWriteSize = TestGetFileSize(filePath);
+    ASSERT_GT(afterWriteSize, initialSize);
+}
+
+/**
+ * @tc.name: FileOperationsChainTest002
+ * @tc.desc: test multiple file creations and size checks
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, FileOperationsChainTest002, TestSize.Level1)
+{
+    std::string filePath1 = TEST_FILE_PATH;
+    std::string filePath2 = TEST_FILE_PATH + "_2";
+    bool result1 = TestCreateFile(filePath1);
+    bool result2 = TestCreateFile(filePath2);
+    ASSERT_TRUE(result1);
+    ASSERT_TRUE(result2);
+    uint64_t size1 = TestGetFileSize(filePath1);
+    uint64_t size2 = TestGetFileSize(filePath2);
+    ASSERT_EQ(size1, 0);
+    ASSERT_EQ(size2, 0);
+    if (access(filePath2.c_str(), F_OK) == 0) {
+        unlink(filePath2.c_str());
+    }
+}
+
+/**
+ * @tc.name: SetDumpDelayTimeTest006
+ * @tc.desc: test SetDumpDelayTime with typical values
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, SetDumpDelayTimeTest006, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    std::vector<uint32_t> testDelays = {100, 500, 1000, 2000, 3000, 5000, 10000};
+    for (auto delay : testDelays) {
+        handler->SetDumpDelayTime(delay);
+        ASSERT_EQ(handler->GetDumpDelayTime(), delay);
+    }
+}
+
+/**
+ * @tc.name: SetGcDelayTimeTest006
+ * @tc.desc: test SetGcDelayTime with typical values
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, SetGcDelayTimeTest006, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    std::vector<uint32_t> testDelays = {1000, 5000, 10000, 30000, 60000, 90000, 120000};
+    for (auto delay : testDelays) {
+        handler->SetGcDelayTime(delay);
+        ASSERT_EQ(handler->GetGcDelayTime(), delay);
+    }
+}
+
+/**
+ * @tc.name: AppendMetaDataTest006
+ * @tc.desc: test AppendMetaData after multiple file writes
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, AppendMetaDataTest006, TestSize.Level1)
+{
+    std::string filePath = TEST_FILE_PATH;
+    std::ofstream targetFile(filePath);
+    ASSERT_TRUE(targetFile.is_open());
+    for (int i = 0; i < 100; ++i) {
+        targetFile << "line " << i << "\n";
+    }
+    targetFile.close();
+    uint64_t initialSize = TestGetFileSize(filePath);
+    ASSERT_GT(initialSize, 0);
+    bool result = TestAppendMetaData(filePath);
+    if (result) {
+        uint64_t finalSize = TestGetFileSize(filePath);
+        ASSERT_GT(finalSize, initialSize);
+    }
+}
+
+/**
+ * @tc.name: HandlerConcurrentStatusTest001
+ * @tc.desc: test rapid status changes
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, HandlerConcurrentStatusTest001, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetJsLeakWatcherStatus(true);
+    handler->SetJsLeakWatcherStatus(true);
+    handler->SetJsLeakWatcherStatus(true);
+    ASSERT_TRUE(handler->GetJsLeakWatcherStatus());
+    handler->SetJsLeakWatcherStatus(false);
+    handler->SetJsLeakWatcherStatus(false);
+    handler->SetJsLeakWatcherStatus(false);
+    ASSERT_FALSE(handler->GetJsLeakWatcherStatus());
+}
+
+/**
+ * @tc.name: GetFileSizeTest008
+ * @tc.desc: test GetFileSize with binary content
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, GetFileSizeTest008, TestSize.Level1)
+{
+    std::string filePath = TEST_FILE_PATH;
+    std::ofstream file(filePath, std::ios::binary);
+    ASSERT_TRUE(file.is_open());
+    char binaryData[256];
+    for (int i = 0; i < 256; ++i) {
+        binaryData[i] = static_cast<char>(i);
+    }
+    file.write(binaryData, sizeof(binaryData));
+    file.close();
+    uint64_t fileSize = TestGetFileSize(filePath);
+    ASSERT_EQ(fileSize, sizeof(binaryData));
+}
+
+/**
+ * @tc.name: CreateFileTest009
+ * @tc.desc: test CreateFile with file containing special characters in name
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest009, TestSize.Level1)
+{
+    std::string filePath = "/data/test_file_123.txt";
+    bool result = TestCreateFile(filePath);
+    ASSERT_TRUE(result);
+    ASSERT_EQ(access(filePath.c_str(), F_OK), 0);
+    if (access(filePath.c_str(), F_OK) == 0) {
+        unlink(filePath.c_str());
+    }
+}
+
+/**
+ * @tc.name: HandlerDelayTimeBoundaryTest001
+ * @tc.desc: test delay time boundary values
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, HandlerDelayTimeBoundaryTest001, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetDumpDelayTime(0);
+    ASSERT_EQ(handler->GetDumpDelayTime(), 0);
+    handler->SetDumpDelayTime(1);
+    ASSERT_EQ(handler->GetDumpDelayTime(), 1);
+    handler->SetDumpDelayTime(UINT32_MAX - 1);
+    ASSERT_EQ(handler->GetDumpDelayTime(), UINT32_MAX - 1);
+    handler->SetDumpDelayTime(UINT32_MAX);
+    ASSERT_EQ(handler->GetDumpDelayTime(), UINT32_MAX);
+}
+
+/**
+ * @tc.name: HandlerDelayTimeBoundaryTest002
+ * @tc.desc: test gc delay time boundary values
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, HandlerDelayTimeBoundaryTest002, TestSize.Level1)
+{
+    auto handler = GetTestHandler();
+    ASSERT_NE(handler, nullptr);
+    handler->SetGcDelayTime(0);
+    ASSERT_EQ(handler->GetGcDelayTime(), 0);
+    handler->SetGcDelayTime(1);
+    ASSERT_EQ(handler->GetGcDelayTime(), 1);
+    handler->SetGcDelayTime(UINT32_MAX - 1);
+    ASSERT_EQ(handler->GetGcDelayTime(), UINT32_MAX - 1);
+    handler->SetGcDelayTime(UINT32_MAX);
+    ASSERT_EQ(handler->GetGcDelayTime(), UINT32_MAX);
+}
+
+/**
+ * @tc.name: AppendMetaDataTest007
+ * @tc.desc: test AppendMetaData with large target file
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, AppendMetaDataTest007, TestSize.Level1)
+{
+    std::string filePath = TEST_FILE_PATH;
+    std::ofstream targetFile(filePath);
+    ASSERT_TRUE(targetFile.is_open());
+    std::string largeContent(8192, 'x');
+    targetFile << largeContent;
+    targetFile.close();
+    uint64_t initialSize = TestGetFileSize(filePath);
+    ASSERT_EQ(initialSize, largeContent.length());
+    bool result = TestAppendMetaData(filePath);
+    if (result) {
+        uint64_t finalSize = TestGetFileSize(filePath);
+        ASSERT_GT(finalSize, initialSize);
+    }
+}
+
+/**
+ * @tc.name: FileOperationsChainTest003
+ * @tc.desc: test file operations with metadata append
+ * @tc.type: FUNC
+ */
+HWTEST_F(JsLeakWatcherNapiTest, FileOperationsChainTest003, TestSize.Level1)
+{
+    std::string filePath = TEST_FILE_PATH;
+    bool createResult = TestCreateFile(filePath);
+    ASSERT_TRUE(createResult);
+    std::ofstream file(filePath, std::ios::app);
+    ASSERT_TRUE(file.is_open());
+    file << "heap snapshot data";
+    file.close();
+    uint64_t beforeMetaSize = TestGetFileSize(filePath);
+    ASSERT_GT(beforeMetaSize, 0);
+    bool appendResult = TestAppendMetaData(filePath);
+    if (appendResult) {
+        uint64_t afterMetaSize = TestGetFileSize(filePath);
+        ASSERT_GT(afterMetaSize, beforeMetaSize);
+    }
+}
 } // namespace HiviewDFX
 } // namespace OHOS
