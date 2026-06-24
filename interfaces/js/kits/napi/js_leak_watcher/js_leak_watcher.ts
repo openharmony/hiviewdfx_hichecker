@@ -610,7 +610,7 @@ function unregisterAbilityLifecycleCallback() {
   });
 }
 
-function executeRegister(config: MonitorObjectType, currentAttempt = 0) {
+function executeRegister(config: MonitorObjectType) {
   retryMonitorObjectTypes = undefined;
   if (config & MonitorObjectType.CUSTOM_COMPONENT) {
     registerArkUIObjectLifeCycleCallback((weakRef, msg) => {
@@ -822,7 +822,7 @@ let jsLeakWatcher = {
 
     jsLeakWatcherNative.handleGCTask(() => {
       if (currentAttempt <= ATTEMPT_COUNT && retryMonitorObjectTypes !== undefined) {
-        executeRegister(retryMonitorObjectTypes, currentAttempt);
+        executeRegister(retryMonitorObjectTypes);
         currentAttempt += 1;
       }
       if (appState.isConfigObj) {
