@@ -20,6 +20,7 @@
 #include "hitrace_meter.h"
 #include "securec.h"
 #include "sys_param.h"
+#include "parameters.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD003D00
@@ -30,6 +31,17 @@
 #define JSLEAK_WATCHER_NAME_LEN 256
 
 static bool g_enableStatus = false;
+
+bool IsDebuggableHap()
+{
+    const char* debuggableEnv = getenv("HAP_DEBUGGABLE");
+    return debuggableEnv != nullptr && strcmp(debuggableEnv, "true") == 0;
+}
+
+bool IsRootVersion()
+{
+    return OHOS::system::GetBoolParameter("const.debuggable", false);
+}
 
 bool CheckJsLeakWatcherParam(const char* bundleName)
 {
