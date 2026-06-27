@@ -109,6 +109,10 @@ void CreateCallbackObject(napi_env env, napi_value* js_callback)
 void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
 {
     HITRACE_METER_NAME(HITRACE_TAG_APP, __PRETTY_FUNCTION__);
+    if (!IsRootVersion() && !IsDebuggableHap()) {
+        HILOG_ERROR(LOG_CORE, "user mode release hap is not allow");
+        return;
+    }
     bool ret = CheckJsLeakWatcherParam(bundleName.c_str());
     SetjsLeakWatcherEnableStatus(ret);
     if (!ret) {
