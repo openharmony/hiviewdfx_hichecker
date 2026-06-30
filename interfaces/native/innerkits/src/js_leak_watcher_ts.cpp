@@ -20,6 +20,7 @@
 #include "hitrace_meter.h"
 #include "securec.h"
 #include "sys_param.h"
+#include "parameters.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD003D00
@@ -30,6 +31,17 @@
 #define JSLEAK_WATCHER_NAME_LEN 256
 
 static bool g_enableStatus = false;
+
+bool IsDebuggableHap()
+{
+    const char* debuggableEnv = getenv("HAP_DEBUGGABLE");
+    return debuggableEnv != nullptr && strcmp(debuggableEnv, "true") == 0;
+}
+
+bool IsRootVersion()
+{
+    return OHOS::system::GetBoolParameter("const.debuggable", false);
+}
 
 bool CheckJsLeakWatcherParam(const char* bundleName)
 {
@@ -97,6 +109,10 @@ void CreateCallbackObject(napi_env env, napi_value* js_callback)
 void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
 {
     HITRACE_METER_NAME(HITRACE_TAG_APP, __PRETTY_FUNCTION__);
+    if (!IsRootVersion() && !IsDebuggableHap()) {
+        HILOG_ERROR(LOG_CORE, "user mode release hap is not allow");
+        return;
+    }
     bool ret = CheckJsLeakWatcherParam(bundleName.c_str());
     SetjsLeakWatcherEnableStatus(ret);
     if (!ret) {

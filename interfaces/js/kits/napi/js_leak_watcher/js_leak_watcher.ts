@@ -443,7 +443,13 @@ function deleteLastOldFile(filePath: string): void {
       suffix: ['.jsleaklist'],
     }
   };
-  let files = fs.listFileSync(filePath, listFileOption);
+  let files: string[];
+  try {
+    files = fs.listFileSync(filePath, listFileOption);
+  } catch (e) {
+    console.log('List files failed! ' + e);
+    return;
+  }
   if (files.length <= 0) {
     return;
   }
@@ -481,7 +487,13 @@ function deleteUnMatchDumpFile(filePath: string): void {
       suffix: ['.rawheap'],
     }
   };
-  let files = fs.listFileSync(filePath, listFileOption);
+  let files: string[];
+  try {
+    files = fs.listFileSync(filePath, listFileOption);
+  } catch (e) {
+    console.log('List files failed! ' + e);
+    return;
+  }
   for (let i = 0; i < files.length; i++) {
     let suffixOffset = files[i].lastIndexOf('.rawheap');
     if (suffixOffset <= 0) {
@@ -552,7 +564,13 @@ function deleteOldFile(filePath) {
       displayName: ['*.heapsnapshot', '*.jsleaklist', '*.rawheap'],
     }
   };
-  let files = fs.listFileSync(filePath, listFileOption);
+  let files: string[];
+  try {
+    files = fs.listFileSync(filePath, listFileOption);
+  } catch (e) {
+    console.log('List files failed! ' + e);
+    return;
+  }
   if (files.length > maxFileNum) {
     files.sort((a, b) => {
       return getTimestampByFileName(a) - getTimestampByFileName(b);
