@@ -225,7 +225,7 @@ static napi_value UnregisterArkUIObjectLifeCycleCallback(napi_env env, napi_call
         return nullptr;
     }
     uiContext->UnregisterArkUIObjectLifecycleCallback();
-    if (g_callbackRef != nullptr) {
+    if (env != nullptr && g_callbackRef != nullptr) {
         napi_delete_reference(env, g_callbackRef);
         g_callbackRef = nullptr;
     }

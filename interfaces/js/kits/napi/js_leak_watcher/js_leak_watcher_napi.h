@@ -110,15 +110,15 @@ private:
     }
     void Reset()
     {
-        if (dumpFuncRef_ != nullptr) {
+        if (env_ != nullptr && dumpFuncRef_ != nullptr) {
             napi_delete_reference(env_, dumpFuncRef_);
             dumpFuncRef_ = nullptr;
         }
-        if (gcFuncRef_ != nullptr) {
+        if (env_ != nullptr && gcFuncRef_ != nullptr) {
             napi_delete_reference(env_, gcFuncRef_);
             gcFuncRef_ = nullptr;
         }
-        if (shutdownFuncRef_ != nullptr) {
+        if (env_ != nullptr && shutdownFuncRef_ != nullptr) {
             napi_delete_reference(env_, shutdownFuncRef_);
             shutdownFuncRef_ = nullptr;
         }
