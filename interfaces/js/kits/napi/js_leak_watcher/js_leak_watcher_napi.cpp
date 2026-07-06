@@ -248,8 +248,10 @@ static napi_value RegisterWindowLifeCycleCallback(napi_env env, napi_callback_in
 
 static napi_value UnregisterWindowLifeCycleCallback(napi_env env, napi_callback_info info)
 {
-    WindowManager::GetInstance().UnregisterWindowLifeCycleCallback(g_listener);
-    g_listener->Reset();
+    if (g_listener != nullptr) {
+        WindowManager::GetInstance().UnregisterWindowLifeCycleCallback(g_listener);
+        g_listener->Reset();
+    }
     return CreateUndefined(env);
 }
 
