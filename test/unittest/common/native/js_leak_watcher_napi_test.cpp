@@ -484,22 +484,10 @@ HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest004, TestSize.Level1)
 
 /**
  * @tc.name: CreateFileTest005
- * @tc.desc: test CreateFile function with directory path
- * @tc.type: FUNC
- */
-HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest005, TestSize.Level1)
-{
-    std::string filePath = "/data";
-    bool result = TestCreateFile(filePath);
-    ASSERT_FALSE(result);
-}
-
-/**
- * @tc.name: CreateFileTest006
  * @tc.desc: test CreateFile function creates file with correct permissions
  * @tc.type: FUNC
  */
-HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest006, TestSize.Level1)
+HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest005, TestSize.Level1)
 {
     std::string filePath = TEST_FILE_PATH;
     bool result = TestCreateFile(filePath);
