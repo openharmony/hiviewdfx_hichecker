@@ -59,8 +59,10 @@ ohos_shared_library("libhichecker") {
     "../../../frameworks/native:libhichecker_source",
   ]
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "napi:ace_napi",
+    "node:node_header_notice",
     "hilog:libhilog", 
     "init:libbegetutil",
     "hitrace:hitrace_meter",

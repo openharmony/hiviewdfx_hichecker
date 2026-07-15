@@ -51,7 +51,9 @@ ohos_shared_library("jsleakwatcher") {
 
     external_deps = [
       "ets_runtime:libark_jsruntime",
+      "libuv:uv",
       "napi:ace_napi",
+      "node:node_header_notice",
     ]
     cflags = [ "-fstack-protector-strong" ]
     relative_install_dir = "module/hiviewdfx"
@@ -68,6 +70,7 @@ ohos_shared_library("jsleakwatchernative") {
 
     external_deps = [
       "ace_engine:libace_compatible",
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "ets_runtime:libark_jsruntime",
       "eventhandler:libeventhandler",
@@ -75,8 +78,10 @@ ohos_shared_library("jsleakwatchernative") {
       "hisysevent:libhisysevent",
       "init:libbegetutil",
       "ipc:ipc_single",
+      "libuv:uv",
       "napi:ace_napi",
       "window_manager:libwm",
+      "node:node_header_notice",
     ]
     if (hichecker_hiviewdfx_api_metrics_enable) {
       defines = [ "ENABLE_API_METRICS" ]

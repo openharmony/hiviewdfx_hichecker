@@ -26,6 +26,7 @@
         "deps": {
             "components": [
                 "api_metrics",
+                "bounds_checking_function",
                 "c_utils",
                 "ets_frontend",
                 "ets_runtime",
@@ -34,7 +35,9 @@
                 "init",
                 "hitrace",
                 "hisysevent",
+                "libuv",
                 "napi",
+                "node",
                 "runtime_core",
                 "ace_engine",
                 "eventhandler",
