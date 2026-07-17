@@ -41,6 +41,7 @@ if (support_jsapi) {
 }
 
 ohos_shared_library("jsleakwatcher") {
+  branch_protector_ret = "pac_ret"
   if (support_jsapi) {
     sources = [ "js_leak_watcher_module.cpp" ]
 
@@ -63,6 +64,7 @@ ohos_shared_library("jsleakwatcher") {
 }
 
 ohos_shared_library("jsleakwatchernative") {
+  branch_protector_ret = "pac_ret"
   if (support_jsapi) {
     sources = [ "js_leak_watcher_napi.cpp" ]
 
