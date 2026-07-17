@@ -61,6 +61,7 @@ if (support_jsapi) {
 
     external_deps = [
       "ace_engine:libace_compatible",
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "ets_runtime:libark_jsruntime",
       "eventhandler:libeventhandler",
@@ -68,7 +69,9 @@ if (support_jsapi) {
       "hisysevent:libhisysevent",
       "init:libbegetutil",
       "ipc:ipc_single",
+      "libuv:uv",
       "napi:ace_napi",
+      "node:node_header_notice",
       "window_manager:libwm",
     ]
 
@@ -89,8 +92,10 @@ if (support_jsapi) {
     deps = [ "../interfaces/native/innerkits:libhichecker" ]
 
     external_deps = [
+      "bounds_checking_function:libsec_shared",
       "c_utils:utils",
       "napi:ace_napi",
+      "node:node_header_notice",
       "hilog:libhilog", 
       "init:libbegetutil",
       "hitrace:hitrace_meter",
