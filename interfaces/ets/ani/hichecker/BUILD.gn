@@ -15,6 +15,7 @@ import("//build/config/components/ets_frontend/ets2abc_config.gni")
 import("//build/ohos.gni")
 
 ohos_shared_library("hichecker_ani") {
+  branch_protector_ret = "pac_ret"
   shlib_type = "ani"
   include_dirs = [ "include/", ]
 
