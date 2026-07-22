@@ -25,8 +25,6 @@ void SetjsLeakWatcherEnableStatus(bool checkStatus);
 
 bool GetjsLeakWatcherEnableStatus();
 
-#ifdef JSLEAKWATHCER_UNITTEST
 bool TestCheckJsLeakWatcherParam(const char* bundleName);
-#endif
 
 #endif //HIVIEWDFX_HICHECKER_JS_LEAK_WATCHER_TS_H
