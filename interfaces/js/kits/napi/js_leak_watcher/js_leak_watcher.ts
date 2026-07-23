@@ -411,7 +411,6 @@ function startDumptask(filePath, callback): void {
     }
     dumpInner(filePath, true, true, callback);
   }
-  return;
 }
 
 function getLeakList() {
