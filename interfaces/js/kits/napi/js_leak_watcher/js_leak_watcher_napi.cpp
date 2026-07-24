@@ -225,8 +225,10 @@ static napi_value UnregisterArkUIObjectLifeCycleCallback(napi_env env, napi_call
         return nullptr;
     }
     uiContext->UnregisterArkUIObjectLifecycleCallback();
-    napi_delete_reference(env, g_callbackRef);
-    g_callbackRef = nullptr;
+    if (env != nullptr && g_callbackRef != nullptr) {
+        napi_delete_reference(env, g_callbackRef);
+        g_callbackRef = nullptr;
+    }
     return CreateUndefined(env);
 }
 
@@ -246,8 +248,10 @@ static napi_value RegisterWindowLifeCycleCallback(napi_env env, napi_callback_in
 
 static napi_value UnregisterWindowLifeCycleCallback(napi_env env, napi_callback_info info)
 {
-    WindowManager::GetInstance().UnregisterWindowLifeCycleCallback(g_listener);
-    g_listener->Reset();
+    if (g_listener != nullptr) {
+        WindowManager::GetInstance().UnregisterWindowLifeCycleCallback(g_listener);
+        g_listener->Reset();
+    }
     return CreateUndefined(env);
 }
 
