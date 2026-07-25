@@ -804,11 +804,11 @@ let jsLeakWatcher = {
       return;
     }
     enabled = isEnabled;
-    jsLeakWatcherNative.apiRecord('enableLeakWatcher');
     if (!isEnabled) {
       shutdownJsLeakWatcher();
       return;
     }
+    jsLeakWatcherNative.apiRecord('enableLeakWatcher');
     getCustomAttribute(configs);
 
     const validConfig = ['CustomComponent', 'Window', 'NodeContainer', 'XComponent', 'Ability'];
