@@ -29,6 +29,7 @@ ohos_shared_library("jsleakwatcher_ani") {
   deps = [ "../../../native/innerkits:libhichecker" ]
 
   external_deps = [
+    "ace_engine:libace_compatible",
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "ets_runtime:libark_jsruntime",

@@ -23,6 +23,7 @@ import application from '@ohos.app.ability.application';
 import appManager from '@ohos.app.ability.appManager';
 import AbilityLifecycleCallback from '@ohos.app.ability.AbilityLifecycleCallback';
 import UIAbility from '@ohos.app.ability.UIAbility';
+import { ExtendableComponent } from '@ohos.arkui.component';
 
 const SANDBOX_PATH: string = '/data/storage/el2/base/files/';
 const JSLEAK_ROOT_DIR_NAME: string = 'jsleak';
@@ -87,13 +88,25 @@ native function handleDumpTask(callback: () => void): void;
 native function handleGCTask(callback: () => void): void;
 native function handleShutdownTask(callback: () => void): void;
 native function removeTask(): void;
-native function registerArkUIObjectLifeCycleCallback(
+// native function 用于 NodeContainer/XComponent 的生命周期回调(C++ 实现,通过 UIContext 注册)。
+// declare function 用于 CustomComponent 的生命周期回调(ArkUI 框架全局函数,运行时由 arkoala.abc 提供)。
+// 两者是独立机制,需分别注册/注销。
+native function registerArkUIObjectLifeCycleCallbackNative(
   callback: (weakRef: WeakRef<object>, msg: string) => void): boolean;
-native function unregisterArkUIObjectLifeCycleCallback(): void;
-native function getClassName(obj: object): string;
+native function unregisterArkUIObjectLifeCycleCallbackNative(): void;
+
+declare function registerArkUIObjectLifeCycleCallback(
+  callback: (weakRef: WeakRef<object>, msg: string) => void): void;
+declare function unregisterArkUIObjectLifeCycleCallback(): void;
 
 class LeakWatcherAbilityCallback extends AbilityLifecycleCallback {
   onAbilityDestroy(ability: UIAbility): void {
+    if (appState.isConfigObj) {
+      let exclList: string[] = leakWatcherConfig.exclusionList ?? [];
+      let name: string = Class.of(ability as object).getName();
+      let skip: boolean = exclList.some((item: string) => item.toLowerCase() === name.toLowerCase());
+      if (skip) { return; }
+    }
     registerObject(ability, '');
   }
 }
@@ -241,6 +254,7 @@ function deleteLastOldFile(filePath: string): void {
   } catch (e) {
     console.log('Delete files failed! ' + e);
   }
+  console.log(`delete same process heap files ${base}`);
 }
 
 function deleteUnMatchDumpFile(filePath: string): void {
@@ -262,6 +276,7 @@ function deleteUnMatchDumpFile(filePath: string): void {
     if (!fileIo.accessSync(lp)) {
       try { fileIo.unlinkSync(filePath + '/' + files[i]); }
       catch (e) { console.log('Delete files failed! ' + e); return; }
+      console.warn(`delete ${files[i]} which no match jsleaklist`);
     }
   }
 }
@@ -282,6 +297,7 @@ function deleteOldFile(filePath: string): void {
     files.sort((a: string, b: string) => getTimestampByFileName(a) - getTimestampByFileName(b));
     for (let i: int = 0; i < files.length - maxFileNum; i++) {
       fileIo.unlinkSync(filePath + '/' + files[i]);
+      console.log(`File: ${files[i]} is deleted.`);
       let ts: string = getTimestampByFileName(files[i]).toString();
       if (i + 1 < files.length && files[i + 1].includes(ts)) {
         fileIo.unlinkSync(filePath + '/' + files[i + 1]);
@@ -346,7 +362,7 @@ function getJsleaklistFile(filePath: string, needSandBox: boolean, isRawHeap: bo
     if (firstDump) { firstDump = false; deleteUnMatchDumpFile(filePath); }
     else { deleteLastOldFile(filePath); }
   }
-  let f = fileIo.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist',
+  let f = fileIo.openSync(filePath + '/' + getHeapBaseName(dumpStatus ? false : true) + '.jsleaklist',
     fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE);
   let lol: ObjMsg[] = getLeakList();
   let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
@@ -409,6 +425,7 @@ function dumpInner(filePath: string, needSandBox: boolean, isRawHeap: boolean,
   if (!dumpStatus) { getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback); return []; }
   try {
     createHeapDumpFile(filePath, isRawHeap, false, (code: int) => {
+      console.log('createHeapDumpFile begin!');
       getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback);
     });
   } catch (error) {
@@ -418,7 +435,8 @@ function dumpInner(filePath: string, needSandBox: boolean, isRawHeap: boolean,
   return [];
 }
 
-function monitorLeakIDandWhitelist(obj: object, objName: string, objId: number): boolean {
+function monitorLeakIDandWhitelist(obj: object, objName: string): boolean {
+  let objId: number = (obj instanceof ExtendableComponent) ? obj.getUniqueId() : -1;
   let uniqueIds: number[] = leakWatcherConfig.objectUniqueIDs ?? [];
   if (uniqueIds.length > 0 && !uniqueIds.includes(objId)) {
     console.log(`The ID of the monitored object does not exist.`);
@@ -438,7 +456,7 @@ function monitorLeakIDandWhitelist(obj: object, objName: string, objId: number):
 function registerObject(obj: object, msg: string): void {
   if (obj === null || obj === undefined) { return; }
   let hash: number = util.getHash(obj as RecordData);
-  let objName: string = getClassName(obj);
+  let objName: string = Class.of(obj).getName();
   watchObjMap.set(hash, { hash: hash, name: objName, msg: msg });
   registry.register(obj, hash);
 }
@@ -523,6 +541,7 @@ function startDumptask(filePath: string, callback: (fileList: string[]) => void)
 
 function shutdownJsLeakWatcher(): void {
   removeTask();
+  unregisterArkUIObjectLifeCycleCallbackNative();
   unregisterArkUIObjectLifeCycleCallback();
   if (lifecycleId !== -1) {
     let appCtx = application.getApplicationContextInstance();
@@ -537,21 +556,19 @@ function shutdownJsLeakWatcher(): void {
 function executeRegister(mask: int): void {
   retryMask = 0;
   if ((mask & 1) !== 0) {
-    let ret: boolean = registerArkUIObjectLifeCycleCallback((wr: WeakRef<object>, msg: string) => {
+    registerArkUIObjectLifeCycleCallback((wr: WeakRef<object>, msg: string) => {
       if (wr === null || wr === undefined) { return; }
       let obj: object | undefined = wr.deref();
       if (obj === undefined) { return; }
       if (appState.isConfigObj) {
-        let objName: string = getClassName(obj);
-        let objId: number = util.getHash(obj as RecordData);
-        if (monitorLeakIDandWhitelist(obj, objName, objId)) { return; }
+        let objName: string = Class.of(obj).getName();
+        if (monitorLeakIDandWhitelist(obj, objName)) { return; }
       }
       registerObject(obj, msg);
     });
-    if (!ret) { retryMask |= 1; }
   }
   if ((mask & 4) !== 0 || (mask & 8) !== 0) {
-    let ret: boolean = registerArkUIObjectLifeCycleCallback((wr: WeakRef<object>) => {
+    let ret: boolean = registerArkUIObjectLifeCycleCallbackNative((wr: WeakRef<object>) => {
       if (wr === null || wr === undefined) { return; }
       let obj: object | undefined = wr.deref();
       if (obj === undefined) { return; }

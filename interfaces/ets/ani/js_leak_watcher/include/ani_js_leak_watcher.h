@@ -24,9 +24,20 @@
 #include "ani.h"
 #include "event_handler.h"
 #include "event_runner.h"
+#include "ui/view/ui_context.h"
 
 namespace OHOS {
 namespace HiviewDFX {
+
+// ANI 侧 ArkUI 生命周期回调数据结构,与 ace_engine 中
+// common_module.cpp 的 ArkUIObjectLifecycleData 保持一致。
+// 当 ArkUI 触发生命周期回调时,void* data 指向此结构体。
+struct ArkUIObjectLifecycleData {
+    ani_object weakRef;
+    ani_string className;
+    ani_string nodeType;
+    ani_long nodePtr;
+};
 
 constexpr uint32_t DUMP_EVENT_ID = 0;
 constexpr uint32_t GC_EVENT_ID = 1;

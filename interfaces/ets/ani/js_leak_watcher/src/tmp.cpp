@@ -23,11 +23,23 @@
 #undef LOG_TAG
 #define LOG_TAG "JSLEAK_WATCHER_TMP"
 
-// Forward declarations for libarkruntime exported symbols (internal_api.cpp)
-// Declared as extern to avoid cross-component include of internal_api.h
+// 临时占位实现:ark::ets::interop::js::IsHybridMode() 和 GetEcmaVM() 定义在
+// runtime_core 的 internal_api.cpp 中,但该文件在 OHOS 标准构建中未被编译进
+// libarkruntime.so / libark_jsruntime.so,导致链接时 undefined symbol。
+// 等待第三方提供 ANI 友好的 DumpHeapSnapshot 接口后,删除本文件即可。
 namespace ark::ets::interop::js {
-extern bool IsHybridMode();
-extern const void *GetEcmaVM();
+bool IsHybridMode()
+{
+    // 占位:始终返回 false,DumpHeapSnapshotImpl 会因此直接报错返回,
+    // 不影响 so 加载和其他 native 函数的注册。
+    return false;
+}
+
+const void *GetEcmaVM()
+{
+    // 占位:返回 nullptr,调用方会检查并报错返回。
+    return nullptr;
+}
 }
 
 namespace OHOS {

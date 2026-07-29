@@ -157,6 +157,41 @@ uint64_t GetFileSize(const std::string &filePath)
     return st.st_size;
 }
 
+static void CloseFileWithError(FILE *file, const char *name)
+{
+    if (fclose(file) != 0) {
+        HILOG_ERROR(LOG_CORE, "AppendMetaData fclose %{public}s failed", name);
+    }
+}
+
+static bool WriteMetaData(FILE *targetFile, FILE *metaDataFile)
+{
+    constexpr auto buffSize = 1024;
+    char buff[buffSize] = {0};
+    size_t readSize = 0;
+    while ((readSize = fread(buff, 1, buffSize, metaDataFile)) > 0) {
+        if (fwrite(buff, 1, readSize, targetFile) != readSize) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool WriteFileSize(FILE *targetFile, uint32_t size)
+{
+    return fwrite(&size, sizeof(size), 1, targetFile) == 1;
+}
+
+static void CloseAllFiles(FILE *targetFile, FILE *metaDataFile)
+{
+    if (targetFile != nullptr) {
+        CloseFileWithError(targetFile, "targetFile");
+    }
+    if (metaDataFile != nullptr) {
+        CloseFileWithError(metaDataFile, "metaDataFile");
+    }
+}
+
 bool AppendMetaData(const std::string &filePath)
 {
 #ifdef __aarch64__
@@ -172,31 +207,22 @@ bool AppendMetaData(const std::string &filePath)
     }
     FILE *metaDataFile = fopen(metaDataPath, "rb");
     if (metaDataFile == nullptr) {
-        fclose(targetFile);
+        CloseFileWithError(targetFile, "targetFile");
         return false;
     }
-    constexpr auto buffSize = 1024;
-    char buff[buffSize] = {0};
-    size_t readSize = 0;
-    while ((readSize = fread(buff, 1, buffSize, metaDataFile)) > 0) {
-        if (fwrite(buff, 1, readSize, targetFile) != readSize) {
-            fclose(targetFile);
-            fclose(metaDataFile);
-            return false;
-        }
-    }
-    if (fwrite(&rawHeapFileSize, sizeof(rawHeapFileSize), 1, targetFile) != 1) {
-        fclose(targetFile);
-        fclose(metaDataFile);
+    if (!WriteMetaData(targetFile, metaDataFile)) {
+        CloseAllFiles(targetFile, metaDataFile);
         return false;
     }
-    if (fwrite(&metaDataFileSize, sizeof(metaDataFileSize), 1, targetFile) != 1) {
-        fclose(targetFile);
-        fclose(metaDataFile);
+    if (!WriteFileSize(targetFile, rawHeapFileSize)) {
+        CloseAllFiles(targetFile, metaDataFile);
         return false;
     }
-    fclose(targetFile);
-    fclose(metaDataFile);
+    if (!WriteFileSize(targetFile, metaDataFileSize)) {
+        CloseAllFiles(targetFile, metaDataFile);
+        return false;
+    }
+    CloseAllFiles(targetFile, metaDataFile);
     return true;
 }
 
@@ -275,9 +301,36 @@ static void RemoveTask(ani_env *env)
     g_handler->SetJsLeakWatcherStatus(false);
 }
 
+static void ExecuteDumpCallback(ani_ref gCallback, uint8_t retcode)
+{
+    ani_env *workerEnv = AttachAniEnv(g_aniVm);
+    if (workerEnv == nullptr) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap callback AttachAniEnv failed");
+        return;
+    }
+    ani_size nrRefs = 16;
+    if (workerEnv->CreateLocalScope(nrRefs) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap callback CreateLocalScope failed");
+        return;
+    }
+    if (JsLeakWatcherAniUtil::IsRefUndefined(workerEnv, gCallback)) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap callback gCallback undefined");
+        workerEnv->DestroyLocalScope();
+        return;
+    }
+    ani_object retCodeObj = JsLeakWatcherAniUtil::CreateInt(workerEnv, retcode);
+    ani_ref args[1] = {static_cast<ani_ref>(retCodeObj)};
+    ani_ref ret {};
+    if (workerEnv->FunctionalObject_Call(reinterpret_cast<ani_fn_object>(gCallback), 1, args, &ret)
+        != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap callback FunctionalObject_Call failed");
+    }
+    workerEnv->DestroyLocalScope();
+    workerEnv->GlobalReference_Delete(gCallback);
+}
+
 static void DumpRawHeap(ani_env *env, ani_string filePathAni, ani_ref callbackRef)
 {
-    HILOG_INFO(LOG_CORE, "DumpRawHeap begin!");
     std::string filePath;
     if (JsLeakWatcherAniUtil::ParseAniString(env, filePathAni, filePath) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "DumpRawHeap ParseAniString failed");
@@ -287,42 +340,19 @@ static void DumpRawHeap(ani_env *env, ani_string filePathAni, ani_ref callbackRe
         HILOG_ERROR(LOG_CORE, "DumpRawHeap CreateFile failed");
         return;
     }
-        ani_ref gCallback = JsLeakWatcherAniUtil::CreateGlobalReference(env, callbackRef);
+    ani_ref gCallback = JsLeakWatcherAniUtil::CreateGlobalReference(env, callbackRef);
     if (g_aniVm == nullptr) {
         g_aniVm = JsLeakWatcherAniUtil::GetAniVm(env);
     }
-        auto callback = [gCallback, filePath](uint8_t retcode) {
+    auto callback = [gCallback, filePath](uint8_t retcode) {
         HILOG_INFO(LOG_CORE, "DumpRawHeap callback get retcode: %{public}d", retcode);
         AppendMetaData(filePath);
-                auto handler = GetLeakWatcherHandler();
+        auto handler = GetLeakWatcherHandler();
         if (handler == nullptr) {
             return;
         }
         handler->PostTask([gCallback, retcode]() {
-            ani_env *workerEnv = AttachAniEnv(g_aniVm);
-            if (workerEnv == nullptr) {
-                HILOG_ERROR(LOG_CORE, "DumpRawHeap callback AttachAniEnv failed");
-                return;
-            }
-            ani_size nrRefs = 16;
-            if (workerEnv->CreateLocalScope(nrRefs) != ANI_OK) {
-                HILOG_ERROR(LOG_CORE, "DumpRawHeap callback CreateLocalScope failed");
-                return;
-            }
-            if (JsLeakWatcherAniUtil::IsRefUndefined(workerEnv, gCallback)) {
-                HILOG_ERROR(LOG_CORE, "DumpRawHeap callback gCallback undefined");
-                workerEnv->DestroyLocalScope();
-                return;
-            }
-                        ani_object retCodeObj = JsLeakWatcherAniUtil::CreateInt(workerEnv, retcode);
-            ani_ref args[1] = {static_cast<ani_ref>(retCodeObj)};
-            ani_ref ret {};
-            if (workerEnv->FunctionalObject_Call(reinterpret_cast<ani_fn_object>(gCallback), 1, args, &ret)
-                != ANI_OK) {
-                HILOG_ERROR(LOG_CORE, "DumpRawHeap callback FunctionalObject_Call failed");
-            }
-            workerEnv->DestroyLocalScope();
-                        workerEnv->GlobalReference_Delete(gCallback);
+            ExecuteDumpCallback(gCallback, retcode);
         }, "DumpRawHeapCallback", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
     };
     DumpHeapSnapshotImplAsync(filePath, callback);
@@ -347,20 +377,71 @@ static void DumpRawHeapSync(ani_env *env, ani_string filePathAni)
     AppendMetaData(filePath);
 }
 
+// ArkUI 对象生命周期回调:从 void* data 中提取 weakRef 并调用 .ets 回调。
+// NAPI 侧只传 1 个参数(weakRef),msg 为 undefined,此处保持一致。
+static void ExecuteArkUILifecycleCallback(void *data)
+{
+    ani_env *aniEnv = GetAniEnv(g_aniVm);
+    if (aniEnv == nullptr) {
+        HILOG_ERROR(LOG_CORE, "ArkUILifecycleCallback GetAniEnv failed");
+        return;
+    }
+    if (JsLeakWatcherAniUtil::IsRefUndefined(aniEnv, g_arkUICallbackRef)) {
+        HILOG_ERROR(LOG_CORE, "ArkUILifecycleCallback g_arkUICallbackRef undefined");
+        return;
+    }
+    if (data == nullptr) {
+        HILOG_ERROR(LOG_CORE, "ArkUILifecycleCallback data is null");
+        return;
+    }
+    auto *lifecycleData = static_cast<ArkUIObjectLifecycleData *>(data);
+    ani_size nrRefs = 16;
+    if (aniEnv->CreateLocalScope(nrRefs) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ArkUILifecycleCallback CreateLocalScope failed");
+        return;
+    }
+    ani_ref args[1] = { static_cast<ani_ref>(lifecycleData->weakRef) };
+    ani_ref ret {};
+    if (aniEnv->FunctionalObject_Call(reinterpret_cast<ani_fn_object>(g_arkUICallbackRef),
+        1, args, &ret) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ArkUILifecycleCallback FunctionalObject_Call failed");
+    }
+    aniEnv->DestroyLocalScope();
+}
+
+// 通过 ace_kit UIContext 向 ArkUI 框架注册对象生命周期回调。
+// ArkUI 销毁对象时触发回调,void* data 指向 ArkUIObjectLifecycleData,
+// 其中 weakRef 是被回收对象的弱引用。回调将其传回 .ets 层。
 static ani_boolean RegisterArkUIObjectLifeCycleCallback(ani_env *env, ani_ref funcRef)
 {
     if (JsLeakWatcherAniUtil::IsRefUndefined(env, funcRef)) {
         return ANI_FALSE;
     }
+    auto uiContext = OHOS::Ace::Kit::UIContext::Current();
+    if (uiContext == nullptr) {
+        HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback UIContext is null");
+        return ANI_FALSE;
+    }
     g_arkUICallbackRef = JsLeakWatcherAniUtil::CreateGlobalReference(env, funcRef);
+    if (JsLeakWatcherAniUtil::IsRefUndefined(env, g_arkUICallbackRef)) {
+        HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback CreateGlobalReference failed");
+        return ANI_FALSE;
+    }
     if (g_aniVm == nullptr) {
         g_aniVm = JsLeakWatcherAniUtil::GetAniVm(env);
     }
+    uiContext->RegisterArkUIObjectLifecycleCallback([](void *data) {
+        ExecuteArkUILifecycleCallback(data);
+    });
     return ANI_TRUE;
 }
 
 static void UnregisterArkUIObjectLifeCycleCallback(ani_env *env)
 {
+    auto uiContext = OHOS::Ace::Kit::UIContext::Current();
+    if (uiContext != nullptr) {
+        uiContext->UnregisterArkUIObjectLifecycleCallback();
+    }
     ani_env *aniEnv = GetAniEnv(g_aniVm);
     if (aniEnv != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(aniEnv, g_arkUICallbackRef)) {
         aniEnv->GlobalReference_Delete(g_arkUICallbackRef);
@@ -381,40 +462,6 @@ static ani_int GetPid(ani_env *env)
 static ani_int GetTid(ani_env *env)
 {
     return static_cast<ani_int>(gettid());
-}
-
-static ani_string GetClassName(ani_env *env, ani_object obj)
-{
-    ani_ref strRef {};
-        if (env->Object_CallMethodByName_Ref(obj, "toString", ":C{std.core.String}", &strRef) != ANI_OK) {
-        ani_string empty {};
-        env->String_NewUTF8("", 0, &empty);
-        return empty;
-    }
-    if (JsLeakWatcherAniUtil::IsRefUndefined(env, strRef)) {
-        ani_string empty {};
-        env->String_NewUTF8("", 0, &empty);
-        return empty;
-    }
-    ani_string aniStr = static_cast<ani_string>(strRef);
-    std::string str;
-    if (JsLeakWatcherAniUtil::ParseAniString(env, aniStr, str) != ANI_OK) {
-        ani_string empty {};
-        env->String_NewUTF8("", 0, &empty);
-        return empty;
-    }
-    // toString() 返回 "[object ClassName]" 格式, 提取类名
-    // 也可能直接返回类名, 取实际值
-    const std::string prefix = "[object ";
-    const std::string suffix = "]";
-    if (str.size() > prefix.size() + suffix.size() &&
-        str.compare(0, prefix.size(), prefix) == 0 &&
-        str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0) {
-        str = str.substr(prefix.size(), str.size() - prefix.size() - suffix.size());
-    }
-    ani_string result {};
-    env->String_NewUTF8(str.c_str(), str.size(), &result);
-    return result;
 }
 
 ani_status ANI_ConstructorImpl(ani_vm *vm, uint32_t *result)
@@ -442,11 +489,10 @@ ani_status ANI_ConstructorImpl(ani_vm *vm, uint32_t *result)
         ani_native_function {"handleGCTask", nullptr, reinterpret_cast<void *>(HandleGCTask)},
         ani_native_function {"handleShutdownTask", nullptr, reinterpret_cast<void *>(HandleShutdownTask)},
         ani_native_function {"removeTask", nullptr, reinterpret_cast<void *>(RemoveTask)},
-        ani_native_function {"registerArkUIObjectLifeCycleCallback", nullptr,
+        ani_native_function {"registerArkUIObjectLifeCycleCallbackNative", nullptr,
             reinterpret_cast<void *>(RegisterArkUIObjectLifeCycleCallback)},
-        ani_native_function {"unregisterArkUIObjectLifeCycleCallback", nullptr,
+        ani_native_function {"unregisterArkUIObjectLifeCycleCallbackNative", nullptr,
             reinterpret_cast<void *>(UnregisterArkUIObjectLifeCycleCallback)},
-        ani_native_function {"getClassName", nullptr, reinterpret_cast<void *>(GetClassName)},
     };
     if (ANI_OK != env->Namespace_BindNativeFunctions(ns, methods.data(), methods.size())) {
         HILOG_ERROR(LOG_CORE, "Namespace_BindNativeFunctions failed");
