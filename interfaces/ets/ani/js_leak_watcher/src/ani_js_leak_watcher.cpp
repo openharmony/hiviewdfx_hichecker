@@ -353,7 +353,7 @@ static void DumpRawHeap(ani_env *env, ani_string filePathAni, ani_ref callbackRe
         }
         handler->PostTask([gCallback, retcode]() {
             ExecuteDumpCallback(gCallback, retcode);
-        }, "DumpRawHeapCallback", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
+            }, "DumpRawHeapCallback", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
     };
     DumpHeapSnapshotImplAsync(filePath, callback);
 }
