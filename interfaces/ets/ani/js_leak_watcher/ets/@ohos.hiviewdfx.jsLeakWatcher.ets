@@ -220,7 +220,7 @@ function getLeakList(): ObjMsg[] {
 }
 
 function getTimestampByFileName(fileName: string): int {
-  let regex: RegExp = new RegExp('(\\\\d+)\\\\.(heapsnapshot|jsleaklist|rawheap)');
+  let regex: RegExp = new RegExp('(\\d+)\\.(heapsnapshot|jsleaklist|rawheap)');
   let match: RegExpMatchArray | null = fileName.match(regex);
   if (match !== null && match.length > 1) {
     return parseInt(match[1] as string).toInt();

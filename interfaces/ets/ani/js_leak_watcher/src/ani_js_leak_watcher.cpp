@@ -306,16 +306,22 @@ static void ExecuteDumpCallback(ani_ref gCallback, uint8_t retcode)
     ani_env *workerEnv = AttachAniEnv(g_aniVm);
     if (workerEnv == nullptr) {
         HILOG_ERROR(LOG_CORE, "DumpRawHeap callback AttachAniEnv failed");
+        ani_env *fallbackEnv = GetAniEnv(g_aniVm);
+        if (fallbackEnv != nullptr) {
+            fallbackEnv->GlobalReference_Delete(gCallback);
+        }
         return;
     }
     ani_size nrRefs = 16;
     if (workerEnv->CreateLocalScope(nrRefs) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "DumpRawHeap callback CreateLocalScope failed");
+        workerEnv->GlobalReference_Delete(gCallback);
         return;
     }
     if (JsLeakWatcherAniUtil::IsRefUndefined(workerEnv, gCallback)) {
         HILOG_ERROR(LOG_CORE, "DumpRawHeap callback gCallback undefined");
         workerEnv->DestroyLocalScope();
+        workerEnv->GlobalReference_Delete(gCallback);
         return;
     }
     ani_object retCodeObj = JsLeakWatcherAniUtil::CreateInt(workerEnv, retcode);
@@ -349,6 +355,10 @@ static void DumpRawHeap(ani_env *env, ani_string filePathAni, ani_ref callbackRe
         AppendMetaData(filePath);
         auto handler = GetLeakWatcherHandler();
         if (handler == nullptr) {
+            ani_env *env = GetAniEnv(g_aniVm);
+            if (env != nullptr) {
+                env->GlobalReference_Delete(gCallback);
+            }
             return;
         }
         handler->PostTask([gCallback, retcode]() {
