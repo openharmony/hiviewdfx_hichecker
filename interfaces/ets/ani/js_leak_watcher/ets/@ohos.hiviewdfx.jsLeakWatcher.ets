@@ -103,7 +103,7 @@ class LeakWatcherAbilityCallback extends AbilityLifecycleCallback {
   onAbilityDestroy(ability: UIAbility): void {
     if (appState.isConfigObj) {
       let exclList: string[] = leakWatcherConfig.exclusionList ?? [];
-      let name: string = Class.of(ability as object).getName();
+      let name: string = ability.context.abilityInfo.name;
       let skip: boolean = exclList.some((item: string) => item.toLowerCase() === name.toLowerCase());
       if (skip) { return; }
     }
@@ -185,6 +185,17 @@ function toInt(v: number | undefined, def: int): int {
     return def;
   }
   return (v as number).toInt();
+}
+
+// Class.of(obj).getName() 返回含命名空间的完整类名(如 "module.MyComponent"),
+// 对齐 NAPI obj.constructor.name 只返回类名(如 "MyComponent")。
+function getShortClassName(obj: object): string {
+  let fullName: string = Class.of(obj).getName();
+  let dotIdx: int = fullName.lastIndexOf('.');
+  if (dotIdx >= 0 && dotIdx < fullName.length - 1) {
+    return fullName.substring(dotIdx + 1);
+  }
+  return fullName;
 }
 
 function convertToMask(configArray: string[]): int {
@@ -456,7 +467,7 @@ function monitorLeakIDandWhitelist(obj: object, objName: string): boolean {
 function registerObject(obj: object, msg: string): void {
   if (obj === null || obj === undefined) { return; }
   let hash: number = util.getHash(obj as RecordData);
-  let objName: string = Class.of(obj).getName();
+  let objName: string = getShortClassName(obj);
   watchObjMap.set(hash, { hash: hash, name: objName, msg: msg });
   registry.register(obj, hash);
 }
@@ -561,7 +572,7 @@ function executeRegister(mask: int): void {
       let obj: object | undefined = wr.deref();
       if (obj === undefined) { return; }
       if (appState.isConfigObj) {
-        let objName: string = Class.of(obj).getName();
+        let objName: string = getShortClassName(obj);
         if (monitorLeakIDandWhitelist(obj, objName)) { return; }
       }
       registerObject(obj, msg);
