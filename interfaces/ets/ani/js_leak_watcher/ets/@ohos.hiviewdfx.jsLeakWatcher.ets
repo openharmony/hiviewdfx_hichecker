@@ -623,9 +623,8 @@ export function dump(filePath: string): string[] {
   return dumpInnerSync(filePath, false, false);
 }
 
-export function enableLeakWatcher(isEnabled: boolean,
-  configs: string[] | LeakWatcherConfig,
-  callback: (fileList: string[]) => void): void {
+function enableLeakWatcherWithArray(isEnabled: boolean,
+  configs: string[], callback: (fileList: string[]) => void): void {
   if (isEnabled === undefined || isEnabled === null) { throwBusinessError(ERROR_CODE_ENABLE_INVALID); }
   if (configs === undefined || configs === null) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
   if (callback === undefined || callback === null) { throwBusinessError(ERROR_CODE_CALLBACK_INVALID); }
@@ -633,39 +632,49 @@ export function enableLeakWatcher(isEnabled: boolean,
   enabled = isEnabled;
   if (!isEnabled) { shutdownJsLeakWatcher(); return; }
 
-  let configArray: string[] = [];
-  let isConfigObj: boolean = false;
-  if (configs instanceof Array) {
-    configArray = configs as string[];
-  } else {
-    isConfigObj = true;
-    appState.isConfigObj = true;
-    let cfg: LeakWatcherConfig = configs as LeakWatcherConfig;
-    if (cfg.exclusionList !== undefined) { leakWatcherConfig.exclusionList = cfg.exclusionList; }
-    if (cfg.objectUniqueIDs !== undefined) { leakWatcherConfig.objectUniqueIDs = cfg.objectUniqueIDs; }
-    let ci: int = toInt(cfg.checkInterval, MIN_CHECK_INTERVAL);
-    let dh: int = toInt(cfg.dumpHeapWaitTimeMs, toInt(leakWatcherConfig.dumpHeapWaitTimeMs, 5000));
-    if (ci > MIN_CHECK_INTERVAL && dh < ci) {
-      setGcDelay(ci);
-      setDumpDelay(dh);
-    } else {
-      setGcDelay(toInt(leakWatcherConfig.checkInterval, MIN_CHECK_INTERVAL));
-      setDumpDelay(toInt(leakWatcherConfig.dumpHeapWaitTimeMs, 5000));
-    }
-    leakWatcherConfig.fgLeakCountThreshold = cfg.fgLeakCountThreshold ?? 5;
-    leakWatcherConfig.bgLeakCountThreshold = cfg.bgLeakCountThreshold ?? 1;
-    let m: int = toInt(cfg.maxStoredHeapDumps, 0);
-    maxFileNum = m > 0 ? m * 2 : toInt(leakWatcherConfig.maxStoredHeapDumps, 10) * 2;
-    leakWatcherConfig.monitorObjectTypes = cfg.monitorObjectTypes;
-  }
-
+  let configArray: string[] = configs;
   const valid: string[] = ['CustomComponent', 'Window', 'NodeContainer', 'XComponent', 'Ability'];
-  if (!isConfigObj) {
-    for (let i: int = 0; i < configArray.length; i++) {
-      if (!valid.includes(configArray[i])) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
-    }
-    if (configArray.length === 0) { configArray = valid; }
+  for (let i: int = 0; i < configArray.length; i++) {
+    if (!valid.includes(configArray[i])) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
   }
+  if (configArray.length === 0) { configArray = valid; }
+  let appCtx = application.getApplicationContextInstance();
+  if (appCtx === undefined) { console.log('enableLeakWatcher applicationContext undefined'); return; }
+  appState.applicationContext = appCtx as Object;
+  let filePath: string = `${appCtx.filesDir}/${JSLEAK_ROOT_DIR_NAME}`;
+  if (!fileIo.accessSync(filePath)) { fileIo.mkdirSync(filePath); }
+  getProcessName();
+  let mask: int = convertToMask(configArray);
+  registerTasksAndExecute(filePath, callback, mask);
+}
+
+function enableLeakWatcherWithConfig(isEnabled: boolean,
+  configs: LeakWatcherConfig, callback: (fileList: string[]) => void): void {
+  if (isEnabled === undefined || isEnabled === null) { throwBusinessError(ERROR_CODE_ENABLE_INVALID); }
+  if (configs === undefined || configs === null) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
+  if (callback === undefined || callback === null) { throwBusinessError(ERROR_CODE_CALLBACK_INVALID); }
+  if (isEnabled === enabled) { console.log('JsLeakWatcher already started or stopped.'); return; }
+  enabled = isEnabled;
+  if (!isEnabled) { shutdownJsLeakWatcher(); return; }
+
+  appState.isConfigObj = true;
+  let cfg: LeakWatcherConfig = configs;
+  if (cfg.exclusionList !== undefined) { leakWatcherConfig.exclusionList = cfg.exclusionList; }
+  if (cfg.objectUniqueIDs !== undefined) { leakWatcherConfig.objectUniqueIDs = cfg.objectUniqueIDs; }
+  let ci: int = toInt(cfg.checkInterval, MIN_CHECK_INTERVAL);
+  let dh: int = toInt(cfg.dumpHeapWaitTimeMs, toInt(leakWatcherConfig.dumpHeapWaitTimeMs, 5000));
+  if (ci > MIN_CHECK_INTERVAL && dh < ci) {
+    setGcDelay(ci);
+    setDumpDelay(dh);
+  } else {
+    setGcDelay(toInt(leakWatcherConfig.checkInterval, MIN_CHECK_INTERVAL));
+    setDumpDelay(toInt(leakWatcherConfig.dumpHeapWaitTimeMs, 5000));
+  }
+  leakWatcherConfig.fgLeakCountThreshold = cfg.fgLeakCountThreshold ?? 5;
+  leakWatcherConfig.bgLeakCountThreshold = cfg.bgLeakCountThreshold ?? 1;
+  let m: int = toInt(cfg.maxStoredHeapDumps, 0);
+  maxFileNum = m > 0 ? m * 2 : toInt(leakWatcherConfig.maxStoredHeapDumps, 10) * 2;
+  leakWatcherConfig.monitorObjectTypes = cfg.monitorObjectTypes;
 
   let appCtx = application.getApplicationContextInstance();
   if (appCtx === undefined) { console.log('enableLeakWatcher applicationContext undefined'); return; }
@@ -673,7 +682,12 @@ export function enableLeakWatcher(isEnabled: boolean,
   let filePath: string = `${appCtx.filesDir}/${JSLEAK_ROOT_DIR_NAME}`;
   if (!fileIo.accessSync(filePath)) { fileIo.mkdirSync(filePath); }
   getProcessName();
+  let mask: int = leakWatcherConfig.monitorObjectTypes.valueOf() as int;
+  registerTasksAndExecute(filePath, callback, mask);
+}
 
+function registerTasksAndExecute(filePath: string,
+  callback: (fileList: string[]) => void, mask: int): void {
   handleGCTask(() => {
     if (currentAttempt <= ATTEMPT_COUNT && retryMask !== 0) {
       executeRegister(retryMask);
@@ -697,9 +711,7 @@ export function enableLeakWatcher(isEnabled: boolean,
     enabled = false;
     shutdownJsLeakWatcher();
   });
-
-  let mask: int = isConfigObj
-    ? (leakWatcherConfig.monitorObjectTypes.valueOf() as int)
-    : convertToMask(configArray);
   executeRegister(mask);
 }
+
+overload enableLeakWatcher { enableLeakWatcherWithArray, enableLeakWatcherWithConfig }
