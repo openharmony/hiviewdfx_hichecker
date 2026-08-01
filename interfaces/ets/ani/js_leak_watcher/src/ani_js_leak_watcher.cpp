@@ -140,10 +140,10 @@ bool CreateFile(const std::string &filePath)
     }
     const mode_t defaultMode = S_IRUSR | S_IWUSR | S_IRGRP; // -rw-r-----
     int fd = creat(filePath.c_str(), defaultMode);
-    fdsan_exchange_owner_tag(fd, 0, FDTAG);
     if (fd == -1) {
         return false;
     }
+    fdsan_exchange_owner_tag(fd, 0, FDTAG);
     fdsan_close_with_tag(fd, FDTAG);
     return true;
 }
@@ -307,7 +307,7 @@ static void ExecuteDumpCallback(ani_ref gCallback, uint8_t retcode)
     if (workerEnv == nullptr) {
         HILOG_ERROR(LOG_CORE, "DumpRawHeap callback AttachAniEnv failed");
         ani_env *fallbackEnv = GetAniEnv(g_aniVm);
-        if (fallbackEnv != nullptr) {
+        if (fallbackEnv != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(fallbackEnv, gCallback)) {
             fallbackEnv->GlobalReference_Delete(gCallback);
         }
         return;
@@ -315,13 +315,14 @@ static void ExecuteDumpCallback(ani_ref gCallback, uint8_t retcode)
     ani_size nrRefs = 16;
     if (workerEnv->CreateLocalScope(nrRefs) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "DumpRawHeap callback CreateLocalScope failed");
-        workerEnv->GlobalReference_Delete(gCallback);
+        if (!JsLeakWatcherAniUtil::IsRefUndefined(workerEnv, gCallback)) {
+            workerEnv->GlobalReference_Delete(gCallback);
+        }
         return;
     }
     if (JsLeakWatcherAniUtil::IsRefUndefined(workerEnv, gCallback)) {
         HILOG_ERROR(LOG_CORE, "DumpRawHeap callback gCallback undefined");
         workerEnv->DestroyLocalScope();
-        workerEnv->GlobalReference_Delete(gCallback);
         return;
     }
     ani_object retCodeObj = JsLeakWatcherAniUtil::CreateInt(workerEnv, retcode);
@@ -356,7 +357,7 @@ static void DumpRawHeap(ani_env *env, ani_string filePathAni, ani_ref callbackRe
         auto handler = GetLeakWatcherHandler();
         if (handler == nullptr) {
             ani_env *env = GetAniEnv(g_aniVm);
-            if (env != nullptr) {
+            if (env != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(env, gCallback)) {
                 env->GlobalReference_Delete(gCallback);
             }
             return;
