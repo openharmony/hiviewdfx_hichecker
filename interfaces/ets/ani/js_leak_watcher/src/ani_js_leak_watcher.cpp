@@ -362,9 +362,16 @@ static void DumpRawHeap(ani_env *env, ani_string filePathAni, ani_ref callbackRe
             }
             return;
         }
-        handler->PostTask([gCallback, retcode]() {
+        bool postOk = handler->PostTask([gCallback, retcode]() {
             ExecuteDumpCallback(gCallback, retcode);
             }, "DumpRawHeapCallback", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
+        if (!postOk) {
+            HILOG_ERROR(LOG_CORE, "DumpRawHeap callback PostTask failed");
+            ani_env *env = GetAniEnv(g_aniVm);
+            if (env != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(env, gCallback)) {
+                env->GlobalReference_Delete(gCallback);
+            }
+        }
     };
     DumpHeapSnapshotImplAsync(filePath, callback);
 }
@@ -484,8 +491,8 @@ ani_status ANI_ConstructorImpl(ani_vm *vm, uint32_t *result)
     }
     g_aniVm = vm;
     ani_namespace ns {};
-    if (ANI_OK != env->FindNamespace("@ohos.hiviewdfx.jsLeakWatcher", &ns)) {
-        HILOG_ERROR(LOG_CORE, "FindNamespace @ohos.hiviewdfx.jsLeakWatcher failed");
+    if (ANI_OK != env->FindNamespace("@ohos.hiviewdfx.jsLeakWatcher.jsLeakWatcher", &ns)) {
+        HILOG_ERROR(LOG_CORE, "FindNamespace @ohos.hiviewdfx.jsLeakWatcher.jsLeakWatcher failed");
         return ANI_ERROR;
     }
     std::array methods = {

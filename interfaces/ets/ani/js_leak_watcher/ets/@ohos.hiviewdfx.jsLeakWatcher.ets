@@ -25,6 +25,9 @@ import AbilityLifecycleCallback from '@ohos.app.ability.AbilityLifecycleCallback
 import UIAbility from '@ohos.app.ability.UIAbility';
 import { ExtendableComponent } from '@ohos.arkui.component';
 
+export default namespace jsLeakWatcher {
+  loadLibraryWithPermissionCheck("jsleakwatcher_ani", "@ohos.hiviewdfx.jsLeakWatcher");
+
 const SANDBOX_PATH: string = '/data/storage/el2/base/files/';
 const JSLEAK_ROOT_DIR_NAME: string = 'jsleak';
 const ERROR_CODE_INVALID_PARAM: int = 401;
@@ -659,8 +662,14 @@ function enableLeakWatcherWithConfig(isEnabled: boolean,
 
   appState.isConfigObj = true;
   let cfg: LeakWatcherConfig = configs;
-  if (cfg.exclusionList !== undefined) { leakWatcherConfig.exclusionList = cfg.exclusionList; }
-  if (cfg.objectUniqueIDs !== undefined) { leakWatcherConfig.objectUniqueIDs = cfg.objectUniqueIDs; }
+  if (cfg.exclusionList !== undefined) {
+    let excl: string[] | undefined = cfg.exclusionList;
+    if (excl !== undefined) { leakWatcherConfig.exclusionList = [...excl]; }
+  }
+  if (cfg.objectUniqueIDs !== undefined) {
+    let ids: number[] | undefined = cfg.objectUniqueIDs;
+    if (ids !== undefined) { leakWatcherConfig.objectUniqueIDs = [...ids]; }
+  }
   let ci: int = toInt(cfg.checkInterval, MIN_CHECK_INTERVAL);
   let dh: int = toInt(cfg.dumpHeapWaitTimeMs, toInt(leakWatcherConfig.dumpHeapWaitTimeMs, 5000));
   if (ci > MIN_CHECK_INTERVAL && dh < ci) {
@@ -715,3 +724,5 @@ function registerTasksAndExecute(filePath: string,
 }
 
 overload enableLeakWatcher { enableLeakWatcherWithArray, enableLeakWatcherWithConfig }
+
+}
