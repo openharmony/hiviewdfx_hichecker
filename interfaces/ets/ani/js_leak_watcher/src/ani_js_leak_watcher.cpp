@@ -26,6 +26,7 @@
 #include "ani_util.h"
 #include "hilog/log.h"
 #include "sys_param.h"
+#include "dfx_jsnapi.h"
 
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD003D00
@@ -336,24 +337,33 @@ static void ExecuteDumpCallback(ani_ref gCallback, uint8_t retcode)
     workerEnv->GlobalReference_Delete(gCallback);
 }
 
-static void DumpRawHeap(ani_env *env, ani_string filePathAni, ani_ref callbackRef)
+static void DumpRawHeap(ani_env *env, ani_string dynamicPathAni, ani_string staticPathAni, ani_ref callbackRef)
 {
-    std::string filePath;
-    if (JsLeakWatcherAniUtil::ParseAniString(env, filePathAni, filePath) != ANI_OK) {
-        HILOG_ERROR(LOG_CORE, "DumpRawHeap ParseAniString failed");
+    std::string dynamicPath;
+    std::string staticPath;
+    if (JsLeakWatcherAniUtil::ParseAniString(env, dynamicPathAni, dynamicPath) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap ParseAniString dynamicPath failed");
         return;
     }
-    if (!CreateFile(filePath)) {
-        HILOG_ERROR(LOG_CORE, "DumpRawHeap CreateFile failed");
+    if (JsLeakWatcherAniUtil::ParseAniString(env, staticPathAni, staticPath) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap ParseAniString staticPath failed");
+        return;
+    }
+    if (!CreateFile(dynamicPath)) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap CreateFile dynamicPath failed");
+        return;
+    }
+    if (!CreateFile(staticPath)) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap CreateFile staticPath failed");
         return;
     }
     ani_ref gCallback = JsLeakWatcherAniUtil::CreateGlobalReference(env, callbackRef);
     if (g_aniVm == nullptr) {
         g_aniVm = JsLeakWatcherAniUtil::GetAniVm(env);
     }
-    auto callback = [gCallback, filePath](uint8_t retcode) {
+    auto callback = [gCallback, dynamicPath](uint8_t retcode) {
         HILOG_INFO(LOG_CORE, "DumpRawHeap callback get retcode: %{public}d", retcode);
-        AppendMetaData(filePath);
+        AppendMetaData(dynamicPath);
         auto handler = GetLeakWatcherHandler();
         if (handler == nullptr) {
             ani_env *env = GetAniEnv(g_aniVm);
@@ -373,26 +383,55 @@ static void DumpRawHeap(ani_env *env, ani_string filePathAni, ani_ref callbackRe
             }
         }
     };
-    DumpHeapSnapshotImplAsync(filePath, callback);
+    panda::DumpSnapShotOption dumpOption;
+    dumpOption.dumpFormat = panda::DumpFormat::BINARY;
+    dumpOption.isVmMode = true;
+    dumpOption.isJSLeakWatcher = true;
+    dumpOption.isFullGC = false;
+    dumpOption.isBeforeFill = false;
+    dumpOption.isSync = false;
+    dumpOption.languageEnv = panda::ecmascript::LanguageEnv::HYBRID;
+    if (!panda::DFXJSNApi::DumpHybridRawHeapSnapshot(dynamicPath, staticPath, dumpOption, callback)) {
+        HILOG_ERROR(LOG_CORE, "DumpHybridRawHeapSnapshot failed.");
+        callback(static_cast<uint8_t>(1));
+    }
 }
 
-static void DumpRawHeapSync(ani_env *env, ani_string filePathAni)
+static void DumpRawHeapSync(ani_env *env, ani_string dynamicPathAni, ani_string staticPathAni)
 {
     HILOG_INFO(LOG_CORE, "DumpRawHeapSync begin!");
-    std::string filePath;
-    if (JsLeakWatcherAniUtil::ParseAniString(env, filePathAni, filePath) != ANI_OK) {
-        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync ParseAniString failed");
+    std::string dynamicPath;
+    std::string staticPath;
+    if (JsLeakWatcherAniUtil::ParseAniString(env, dynamicPathAni, dynamicPath) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync ParseAniString dynamicPath failed");
         return;
     }
-    if (!CreateFile(filePath)) {
-        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync CreateFile failed");
+    if (JsLeakWatcherAniUtil::ParseAniString(env, staticPathAni, staticPath) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync ParseAniString staticPath failed");
         return;
     }
-    if (!DumpHeapSnapshotImpl(filePath)) {
-        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync DumpHeapSnapshotImpl failed");
+    if (!CreateFile(dynamicPath)) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync CreateFile dynamicPath failed");
         return;
     }
-    AppendMetaData(filePath);
+    if (!CreateFile(staticPath)) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync CreateFile staticPath failed");
+        return;
+    }
+    panda::DumpSnapShotOption dumpOption;
+    dumpOption.dumpFormat = panda::DumpFormat::BINARY;
+    dumpOption.isVmMode = true;
+    dumpOption.isJSLeakWatcher = true;
+    dumpOption.isFullGC = false;
+    dumpOption.isBeforeFill = false;
+    dumpOption.isSync = true;
+    dumpOption.languageEnv = panda::ecmascript::LanguageEnv::HYBRID;
+    auto dummyCallback = []([[maybe_unused]] uint8_t code) {};
+    if (!panda::DFXJSNApi::DumpHybridRawHeapSnapshot(dynamicPath, staticPath, dumpOption, dummyCallback)) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync DumpHybridRawHeapSnapshot failed");
+        return;
+    }
+    AppendMetaData(dynamicPath);
 }
 
 // ArkUI 对象生命周期回调:从 void* data 中提取 weakRef 并调用 .ets 回调。

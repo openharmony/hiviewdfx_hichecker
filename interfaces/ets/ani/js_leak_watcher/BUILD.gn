@@ -23,7 +23,6 @@ ohos_shared_library("jsleakwatcher_ani") {
   sources = [
     "./src/ani_js_leak_watcher.cpp",
     "./src/ani_util.cpp",
-    "./src/tmp.cpp",
   ]
 
   deps = [ "../../../native/innerkits:libhichecker" ]

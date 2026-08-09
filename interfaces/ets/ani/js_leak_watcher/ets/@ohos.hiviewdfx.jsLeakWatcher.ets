@@ -85,8 +85,8 @@ export default namespace jsLeakWatcher {
   native function getDumpStatus(): boolean;
   native function setGcDelay(delay: int): void;
   native function setDumpDelay(delay: int): void;
-  native function dumpRawHeap(filePath: string, callback: (code: int) => void): void;
-  native function dumpRawHeapSync(filePath: string): void;
+  native function dumpRawHeap(dynamicPath: string, staticPath: string, callback: (code: int) => void): void;
+  native function dumpRawHeapSync(dynamicPath: string, staticPath: string): void;
   native function handleDumpTask(callback: () => void): void;
   native function handleGCTask(callback: () => void): void;
   native function handleShutdownTask(callback: () => void): void;
@@ -235,11 +235,19 @@ export default namespace jsLeakWatcher {
     return `jsleakwatcher-${getPid()}-${getTid()}-`;
   }
 
+  function getStaticHeapPrefix(): string {
+    return `jsleakwatcher-static_jsheap-${getPid()}-`;
+  }
+
   function getHeapBaseName(update: boolean): string {
     if (update) {
       curTimeStamp = Date.now().toString();
     }
     return `${getHeapPrefix()}${curTimeStamp}`;
+  }
+
+  function getStaticHeapBaseName(): string {
+    return `${getStaticHeapPrefix()}${curTimeStamp}`;
   }
 
   function deleteLastOldFile(filePath: string): void {
@@ -328,9 +336,10 @@ export default namespace jsLeakWatcher {
     let fn: string = getHeapBaseName(true);
     let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
     let dp: string = filePath + '/' + fn + suf;
+    let sp: string = filePath + '/' + getStaticHeapBaseName() + suf;
     if (isRawHeap) {
-      if (!isSync && dumpCallback !== undefined) { dumpRawHeap(dp, dumpCallback); }
-      else { dumpRawHeapSync(dp); }
+      if (!isSync && dumpCallback !== undefined) { dumpRawHeap(dp, sp, dumpCallback); }
+      else { dumpRawHeapSync(dp, sp); }
     } else {
       hidebug.dumpJsHeapData(fn);
       fileIo.moveFileSync(SANDBOX_PATH + fn + suf, dp, 0);
@@ -392,7 +401,8 @@ export default namespace jsLeakWatcher {
     let fl: string[] = [];
     if (needSandBox) {
       fl = [filePath + '/' + getHeapBaseName(false) + '.jsleaklist',
-        dumpStatus ? filePath + '/' + getHeapBaseName(false) + '.rawheap' : ''];
+        dumpStatus ? filePath + '/' + getHeapBaseName(false) + '.rawheap' : '',
+        dumpStatus ? filePath + '/' + getStaticHeapBaseName() + '.rawheap' : ''];
     } else {
       fl = [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
     }
@@ -425,7 +435,8 @@ export default namespace jsLeakWatcher {
     catch (e) { console.log('Delete old files failed! ' + e); return []; }
     if (needSandBox) {
       return [filePath + '/' + getHeapBaseName(false) + '.jsleaklist',
-              filePath + '/' + getHeapBaseName(false) + '.rawheap'];
+              filePath + '/' + getHeapBaseName(false) + '.rawheap',
+              filePath + '/' + getStaticHeapBaseName() + '.rawheap'];
     } else {
       return [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
     }
