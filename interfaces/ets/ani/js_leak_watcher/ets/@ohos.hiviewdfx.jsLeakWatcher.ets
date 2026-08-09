@@ -637,7 +637,7 @@ export default namespace jsLeakWatcher {
     return dumpInnerSync(filePath, false, false);
   }
 
-  export function enableLeakWatcherWithArray(isEnabled: boolean,
+  function enableLeakWatcherWithArray(isEnabled: boolean,
     configs: string[], callback: Callback<Array<string>>): void {
     if (isEnabled === undefined || isEnabled === null) { throwBusinessError(ERROR_CODE_ENABLE_INVALID); }
     if (configs === undefined || configs === null) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
@@ -662,7 +662,7 @@ export default namespace jsLeakWatcher {
     registerTasksAndExecute(filePath, callback, mask);
   }
 
-  export function enableLeakWatcherWithConfig(isEnabled: boolean,
+  function enableLeakWatcherWithConfig(isEnabled: boolean,
     configs: LeakWatcherConfig, callback: Callback<Array<string>>): void {
     if (isEnabled === undefined || isEnabled === null) { throwBusinessError(ERROR_CODE_ENABLE_INVALID); }
     if (configs === undefined || configs === null) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
@@ -706,6 +706,15 @@ export default namespace jsLeakWatcher {
     registerTasksAndExecute(filePath, callback, mask);
   }
 
+  export function enableLeakWatcher(isEnabled: boolean,
+    configs: string[] | LeakWatcherConfig, callback: Callback<Array<string>>): void {
+    if (configs instanceof Array) {
+      enableLeakWatcherWithArray(isEnabled, configs, callback);
+    } else {
+      enableLeakWatcherWithConfig(isEnabled, configs as LeakWatcherConfig, callback);
+    }
+  }
+
   function registerTasksAndExecute(filePath: string,
     callback: Callback<Array<string>>, mask: int): void {
     handleGCTask(() => {
@@ -733,7 +742,5 @@ export default namespace jsLeakWatcher {
     });
     executeRegister(mask);
   }
-
-  export overload enableLeakWatcher { enableLeakWatcherWithArray, enableLeakWatcherWithConfig }
 
 }
