@@ -734,6 +734,6 @@ export default namespace jsLeakWatcher {
     executeRegister(mask);
   }
 
-  overload enableLeakWatcher { enableLeakWatcherWithArray, enableLeakWatcherWithConfig }
+  export overload enableLeakWatcher { enableLeakWatcherWithArray, enableLeakWatcherWithConfig }
 
 }
