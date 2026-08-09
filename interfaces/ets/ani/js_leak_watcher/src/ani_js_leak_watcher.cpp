@@ -337,6 +337,30 @@ static void ExecuteDumpCallback(ani_ref gCallback, uint8_t retcode)
     workerEnv->GlobalReference_Delete(gCallback);
 }
 
+static void DumpRawHeapCallback(ani_ref gCallback, const std::string &dynamicPath, uint8_t retcode)
+{
+    HILOG_INFO(LOG_CORE, "DumpRawHeap callback get retcode: %{public}d", retcode);
+    AppendMetaData(dynamicPath);
+    auto handler = GetLeakWatcherHandler();
+    if (handler == nullptr) {
+        ani_env *env = GetAniEnv(g_aniVm);
+        if (env != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(env, gCallback)) {
+            env->GlobalReference_Delete(gCallback);
+        }
+        return;
+    }
+    bool postOk = handler->PostTask([gCallback, retcode]() {
+        ExecuteDumpCallback(gCallback, retcode);
+        }, "DumpRawHeapCallback", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
+    if (!postOk) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap callback PostTask failed");
+        ani_env *env = GetAniEnv(g_aniVm);
+        if (env != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(env, gCallback)) {
+            env->GlobalReference_Delete(gCallback);
+        }
+    }
+}
+
 static void DumpRawHeap(ani_env *env, ani_string dynamicPathAni, ani_string staticPathAni, ani_ref callbackRef)
 {
     std::string dynamicPath;
@@ -349,12 +373,8 @@ static void DumpRawHeap(ani_env *env, ani_string dynamicPathAni, ani_string stat
         HILOG_ERROR(LOG_CORE, "DumpRawHeap ParseAniString staticPath failed");
         return;
     }
-    if (!CreateFile(dynamicPath)) {
-        HILOG_ERROR(LOG_CORE, "DumpRawHeap CreateFile dynamicPath failed");
-        return;
-    }
-    if (!CreateFile(staticPath)) {
-        HILOG_ERROR(LOG_CORE, "DumpRawHeap CreateFile staticPath failed");
+    if (!CreateFile(dynamicPath) || !CreateFile(staticPath)) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap CreateFile failed");
         return;
     }
     ani_ref gCallback = JsLeakWatcherAniUtil::CreateGlobalReference(env, callbackRef);
@@ -362,26 +382,7 @@ static void DumpRawHeap(ani_env *env, ani_string dynamicPathAni, ani_string stat
         g_aniVm = JsLeakWatcherAniUtil::GetAniVm(env);
     }
     auto callback = [gCallback, dynamicPath](uint8_t retcode) {
-        HILOG_INFO(LOG_CORE, "DumpRawHeap callback get retcode: %{public}d", retcode);
-        AppendMetaData(dynamicPath);
-        auto handler = GetLeakWatcherHandler();
-        if (handler == nullptr) {
-            ani_env *env = GetAniEnv(g_aniVm);
-            if (env != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(env, gCallback)) {
-                env->GlobalReference_Delete(gCallback);
-            }
-            return;
-        }
-        bool postOk = handler->PostTask([gCallback, retcode]() {
-            ExecuteDumpCallback(gCallback, retcode);
-            }, "DumpRawHeapCallback", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
-        if (!postOk) {
-            HILOG_ERROR(LOG_CORE, "DumpRawHeap callback PostTask failed");
-            ani_env *env = GetAniEnv(g_aniVm);
-            if (env != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(env, gCallback)) {
-                env->GlobalReference_Delete(gCallback);
-            }
-        }
+        DumpRawHeapCallback(gCallback, dynamicPath, retcode);
     };
     panda::DumpSnapShotOption dumpOption;
     dumpOption.dumpFormat = panda::DumpFormat::BINARY;
