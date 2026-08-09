@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { BusinessError, RecordData } from '@ohos.base';
+import { BusinessError, RecordData, Callback } from '@ohos.base';
 import fileIo, { ListFileOptions, Filter, ReadOptions } from '@ohos.file.fs';
 import util from '@ohos.util';
 import hidebug from '@ohos.hidebug';
@@ -380,7 +380,7 @@ export default namespace jsLeakWatcher {
   }
 
   function getJsleaklistFile(filePath: string, needSandBox: boolean, isRawHeap: boolean,
-    jsCallback?: (fileList: string[]) => void): string[] {
+    jsCallback?: Callback<Array<string>>): string[] {
     if (!dumpStatus) {
       if (firstDump) { firstDump = false; deleteUnMatchDumpFile(filePath); }
       else { deleteLastOldFile(filePath); }
@@ -443,7 +443,7 @@ export default namespace jsLeakWatcher {
   }
 
   function dumpInner(filePath: string, needSandBox: boolean, isRawHeap: boolean,
-    jsCallback?: (fileList: string[]) => void): string[] {
+    jsCallback?: Callback<Array<string>>): string[] {
     dumpStatus = getDumpStatus();
     if (!enabled) { return []; }
     if (!fileIo.accessSync(filePath)) { throwBusinessError(ERROR_CODE_INVALID_PARAM); return []; }
@@ -524,7 +524,7 @@ export default namespace jsLeakWatcher {
     }
   }
 
-  function startDumptask(filePath: string, callback: (fileList: string[]) => void): void {
+  function startDumptask(filePath: string, callback: Callback<Array<string>>): void {
     if (!appState.isGC) {
       console.log('startDumptask is not executed.');
       return;
@@ -637,8 +637,8 @@ export default namespace jsLeakWatcher {
     return dumpInnerSync(filePath, false, false);
   }
 
-  function enableLeakWatcherWithArray(isEnabled: boolean,
-    configs: string[], callback: (fileList: string[]) => void): void {
+  export function enableLeakWatcherWithArray(isEnabled: boolean,
+    configs: string[], callback: Callback<Array<string>>): void {
     if (isEnabled === undefined || isEnabled === null) { throwBusinessError(ERROR_CODE_ENABLE_INVALID); }
     if (configs === undefined || configs === null) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
     if (callback === undefined || callback === null) { throwBusinessError(ERROR_CODE_CALLBACK_INVALID); }
@@ -662,8 +662,8 @@ export default namespace jsLeakWatcher {
     registerTasksAndExecute(filePath, callback, mask);
   }
 
-  function enableLeakWatcherWithConfig(isEnabled: boolean,
-    configs: LeakWatcherConfig, callback: (fileList: string[]) => void): void {
+  export function enableLeakWatcherWithConfig(isEnabled: boolean,
+    configs: LeakWatcherConfig, callback: Callback<Array<string>>): void {
     if (isEnabled === undefined || isEnabled === null) { throwBusinessError(ERROR_CODE_ENABLE_INVALID); }
     if (configs === undefined || configs === null) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
     if (callback === undefined || callback === null) { throwBusinessError(ERROR_CODE_CALLBACK_INVALID); }
@@ -707,7 +707,7 @@ export default namespace jsLeakWatcher {
   }
 
   function registerTasksAndExecute(filePath: string,
-    callback: (fileList: string[]) => void, mask: int): void {
+    callback: Callback<Array<string>>, mask: int): void {
     handleGCTask(() => {
       if (currentAttempt <= ATTEMPT_COUNT && retryMask !== 0) {
         executeRegister(retryMask);
