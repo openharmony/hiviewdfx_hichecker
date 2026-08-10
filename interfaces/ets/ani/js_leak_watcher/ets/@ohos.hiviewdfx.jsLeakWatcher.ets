@@ -25,6 +25,10 @@ import AbilityLifecycleCallback from '@ohos.app.ability.AbilityLifecycleCallback
 import UIAbility from '@ohos.app.ability.UIAbility';
 import { ExtendableComponent } from '@ohos.arkui.component';
 
+declare class ArkTools {
+  static forceFullGC(): void;
+}
+
 export default namespace jsLeakWatcher {
   loadLibraryWithPermissionCheck("jsleakwatcher_ani", "@ohos.hiviewdfx.jsLeakWatcher");
 
@@ -44,9 +48,6 @@ export default namespace jsLeakWatcher {
   const STATE_FOREGROUND: int = 1;
   const STATE_BACKGROUND: int = 3;
 
-  declare class ArkTools {
-    static forceFullGC(): void;
-  }
 
   export enum MonitorObjectType {
     ALL = -1,
@@ -59,12 +60,12 @@ export default namespace jsLeakWatcher {
 
   export interface LeakWatcherConfig {
     monitorObjectTypes: MonitorObjectType;
-    objectUniqueIDs?: Array<number>;
-    checkInterval?: number;
-    fgLeakCountThreshold?: number;
-    bgLeakCountThreshold?: number;
-    maxStoredHeapDumps?: number;
-    dumpHeapWaitTimeMs?: number;
+    objectUniqueIDs?: Array<int>;
+    checkInterval?: int;
+    fgLeakCountThreshold?: int;
+    bgLeakCountThreshold?: int;
+    maxStoredHeapDumps?: int;
+    dumpHeapWaitTimeMs?: int;
     exclusionList?: Array<string>;
   }
 
@@ -183,11 +184,11 @@ export default namespace jsLeakWatcher {
     throw new BusinessError<void>(code, msg);
   }
 
-  function toInt(v: number | undefined, def: int): int {
+  function toInt(v: int | undefined, def: int): int {
     if (v === undefined || v === null) {
       return def;
     }
-    return (v as number).toInt();
+    return v as int;
   }
 
   // Class.of(obj).getName() 返回含命名空间的完整类名(如 "module.MyComponent"),
@@ -461,8 +462,8 @@ export default namespace jsLeakWatcher {
   }
 
   function monitorLeakIDandWhitelist(obj: object, objName: string): boolean {
-    let objId: number = (obj instanceof ExtendableComponent) ? obj.getUniqueId() : -1;
-    let uniqueIds: number[] = leakWatcherConfig.objectUniqueIDs ?? [];
+    let objId: int = (obj instanceof ExtendableComponent) ? obj.getUniqueId() : -1;
+    let uniqueIds: int[] = leakWatcherConfig.objectUniqueIDs ?? [];
     if (uniqueIds.length > 0 && !uniqueIds.includes(objId)) {
       console.log(`The ID of the monitored object does not exist.`);
       return true;
@@ -678,7 +679,7 @@ export default namespace jsLeakWatcher {
       if (excl !== undefined) { leakWatcherConfig.exclusionList = [...excl]; }
     }
     if (cfg.objectUniqueIDs !== undefined) {
-      let ids: number[] | undefined = cfg.objectUniqueIDs;
+      let ids: int[] | undefined = cfg.objectUniqueIDs;
       if (ids !== undefined) { leakWatcherConfig.objectUniqueIDs = [...ids]; }
     }
     let ci: int = toInt(cfg.checkInterval, MIN_CHECK_INTERVAL);
