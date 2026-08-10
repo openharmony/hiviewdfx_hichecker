@@ -24,6 +24,7 @@ import appManager from '@ohos.app.ability.appManager';
 import AbilityLifecycleCallback from '@ohos.app.ability.AbilityLifecycleCallback';
 import UIAbility from '@ohos.app.ability.UIAbility';
 import { ExtendableComponent } from '@ohos.arkui.component';
+import { registerArkUIObjectLifeCycleCallback, unregisterArkUIObjectLifeCycleCallback } from 'arkui.base.ArkUIObjectFinalizationRegisterProxy';
 
 export default namespace jsLeakWatcher {
   loadLibraryWithPermissionCheck("jsleakwatcher_ani", "@ohos.hiviewdfx.jsLeakWatcher");
@@ -94,10 +95,6 @@ export default namespace jsLeakWatcher {
   native function registerArkUIObjectLifeCycleCallbackNative(
     callback: (weakRef: WeakRef<object>, msg: string) => void): boolean;
   native function unregisterArkUIObjectLifeCycleCallbackNative(): void;
-
-  declare function registerArkUIObjectLifeCycleCallback(
-    callback: (weakRef: WeakRef<object>, msg: string) => void): void;
-  declare function unregisterArkUIObjectLifeCycleCallback(): void;
 
   class LeakWatcherAbilityCallback extends AbilityLifecycleCallback {
     onAbilityDestroy(ability: UIAbility): void {

@@ -54,6 +54,7 @@ generate_static_abc("jsleakwatcher") {
   files = [ "./ets/@ohos.hiviewdfx.jsLeakWatcher.ets" ]
   is_boot_abc = "True"
   device_dst_file = "/system/framework/jsleakwatcher.abc"
+  dependencies = [ "//foundation/arkui/ace_engine/frameworks/bridge/arkts_frontend/koala_projects/inner_api:copy_arkui_ets" ]
 }
 
 ohos_prebuilt_etc("jsleakwatcher_etc") {
