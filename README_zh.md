@@ -72,8 +72,8 @@ HiChecker，可以作为应用开发阶段使用的检测工具，用于检测�
 
 ## 涉及仓<a name="section1371113476310"></a>
 
-[DFX子系统](https://gitee.com/openharmony/docs/blob/master/zh-cn/readme/DFX子系统.md)
+[DFX子系统](https://gitcode.com/openharmony/docs/blob/master/zh-cn/readme/DFX子系统.md)
 
-[hiviewdfx_hilog](https://gitee.com/openharmony/hiviewdfx_hilog/blob/master/README_zh.md)
+[hiviewdfx_hilog](https://gitcode.com/openharmony/hiviewdfx_hilog/blob/master/README_zh.md)
 
-[hiviewdfx_faultloggerd](https://gitee.com/openharmony/hiviewdfx_faultloggerd/blob/master/README_zh.md)
+[hiviewdfx_faultloggerd](https://gitcode.com/openharmony/hiviewdfx_faultloggerd/blob/master/README_zh.md)

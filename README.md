@@ -72,8 +72,8 @@ The following table lists the APIs provided by HiChecker.
 
 ## Repositories Involved<a name="section1371113476310"></a>
 
-[DFX Subsystem](https://gitee.com/openharmony/docs/blob/master/en/readme/dfx.md)
+[DFX Subsystem](https://gitcode.com/openharmony/docs/blob/master/en/readme/dfx.md)
 
-[hiviewdfx_hilog](https://gitee.com/openharmony/hiviewdfx_hilog/blob/master/README.md)
+[hiviewdfx_hilog](https://gitcode.com/openharmony/hiviewdfx_hilog/blob/master/README.md)
 
-[hiviewdfx_faultloggerd](https://gitee.com/openharmony/hiviewdfx_faultloggerd/blob/master/README.md)
+[hiviewdfx_faultloggerd](https://gitcode.com/openharmony/hiviewdfx_faultloggerd/blob/master/README.md)
