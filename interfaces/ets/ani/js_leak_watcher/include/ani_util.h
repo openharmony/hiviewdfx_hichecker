@@ -39,14 +39,7 @@ public:
     static ani_object CreateInt(ani_env *env, int32_t num);
     static ani_string CreateAniString(ani_env *env, const std::string &str);
     static ani_vm *GetAniVm(ani_env *env);
-    static bool DumpHeapSnapshot(const std::string &filePath);
-    static void DumpHeapSnapshot(const std::string &filePath,
-        const std::function<void(uint8_t)> &callback);
 };
-
-bool DumpHeapSnapshotImpl(const std::string &filePath);
-void DumpHeapSnapshotImplAsync(const std::string &filePath,
-    const std::function<void(uint8_t)> &callback);
 } // namespace HiviewDFX
 } // namespace OHOS
 

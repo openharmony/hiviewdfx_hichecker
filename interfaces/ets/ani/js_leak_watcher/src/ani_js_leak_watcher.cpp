@@ -11,16 +11,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
-*/
+ */
 
 #include "ani_js_leak_watcher.h"
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <atomic>
-#include <chrono>
 #include <cstring>
 
 #include "ani_util.h"
@@ -65,7 +62,6 @@ ani_env *AttachAniEnv(ani_vm *vm)
 }
 } // namespace
 
-// === LeakWatcherEventHandler 实现 ===
 void LeakWatcherEventHandler::ProcessEvent(const OHOS::AppExecFwk::InnerEvent::Pointer &event)
 {
     if (!isRunning_) {
@@ -269,7 +265,6 @@ static void HandleDumpTask(ani_env *env, ani_ref funcRef)
         HILOG_ERROR(LOG_CORE, "HandleDumpTask GetCallbackRef failed");
         return;
     }
-    g_handler->SetAniEnv(env);
     g_handler->SetDumpFuncRef(gRef);
     g_handler->SetJsLeakWatcherStatus(true);
 }
@@ -281,7 +276,6 @@ static void HandleGCTask(ani_env *env, ani_ref funcRef)
         HILOG_ERROR(LOG_CORE, "HandleGCTask GetCallbackRef failed");
         return;
     }
-    g_handler->SetAniEnv(env);
     g_handler->SetGcFuncRef(gRef);
     g_handler->SendEvent(GC_EVENT_ID, g_handler->GetGcDelayTime(), LeakWatcherEventHandler::Priority::IDLE);
 }
@@ -293,7 +287,6 @@ static void HandleShutdownTask(ani_env *env, ani_ref funcRef)
         HILOG_ERROR(LOG_CORE, "HandleShutdownTask GetCallbackRef failed");
         return;
     }
-    g_handler->SetAniEnv(env);
     g_handler->SetShutdownFuncRef(gRef);
 }
 
@@ -435,8 +428,6 @@ static void DumpRawHeapSync(ani_env *env, ani_string dynamicPathAni, ani_string 
     AppendMetaData(dynamicPath);
 }
 
-// ArkUI 对象生命周期回调:从 void* data 中提取 weakRef 并调用 .ets 回调。
-// NAPI 侧只传 1 个参数(weakRef),msg 为 undefined,此处保持一致。
 static void ExecuteArkUILifecycleCallback(void *data)
 {
     ani_env *aniEnv = GetAniEnv(g_aniVm);
@@ -467,9 +458,6 @@ static void ExecuteArkUILifecycleCallback(void *data)
     aniEnv->DestroyLocalScope();
 }
 
-// 通过 ace_kit UIContext 向 ArkUI 框架注册对象生命周期回调。
-// ArkUI 销毁对象时触发回调,void* data 指向 ArkUIObjectLifecycleData,
-// 其中 weakRef 是被回收对象的弱引用。回调将其传回 .ets 层。
 static ani_boolean RegisterArkUIObjectLifeCycleCallback(ani_env *env, ani_ref funcRef)
 {
     if (JsLeakWatcherAniUtil::IsRefUndefined(env, funcRef)) {

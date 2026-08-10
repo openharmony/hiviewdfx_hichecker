@@ -152,16 +152,5 @@ ani_vm *JsLeakWatcherAniUtil::GetAniVm(ani_env *env)
     }
     return vm;
 }
-
-bool JsLeakWatcherAniUtil::DumpHeapSnapshot(const std::string &filePath)
-{
-    return DumpHeapSnapshotImpl(filePath);
-}
-
-void JsLeakWatcherAniUtil::DumpHeapSnapshot(const std::string &filePath,
-    const std::function<void(uint8_t)> &callback)
-{
-    DumpHeapSnapshotImplAsync(filePath, callback);
-}
 } // namespace HiviewDFX
 } // namespace OHOS

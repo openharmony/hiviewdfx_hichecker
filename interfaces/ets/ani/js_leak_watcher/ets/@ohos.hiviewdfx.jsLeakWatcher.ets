@@ -89,9 +89,6 @@ export default namespace jsLeakWatcher {
   native function handleGCTask(callback: () => void): void;
   native function handleShutdownTask(callback: () => void): void;
   native function removeTask(): void;
-  // native function 用于 NodeContainer/XComponent 的生命周期回调(C++ 实现,通过 UIContext 注册)。
-  // declare function 用于 CustomComponent 的生命周期回调(ArkUI 框架全局函数,运行时由 arkoala.abc 提供)。
-  // 两者是独立机制,需分别注册/注销。
   native function registerArkUIObjectLifeCycleCallbackNative(
     callback: (weakRef: WeakRef<object>, msg: string) => void): boolean;
   native function unregisterArkUIObjectLifeCycleCallbackNative(): void;
@@ -184,8 +181,6 @@ export default namespace jsLeakWatcher {
     return v as int;
   }
 
-  // Class.of(obj).getName() 返回含命名空间的完整类名(如 "module.MyComponent"),
-  // 对齐 NAPI obj.constructor.name 只返回类名(如 "MyComponent")。
   function getShortClassName(obj: object): string {
     let fullName: string = Class.of(obj).getName();
     let dotIdx: int = fullName.lastIndexOf('.');

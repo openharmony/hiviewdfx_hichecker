@@ -29,9 +29,6 @@
 namespace OHOS {
 namespace HiviewDFX {
 
-// ANI 侧 ArkUI 生命周期回调数据结构,与 ace_engine 中
-// common_module.cpp 的 ArkUIObjectLifecycleData 保持一致。
-// 当 ArkUI 触发生命周期回调时,void* data 指向此结构体。
 struct ArkUIObjectLifecycleData {
     ani_object weakRef;
     ani_string className;
@@ -54,7 +51,6 @@ public:
     void SetDumpDelayTime(uint32_t delay) { dumpDelayTime_ = delay; }
     void SetGcDelayTime(uint32_t delay) { gcDelayTime_ = delay; }
     uint32_t GetGcDelayTime() const { return gcDelayTime_; }
-    void SetAniEnv(ani_env *env) { env_ = env; }
     void SetDumpFuncRef(ani_ref ref) { dumpFuncRef_ = ref; }
     void SetGcFuncRef(ani_ref ref) { gcFuncRef_ = ref; }
     void SetShutdownFuncRef(ani_ref ref) { shutdownFuncRef_ = ref; }
@@ -63,7 +59,6 @@ public:
 
 private:
     void ExecuteJsFunc(ani_ref callbackRef);
-    ani_env *env_ = nullptr;
     ani_ref dumpFuncRef_ = nullptr;
     ani_ref gcFuncRef_ = nullptr;
     ani_ref shutdownFuncRef_ = nullptr;
