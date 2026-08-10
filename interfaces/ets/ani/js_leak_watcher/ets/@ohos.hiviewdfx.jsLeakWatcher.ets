@@ -25,10 +25,6 @@ import AbilityLifecycleCallback from '@ohos.app.ability.AbilityLifecycleCallback
 import UIAbility from '@ohos.app.ability.UIAbility';
 import { ExtendableComponent } from '@ohos.arkui.component';
 
-declare class ArkTools {
-  static forceFullGC(): void;
-}
-
 export default namespace jsLeakWatcher {
   loadLibraryWithPermissionCheck("jsleakwatcher_ani", "@ohos.hiviewdfx.jsLeakWatcher");
 
@@ -516,7 +512,7 @@ export default namespace jsLeakWatcher {
                       ` is less than the threshold.`);
           return;
         }
-        ArkTools.forceFullGC();
+        GC.startGC(GC.Cause.FULL, GC.IN_PLACE_MODE);
         appState.isGC = true;
       }
     } catch (error) {
@@ -717,7 +713,7 @@ export default namespace jsLeakWatcher {
       if (appState.isConfigObj) {
         startGCtask(appState.applicationContext);
       } else {
-        ArkTools.forceFullGC();
+        GC.startGC(GC.Cause.FULL, GC.IN_PLACE_MODE);
       }
     });
     handleDumpTask(() => {
