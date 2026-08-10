@@ -637,8 +637,8 @@ export default namespace jsLeakWatcher {
     return dumpInnerSync(filePath, false, false);
   }
 
-  function enableLeakWatcherWithArray(isEnabled: boolean,
-    configs: string[], callback: Callback<Array<string>>): void {
+  export function enableLeakWatcher(isEnabled: boolean,
+    configs: Array<string>, callback: Callback<Array<string>>): void {
     if (isEnabled === undefined || isEnabled === null) { throwBusinessError(ERROR_CODE_ENABLE_INVALID); }
     if (configs === undefined || configs === null) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
     if (callback === undefined || callback === null) { throwBusinessError(ERROR_CODE_CALLBACK_INVALID); }
@@ -662,7 +662,7 @@ export default namespace jsLeakWatcher {
     registerTasksAndExecute(filePath, callback, mask);
   }
 
-  function enableLeakWatcherWithConfig(isEnabled: boolean,
+  export function enableLeakWatcher(isEnabled: boolean,
     configs: LeakWatcherConfig, callback: Callback<Array<string>>): void {
     if (isEnabled === undefined || isEnabled === null) { throwBusinessError(ERROR_CODE_ENABLE_INVALID); }
     if (configs === undefined || configs === null) { throwBusinessError(ERROR_CODE_CONFIG_INVALID); }
@@ -704,15 +704,6 @@ export default namespace jsLeakWatcher {
     getProcessName();
     let mask: int = leakWatcherConfig.monitorObjectTypes.valueOf() as int;
     registerTasksAndExecute(filePath, callback, mask);
-  }
-
-  export function enableLeakWatcher(isEnabled: boolean,
-    configs: string[] | LeakWatcherConfig, callback: Callback<Array<string>>): void {
-    if (configs instanceof Array) {
-      enableLeakWatcherWithArray(isEnabled, configs, callback);
-    } else {
-      enableLeakWatcherWithConfig(isEnabled, configs as LeakWatcherConfig, callback);
-    }
   }
 
   function registerTasksAndExecute(filePath: string,
