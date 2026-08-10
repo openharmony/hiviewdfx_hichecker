@@ -190,7 +190,7 @@ function convertToMask(configArray: string[]): number {
 
   let mask = 0;
   configArray.forEach(item => {
-      const bitValue = typeMap[item] || 0; 
+      const bitValue = typeMap[item] || 0;
       mask |= bitValue;
   });
 
@@ -229,7 +229,7 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
     console.log('Delete old files failed! ' + e);
     return [];
   }
-  
+
   let fileList: string[] = [];
   if (needSandBox) {
     fileList = [filePath + '/' + getHeapBaseName(false) + '.jsleaklist', dumpStatus ? filePath + '/' + getHeapBaseName(false) + '.rawheap' : ''];
@@ -387,7 +387,7 @@ function startDumptask(filePath, callback): void {
       return item.hash === isDuplicateLeakList.hash;
     });
   if (hashEqual) {
-    console.log("No new leakage objects were added."); 
+    console.log("No new leakage objects were added.");
     return;
   }
   appState.intersection = getLeakList().filter(item1 =>
@@ -584,7 +584,7 @@ function deleteOldFile(filePath) {
         i++;
       }
     }
-  }  
+  }
 }
 
 function registerObject(obj, msg) {
@@ -699,7 +699,7 @@ function dumpInnerSync(filePath, needSandBox, isRawHeap) {
     }
     fs.closeSync(file);
   } catch (error) {
-    console.log('Dump heaoSnapShot or LeakList failed! ' + error);
+    console.log('Dump heapSnapShot or LeakList failed! ' + error);
     return [];
   }
 
@@ -735,7 +735,7 @@ function dumpInner(filePath, needSandBox, isRawHeap, jsCallback: Callback<Array<
       return [];
     });
   } catch (error) {
-    console.log('Dump heaoSnapShot or LeakList failed! ' + error);
+    console.log('Dump heapSnapShot or LeakList failed! ' + error);
     return [];
   }
 }
@@ -823,7 +823,7 @@ let jsLeakWatcher = {
     if (configs.length === 0) {
       configs = validConfig;
     }
-    
+
     if (appState.applicationContext === undefined) {
       console.log('enableLeakWatcher applicationContext is undefined');
       return;
