@@ -480,6 +480,10 @@ static ani_boolean RegisterArkUIObjectLifeCycleCallback(ani_env *env, ani_ref fu
         HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback UIContext is null");
         return ANI_FALSE;
     }
+    if (!JsLeakWatcherAniUtil::IsRefUndefined(env, g_arkUICallbackRef)) {
+        env->GlobalReference_Delete(g_arkUICallbackRef);
+        g_arkUICallbackRef = nullptr;
+    }
     g_arkUICallbackRef = JsLeakWatcherAniUtil::CreateGlobalReference(env, funcRef);
     if (JsLeakWatcherAniUtil::IsRefUndefined(env, g_arkUICallbackRef)) {
         HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback CreateGlobalReference failed");
