@@ -297,13 +297,12 @@ static void RemoveTask(ani_env *env)
 
 static void ExecuteDumpCallback(ani_ref gCallback, uint8_t retcode)
 {
-    ani_env *workerEnv = AttachAniEnv(g_aniVm);
+    ani_env *workerEnv = GetAniEnv(g_aniVm);
     if (workerEnv == nullptr) {
-        HILOG_ERROR(LOG_CORE, "DumpRawHeap callback AttachAniEnv failed");
-        ani_env *fallbackEnv = GetAniEnv(g_aniVm);
-        if (fallbackEnv != nullptr && !JsLeakWatcherAniUtil::IsRefUndefined(fallbackEnv, gCallback)) {
-            fallbackEnv->GlobalReference_Delete(gCallback);
-        }
+        workerEnv = AttachAniEnv(g_aniVm);
+    }
+    if (workerEnv == nullptr) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap callback GetEnv and AttachEnv both failed");
         return;
     }
     ani_size nrRefs = 16;
