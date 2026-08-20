@@ -380,8 +380,7 @@ export default namespace jsLeakWatcher {
     let buf: ArrayBuffer = new ArrayBuffer(bs);
     let rl: long = fileIo.readSync(f.fd, buf, { offset: rs, length: bs } as ReadOptions);
     while (rl > 0) {
-      let rli: int = rl as int;
-      let blob: cryptoFramework.DataBlob = { data: new Uint8Array(buf.slice(0, rli)) } as cryptoFramework.DataBlob;
+      let blob: cryptoFramework.DataBlob = { data: new Uint8Array(buf, 0, Number.parseInt(rl.toString(), 10)) } as cryptoFramework.DataBlob;
       md.updateSync(blob);
       rs += rl;
       rl = fileIo.readSync(f.fd, buf, { offset: rs, length: bs } as ReadOptions);
