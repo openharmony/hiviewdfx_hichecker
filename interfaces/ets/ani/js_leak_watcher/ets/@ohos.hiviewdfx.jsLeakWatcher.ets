@@ -216,10 +216,10 @@ export default namespace jsLeakWatcher {
 
   const FILE_TIMESTAMP_REGEX: RegExp = new RegExp('(\\d+)\\.(heapsnapshot|jsleaklist|rawheap)');
 
-  function getTimestampByFileName(fileName: string): int {
+  function getTimestampByFileName(fileName: string): long {
     let match: RegExpMatchArray | null = fileName.match(FILE_TIMESTAMP_REGEX);
     if (match !== null && match.length > 1) {
-      return parseInt(match[1] as string).toInt();
+      return parseInt(match[1] as string).toLong();
     }
     return 0;
   }
@@ -256,7 +256,7 @@ export default namespace jsLeakWatcher {
       return;
     }
     if (files.length <= 0) { return; }
-    let tsList: int[] = [];
+    let tsList: long[] = [];
     for (let i: int = 0; i < files.length; i++) {
       tsList[i] = getTimestampByFileName(files[i]);
     }
@@ -334,7 +334,7 @@ export default namespace jsLeakWatcher {
       return;
     }
     if (files.length > maxFileNum) {
-      let tsList: int[] = [];
+      let tsList: long[] = [];
       for (let i: int = 0; i < files.length; i++) {
         tsList[i] = getTimestampByFileName(files[i]);
       }
