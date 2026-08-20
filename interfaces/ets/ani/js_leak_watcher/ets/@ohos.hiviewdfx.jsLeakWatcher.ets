@@ -375,12 +375,13 @@ export default namespace jsLeakWatcher {
   function getHeapDumpSHA256(filePath: string): string {
     let md: cryptoFramework.Md = cryptoFramework.createMd('SHA256');
     let f = fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE);
-    let bs: long = 40960;
+    let bs: int = 40960;
     let rs: long = 0;
     let buf: ArrayBuffer = new ArrayBuffer(bs);
     let rl: long = fileIo.readSync(f.fd, buf, { offset: rs, length: bs } as ReadOptions);
     while (rl > 0) {
-      let blob: cryptoFramework.DataBlob = { data: new Uint8Array(buf.slice(0, rl)) } as cryptoFramework.DataBlob;
+      let rli: int = rl as int;
+      let blob: cryptoFramework.DataBlob = { data: new Uint8Array(buf.slice(0, rli)) } as cryptoFramework.DataBlob;
       md.updateSync(blob);
       rs += rl;
       rl = fileIo.readSync(f.fd, buf, { offset: rs, length: bs } as ReadOptions);
