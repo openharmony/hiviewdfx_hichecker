@@ -41,7 +41,7 @@ export default namespace jsLeakWatcher {
   const ERROR_MSG_CALLBACK_INVALID: string = 'The parameter callback invalid. Please check!';
   const MIN_CHECK_INTERVAL: int = 90000;
   const ATTEMPT_COUNT: int = 2;
-  const MAX_FILE_NUM_DEFAULT: int = 20;
+  const MAX_FILE_NUM_DEFAULT: int = 30;
   const STATE_FOREGROUND: int = 1;
   const STATE_BACKGROUND: int = 3;
 
@@ -255,13 +255,18 @@ export default namespace jsLeakWatcher {
     files.sort((a: string, b: string) => getTimestampByFileName(b) - getTimestampByFileName(a));
     let prefix: string = getHeapPrefix();
     if (!files[0].startsWith(prefix)) { return; }
-    let base: string = prefix + getTimestampByFileName(files[0]).toString();
+    let ts: string = getTimestampByFileName(files[0]).toString();
+    let base: string = prefix + ts;
+    let staticBase: string = getStaticHeapPrefix() + ts;
     try {
       let lp: string = filePath + '/' + base + '.jsleaklist';
       if (fileIo.accessSync(lp)) { fileIo.unlinkSync(lp); }
       let rp: string = filePath + '/' + base + '.rawheap';
       if (fileIo.accessSync(rp)) { fileIo.unlinkSync(rp); }
-      else { fileIo.unlinkSync(filePath + '/' + base + '.heapsnapshot'); }
+      let hp: string = filePath + '/' + base + '.heapsnapshot';
+      if (fileIo.accessSync(hp)) { fileIo.unlinkSync(hp); }
+      let srp: string = filePath + '/' + staticBase + '.rawheap';
+      if (fileIo.accessSync(srp)) { fileIo.unlinkSync(srp); }
     } catch (e) {
       console.log('Delete files failed! ' + e);
     }
@@ -306,12 +311,12 @@ export default namespace jsLeakWatcher {
     }
     if (files.length > maxFileNum) {
       files.sort((a: string, b: string) => getTimestampByFileName(a) - getTimestampByFileName(b));
-      for (let i: int = 0; i < files.length - maxFileNum; i++) {
-        fileIo.unlinkSync(filePath + '/' + files[i]);
-        console.log(`File: ${files[i]} is deleted.`);
+      let i: int = 0;
+      while (i < files.length && files.length - i > maxFileNum) {
         let ts: string = getTimestampByFileName(files[i]).toString();
-        if (i + 1 < files.length && files[i + 1].includes(ts)) {
-          fileIo.unlinkSync(filePath + '/' + files[i + 1]);
+        while (i < files.length && files[i].includes(ts)) {
+          fileIo.unlinkSync(filePath + '/' + files[i]);
+          console.log(`File: ${files[i]} is deleted.`);
           i++;
         }
       }
@@ -682,7 +687,7 @@ export default namespace jsLeakWatcher {
     leakWatcherConfig.fgLeakCountThreshold = cfg.fgLeakCountThreshold ?? 5;
     leakWatcherConfig.bgLeakCountThreshold = cfg.bgLeakCountThreshold ?? 1;
     let m: int = toInt(cfg.maxStoredHeapDumps, 0);
-    maxFileNum = m > 0 ? m * 2 : toInt(leakWatcherConfig.maxStoredHeapDumps, 10) * 2;
+    maxFileNum = m > 0 ? m * 3 : toInt(leakWatcherConfig.maxStoredHeapDumps, 10) * 3;
     leakWatcherConfig.monitorObjectTypes = cfg.monitorObjectTypes;
 
     let appCtx = application.getApplicationContextInstance();
