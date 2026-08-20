@@ -19,9 +19,11 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <cstring>
+#include <ctime>
 
 #include "ani_util.h"
 #include "hilog/log.h"
+#include "hisysevent.h"
 #include "sys_param.h"
 #include "dfx_jsnapi.h"
 
@@ -513,6 +515,52 @@ static ani_int GetTid(ani_env *env)
     return static_cast<ani_int>(gettid());
 }
 
+static void ReportRawHeap(ani_env *env, ani_int pid, ani_string happenTimeAni,
+    ani_string moduleAni, ani_string leakListAni, ani_string dynamicRawheapPathAni,
+    ani_string staticRawheapPathAni, ani_string leakListPathAni, ani_int leakObjectCount)
+{
+    HILOG_INFO(LOG_CORE, "hisysevent reportrawheap begin!");
+    std::string happenTime;
+    std::string module;
+    std::string leakList;
+    std::string dynamicRawheapPath;
+    std::string staticRawheapPath;
+    std::string leakListPath;
+    if (JsLeakWatcherAniUtil::ParseAniString(env, happenTimeAni, happenTime) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString happenTime failed");
+        return;
+    }
+    if (JsLeakWatcherAniUtil::ParseAniString(env, moduleAni, module) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString module failed");
+        return;
+    }
+    if (JsLeakWatcherAniUtil::ParseAniString(env, leakListAni, leakList) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString leakList failed");
+        return;
+    }
+    if (JsLeakWatcherAniUtil::ParseAniString(env, dynamicRawheapPathAni, dynamicRawheapPath) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString dynamicRawheapPath failed");
+        return;
+    }
+    if (JsLeakWatcherAniUtil::ParseAniString(env, staticRawheapPathAni, staticRawheapPath) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString staticRawheapPath failed");
+        return;
+    }
+    if (JsLeakWatcherAniUtil::ParseAniString(env, leakListPathAni, leakListPath) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString leakListPath failed");
+        return;
+    }
+    int ret = HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::RELIABILITY,
+        "MEMORY_LEAK_JS_LEAK_WATCHER", OHOS::HiviewDFX::HiSysEvent::EventType::FAULT,
+        "PID", pid, "HAPPEN_TIME", happenTime, "MODULE", module, "LEAK_LIST", leakList,
+        "DYNAMIC_RAWHEAP_PATH", dynamicRawheapPath, "STATIC_RAWHEAP_PATH", staticRawheapPath,
+        "LEAK_LIST_PATH", leakListPath, "LEAK_OBJECT_COUNT", leakObjectCount);
+    if (ret != 0) {
+        HILOG_ERROR(LOG_CORE, "hisysevent report failed! ret %{public}d.", ret);
+    }
+    HILOG_INFO(LOG_CORE, "hisysevent reportrawheap end!");
+}
+
 ani_status ANI_ConstructorImpl(ani_vm *vm, uint32_t *result)
 {
     ani_env *env = nullptr;
@@ -542,6 +590,7 @@ ani_status ANI_ConstructorImpl(ani_vm *vm, uint32_t *result)
             reinterpret_cast<void *>(RegisterArkUIObjectLifeCycleCallback)},
         ani_native_function {"unregisterArkUIObjectLifeCycleCallbackNative", nullptr,
             reinterpret_cast<void *>(UnregisterArkUIObjectLifeCycleCallback)},
+        ani_native_function {"reportRawHeap", nullptr, reinterpret_cast<void *>(ReportRawHeap)},
     };
     if (ANI_OK != env->Namespace_BindNativeFunctions(ns, methods.data(), methods.size())) {
         HILOG_ERROR(LOG_CORE, "Namespace_BindNativeFunctions failed");

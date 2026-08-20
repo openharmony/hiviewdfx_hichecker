@@ -92,6 +92,9 @@ export default namespace jsLeakWatcher {
   native function registerArkUIObjectLifeCycleCallbackNative(
     callback: (weakRef: WeakRef<object>, msg: string) => void): boolean;
   native function unregisterArkUIObjectLifeCycleCallbackNative(): void;
+  native function reportRawHeap(pid: int, happenTime: string, module: string, leakList: string,
+    dynamicRawheapPath: string, staticRawheapPath: string, leakListPath: string,
+    leakObjectCount: int): void;
 
   class LeakWatcherAbilityCallback extends AbilityLifecycleCallback {
     onAbilityDestroy(ability: UIAbility): void {
@@ -402,7 +405,15 @@ export default namespace jsLeakWatcher {
     }
     appState.leakListPath = fl;
     if (jsCallback !== undefined) { jsCallback(fl); }
+    setReportData();
     return [];
+  }
+
+  function setReportData(): void {
+    reportRawHeap(getPid(), Date.now().toString(), appState.bundleName,
+      JSON.stringify(appState.intersection), JSON.stringify(appState.leakListPath),
+      JSON.stringify(appState.leakListPath), JSON.stringify(appState.leakListPath),
+      appState.intersection.length);
   }
 
   function dumpInnerSync(filePath: string, needSandBox: boolean, isRawHeap: boolean): string[] {
