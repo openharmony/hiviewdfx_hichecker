@@ -264,7 +264,11 @@ export default namespace jsLeakWatcher {
     for (let i: int = 0; i < files.length; i++) {
       idx[i] = i;
     }
-    idx.sort((a: int, b: int) => tsList[b] - tsList[a]);
+    idx.sort((a: int, b: int): int => {
+      if (tsList[b] < tsList[a]) { return -1; }
+      if (tsList[b] > tsList[a]) { return 1; }
+      return 0;
+    });
     let prefix: string = getHeapPrefix();
     if (!files[idx[0]].startsWith(prefix)) { return; }
     let ts: string = tsList[idx[0]].toString();
@@ -342,7 +346,11 @@ export default namespace jsLeakWatcher {
       for (let i: int = 0; i < files.length; i++) {
         idx[i] = i;
       }
-      idx.sort((a: int, b: int) => tsList[a] - tsList[b]);
+      idx.sort((a: int, b: int): int => {
+        if (tsList[a] < tsList[b]) { return -1; }
+        if (tsList[a] > tsList[b]) { return 1; }
+        return 0;
+      });
       let i: int = 0;
       while (i < idx.length && idx.length - i > maxFileNum) {
         let ts: string = tsList[idx[i]].toString();
