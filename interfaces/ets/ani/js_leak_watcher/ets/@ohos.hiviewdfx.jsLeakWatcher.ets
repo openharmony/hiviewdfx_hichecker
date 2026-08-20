@@ -214,9 +214,10 @@ export default namespace jsLeakWatcher {
     return result;
   }
 
+  const FILE_TIMESTAMP_REGEX: RegExp = new RegExp('(\\d+)\\.(heapsnapshot|jsleaklist|rawheap)');
+
   function getTimestampByFileName(fileName: string): int {
-    let regex: RegExp = new RegExp('(\\d+)\\.(heapsnapshot|jsleaklist|rawheap)');
-    let match: RegExpMatchArray | null = fileName.match(regex);
+    let match: RegExpMatchArray | null = fileName.match(FILE_TIMESTAMP_REGEX);
     if (match !== null && match.length > 1) {
       return parseInt(match[1] as string).toInt();
     }
@@ -255,10 +256,18 @@ export default namespace jsLeakWatcher {
       return;
     }
     if (files.length <= 0) { return; }
-    files.sort((a: string, b: string) => getTimestampByFileName(b) - getTimestampByFileName(a));
+    let tsList: int[] = [];
+    for (let i: int = 0; i < files.length; i++) {
+      tsList[i] = getTimestampByFileName(files[i]);
+    }
+    let idx: int[] = [];
+    for (let i: int = 0; i < files.length; i++) {
+      idx[i] = i;
+    }
+    idx.sort((a: int, b: int) => tsList[b] - tsList[a]);
     let prefix: string = getHeapPrefix();
-    if (!files[0].startsWith(prefix)) { return; }
-    let ts: string = getTimestampByFileName(files[0]).toString();
+    if (!files[idx[0]].startsWith(prefix)) { return; }
+    let ts: string = tsList[idx[0]].toString();
     let base: string = prefix + ts;
     let staticBase: string = getStaticHeapPrefix() + ts;
     try {
@@ -291,11 +300,23 @@ export default namespace jsLeakWatcher {
     for (let i: int = 0; i < files.length; i++) {
       let off: int = files[i].lastIndexOf('.rawheap');
       if (off <= 0) { continue; }
-      let lp: string = filePath + '/' + files[i].substring(0, off) + '.jsleaklist';
-      if (!fileIo.accessSync(lp)) {
-        try { fileIo.unlinkSync(filePath + '/' + files[i]); }
-        catch (e) { console.log('Delete files failed! ' + e); return; }
-        console.warn(`delete ${files[i]} which no match jsleaklist`);
+      let baseName: string = files[i].substring(0, off);
+      if (baseName.includes('static_jsheap')) {
+        let dynName: string = getHeapPrefix() +
+          getTimestampByFileName(files[i]).toString();
+        let dynLp: string = filePath + '/' + dynName + '.jsleaklist';
+        if (!fileIo.accessSync(dynLp)) {
+          try { fileIo.unlinkSync(filePath + '/' + files[i]); }
+          catch (e) { console.log('Delete files failed! ' + e); return; }
+          console.warn(`delete ${files[i]} which no match jsleaklist`);
+        }
+      } else {
+        let lp: string = filePath + '/' + baseName + '.jsleaklist';
+        if (!fileIo.accessSync(lp)) {
+          try { fileIo.unlinkSync(filePath + '/' + files[i]); }
+          catch (e) { console.log('Delete files failed! ' + e); return; }
+          console.warn(`delete ${files[i]} which no match jsleaklist`);
+        }
       }
     }
   }
@@ -313,13 +334,21 @@ export default namespace jsLeakWatcher {
       return;
     }
     if (files.length > maxFileNum) {
-      files.sort((a: string, b: string) => getTimestampByFileName(a) - getTimestampByFileName(b));
+      let tsList: int[] = [];
+      for (let i: int = 0; i < files.length; i++) {
+        tsList[i] = getTimestampByFileName(files[i]);
+      }
+      let idx: int[] = [];
+      for (let i: int = 0; i < files.length; i++) {
+        idx[i] = i;
+      }
+      idx.sort((a: int, b: int) => tsList[a] - tsList[b]);
       let i: int = 0;
-      while (i < files.length && files.length - i > maxFileNum) {
-        let ts: string = getTimestampByFileName(files[i]).toString();
-        while (i < files.length && files[i].includes(ts)) {
-          fileIo.unlinkSync(filePath + '/' + files[i]);
-          console.log(`File: ${files[i]} is deleted.`);
+      while (i < idx.length && idx.length - i > maxFileNum) {
+        let ts: string = tsList[idx[i]].toString();
+        while (i < idx.length && files[idx[i]].includes(ts)) {
+          fileIo.unlinkSync(filePath + '/' + files[idx[i]]);
+          console.log(`File: ${files[idx[i]]} is deleted.`);
           i++;
         }
       }
