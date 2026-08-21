@@ -263,12 +263,12 @@ export default namespace jsLeakWatcher {
       console.log('deleteLastOldFile parsing file ' + i + ': ' + files[i]);
       let ts: number = getTimestampByFileName(files[i]);
       console.log('deleteLastOldFile parsed ts=' + ts);
-      tsList[i] = ts;
+      tsList.push(ts);
     }
     console.log('deleteLastOldFile tsList extracted');
     let idx: int[] = [];
     for (let i: int = 0; i < files.length; i++) {
-      idx[i] = i;
+      idx.push(i);
     }
     console.log('deleteLastOldFile before sort');
     idx.sort((a: int, b: int): int => {
@@ -348,11 +348,11 @@ export default namespace jsLeakWatcher {
     if (files.length > maxFileNum) {
       let tsList: number[] = [];
       for (let i: int = 0; i < files.length; i++) {
-        tsList[i] = getTimestampByFileName(files[i]);
+        tsList.push(getTimestampByFileName(files[i]));
       }
       let idx: int[] = [];
       for (let i: int = 0; i < files.length; i++) {
-        idx[i] = i;
+        idx.push(i);
       }
       idx.sort((a: int, b: int): int => {
         if (tsList[a] < tsList[b]) { return -1; }
