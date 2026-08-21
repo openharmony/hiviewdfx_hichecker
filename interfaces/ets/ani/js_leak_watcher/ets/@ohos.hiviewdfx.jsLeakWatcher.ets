@@ -424,7 +424,14 @@ export default namespace jsLeakWatcher {
     let lol: ObjMsg[] = getLeakList();
     let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
     let dp: string = filePath + '/' + getHeapBaseName(false) + suf;
-    let sha: string = dumpStatus ? getHeapDumpSHA256(dp) : '';
+    let sha: string = '';
+    if (dumpStatus) {
+      try {
+        sha = getHeapDumpSHA256(dp);
+      } catch (e) {
+        console.log('SHA256 failed! ' + e);
+      }
+    }
     let r: LeakJsonResult = dumpStatus
       ? { version: '2.0.0', snapshot_hash: sha, leakObjList: lol }
       : { snapshot_hash: sha, leakObjList: lol };
@@ -463,7 +470,12 @@ export default namespace jsLeakWatcher {
       let lol: ObjMsg[] = getLeakList();
       let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
       let dp: string = filePath + '/' + getHeapBaseName(false) + suf;
-      let sha: string = getHeapDumpSHA256(dp);
+      let sha: string = '';
+      try {
+        sha = getHeapDumpSHA256(dp);
+      } catch (e) {
+        console.log('SHA256Sync failed! ' + e);
+      }
       let r: LeakJsonResult = isRawHeap
         ? { version: '2.0.0', snapshot_hash: sha, leakObjList: lol }
         : { snapshot_hash: sha, leakObjList: lol };
