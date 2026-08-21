@@ -313,22 +313,29 @@ export default namespace jsLeakWatcher {
       let off: int = files[i].lastIndexOf('.rawheap');
       if (off <= 0) { continue; }
       let baseName: string = files[i].substring(0, off);
-      if (baseName.includes('static_jsheap')) {
-        let dynName: string = getHeapPrefix() +
-          getTimestampByFileName(files[i]).toString();
-        let dynLp: string = filePath + '/' + dynName + '.jsleaklist';
-        if (!fileIo.accessSync(dynLp)) {
-          try { fileIo.unlinkSync(filePath + '/' + files[i]); }
-          catch (e) { console.log('Delete files failed! ' + e); return; }
-          console.warn(`delete ${files[i]} which no match jsleaklist`);
+      let ts: number = getTimestampByFileName(files[i]);
+      let tsStr: string = ts.toString();
+      let foundMatch: boolean = false;
+      let allFiles: string[] = [];
+      try {
+        let allOpt: ListFileOptions = {
+          recursion: false, listNum: 0,
+          filter: { suffix: ['.jsleaklist'] } as Filter
+        };
+        allFiles = fileIo.listFileSync(filePath, allOpt);
+      } catch (e) {
+        console.log('List jsleaklist files failed! ' + e);
+      }
+      for (let j: int = 0; j < allFiles.length; j++) {
+        if (allFiles[j].includes(tsStr)) {
+          foundMatch = true;
+          break;
         }
-      } else {
-        let lp: string = filePath + '/' + baseName + '.jsleaklist';
-        if (!fileIo.accessSync(lp)) {
-          try { fileIo.unlinkSync(filePath + '/' + files[i]); }
-          catch (e) { console.log('Delete files failed! ' + e); return; }
-          console.warn(`delete ${files[i]} which no match jsleaklist`);
-        }
+      }
+      if (!foundMatch) {
+        try { fileIo.unlinkSync(filePath + '/' + files[i]); }
+        catch (e) { console.log('Delete files failed! ' + e); return; }
+        console.warn(`delete ${files[i]} which no match jsleaklist`);
       }
     }
   }
