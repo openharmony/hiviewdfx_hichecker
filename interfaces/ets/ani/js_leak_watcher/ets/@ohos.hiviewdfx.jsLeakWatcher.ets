@@ -244,6 +244,7 @@ export default namespace jsLeakWatcher {
   }
 
   function deleteLastOldFile(filePath: string): void {
+    console.log('deleteLastOldFile start');
     let opt: ListFileOptions = {
       recursion: false, listNum: 0,
       filter: { suffix: ['.jsleaklist'] } as Filter
@@ -255,20 +256,24 @@ export default namespace jsLeakWatcher {
       console.log('List files failed! ' + e);
       return;
     }
+    console.log('deleteLastOldFile files count=' + files.length);
     if (files.length <= 0) { return; }
     let tsList: number[] = [];
     for (let i: int = 0; i < files.length; i++) {
       tsList[i] = getTimestampByFileName(files[i]);
     }
+    console.log('deleteLastOldFile tsList extracted');
     let idx: int[] = [];
     for (let i: int = 0; i < files.length; i++) {
       idx[i] = i;
     }
+    console.log('deleteLastOldFile before sort');
     idx.sort((a: int, b: int): int => {
       if (tsList[b] < tsList[a]) { return -1; }
       if (tsList[b] > tsList[a]) { return 1; }
       return 0;
     });
+    console.log('deleteLastOldFile after sort');
     let prefix: string = getHeapPrefix();
     if (!files[idx[0]].startsWith(prefix)) { return; }
     let ts: string = tsList[idx[0]].toString();
@@ -365,19 +370,22 @@ export default namespace jsLeakWatcher {
 
   function createHeapDumpFile(filePath: string, isRawHeap: boolean, isSync: boolean,
     dumpCallback?: (code: int) => void): void {
-    if (firstDump) { firstDump = false; deleteUnMatchDumpFile(filePath); }
-    else { deleteLastOldFile(filePath); }
+    console.log('createHeapDumpFile start firstDump=' + firstDump);
+    if (firstDump) { firstDump = false; console.log('createHeapDumpFile deleteUnMatchDumpFile'); deleteUnMatchDumpFile(filePath); }
+    else { console.log('createHeapDumpFile deleteLastOldFile'); deleteLastOldFile(filePath); }
     let fn: string = getHeapBaseName(true);
     let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
     let dp: string = filePath + '/' + fn + suf;
     let sp: string = filePath + '/' + getStaticHeapBaseName() + suf;
+    console.log('createHeapDumpFile dp=' + dp + ' sp=' + sp);
     if (isRawHeap) {
-      if (!isSync && dumpCallback !== undefined) { dumpRawHeap(dp, sp, dumpCallback); }
-      else { dumpRawHeapSync(dp, sp); }
+      if (!isSync && dumpCallback !== undefined) { console.log('createHeapDumpFile dumpRawHeap async'); dumpRawHeap(dp, sp, dumpCallback); }
+      else { console.log('createHeapDumpFile dumpRawHeapSync'); dumpRawHeapSync(dp, sp); }
     } else {
       hidebug.dumpJsHeapData(fn);
       fileIo.moveFileSync(SANDBOX_PATH + fn + suf, dp, 0);
     }
+    console.log('createHeapDumpFile end');
   }
 
   function getHeapDumpSHA256(filePath: string): string {
