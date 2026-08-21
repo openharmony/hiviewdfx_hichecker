@@ -219,7 +219,7 @@ export default namespace jsLeakWatcher {
   function getTimestampByFileName(fileName: string): long {
     let match: RegExpMatchArray | null = fileName.match(FILE_TIMESTAMP_REGEX);
     if (match !== null && match.length > 1) {
-      return parseInt(match[1] as string).toLong();
+      return Number.parseInt(match[1] as string, 10).toLong();
     }
     return 0;
   }
