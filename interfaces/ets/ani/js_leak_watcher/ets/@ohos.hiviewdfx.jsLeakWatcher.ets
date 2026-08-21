@@ -260,7 +260,10 @@ export default namespace jsLeakWatcher {
     if (files.length <= 0) { return; }
     let tsList: number[] = [];
     for (let i: int = 0; i < files.length; i++) {
-      tsList[i] = getTimestampByFileName(files[i]);
+      console.log('deleteLastOldFile parsing file ' + i + ': ' + files[i]);
+      let ts: number = getTimestampByFileName(files[i]);
+      console.log('deleteLastOldFile parsed ts=' + ts);
+      tsList[i] = ts;
     }
     console.log('deleteLastOldFile tsList extracted');
     let idx: int[] = [];
