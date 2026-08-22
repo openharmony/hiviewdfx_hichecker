@@ -515,50 +515,75 @@ static ani_int GetTid(ani_env *env)
     return static_cast<ani_int>(gettid());
 }
 
-static void ReportRawHeap(ani_env *env, ani_int pid, ani_string happenTimeAni,
-    ani_string moduleAni, ani_string leakListAni, ani_string dynamicRawheapPathAni,
-    ani_string staticRawheapPathAni, ani_string leakListPathAni, ani_int leakObjectCount)
-{
-    HILOG_INFO(LOG_CORE, "hisysevent reportrawheap begin!");
+struct ReportData {
+    int32_t pid = 0;
     std::string happenTime;
     std::string module;
     std::string leakList;
     std::string dynamicRawheapPath;
     std::string staticRawheapPath;
     std::string leakListPath;
-    if (JsLeakWatcherAniUtil::ParseAniString(env, happenTimeAni, happenTime) != ANI_OK) {
+    int32_t leakObjectCount = 0;
+};
+
+static bool ParseReportStrings(ani_env *env, ani_string happenTimeAni, ani_string moduleAni,
+    ani_string leakListAni, ani_string dynamicRawheapPathAni,
+    ani_string staticRawheapPathAni, ani_string leakListPathAni, ReportData &data)
+{
+    if (JsLeakWatcherAniUtil::ParseAniString(env, happenTimeAni, data.happenTime) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString happenTime failed");
-        return;
+        return false;
     }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, moduleAni, module) != ANI_OK) {
+    if (JsLeakWatcherAniUtil::ParseAniString(env, moduleAni, data.module) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString module failed");
-        return;
+        return false;
     }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, leakListAni, leakList) != ANI_OK) {
+    if (JsLeakWatcherAniUtil::ParseAniString(env, leakListAni, data.leakList) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString leakList failed");
-        return;
+        return false;
     }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, dynamicRawheapPathAni, dynamicRawheapPath) != ANI_OK) {
+    if (JsLeakWatcherAniUtil::ParseAniString(env, dynamicRawheapPathAni, data.dynamicRawheapPath) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString dynamicRawheapPath failed");
-        return;
+        return false;
     }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, staticRawheapPathAni, staticRawheapPath) != ANI_OK) {
+    if (JsLeakWatcherAniUtil::ParseAniString(env, staticRawheapPathAni, data.staticRawheapPath) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString staticRawheapPath failed");
-        return;
+        return false;
     }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, leakListPathAni, leakListPath) != ANI_OK) {
+    if (JsLeakWatcherAniUtil::ParseAniString(env, leakListPathAni, data.leakListPath) != ANI_OK) {
         HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString leakListPath failed");
-        return;
+        return false;
     }
+    return true;
+}
+
+static void WriteReportToHiSysEvent(const ReportData &data)
+{
     int ret = HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::RELIABILITY,
         "MEMORY_LEAK_JS_LEAK_WATCHER", OHOS::HiviewDFX::HiSysEvent::EventType::FAULT,
-        "PID", pid, "HAPPEN_TIME", happenTime, "MODULE", module, "LEAK_LIST", leakList,
-        "DYNAMIC_RAWHEAP_PATH", dynamicRawheapPath, "STATIC_RAWHEAP_PATH", staticRawheapPath,
-        "LEAK_LIST_PATH", leakListPath, "LEAK_OBJECT_COUNT", leakObjectCount);
+        "PID", data.pid, "HAPPEN_TIME", data.happenTime, "MODULE", data.module,
+        "LEAK_LIST", data.leakList, "DYNAMIC_RAWHEAP_PATH", data.dynamicRawheapPath,
+        "STATIC_RAWHEAP_PATH", data.staticRawheapPath, "LEAK_LIST_PATH", data.leakListPath,
+        "LEAK_OBJECT_COUNT", data.leakObjectCount);
     if (ret != 0) {
         HILOG_ERROR(LOG_CORE, "hisysevent report failed! ret %{public}d.", ret);
     }
     HILOG_INFO(LOG_CORE, "hisysevent reportrawheap end!");
+}
+
+static void ReportRawHeap(ani_env *env, ani_int pid, ani_string happenTimeAni,
+    ani_string moduleAni, ani_string leakListAni, ani_string dynamicRawheapPathAni,
+    ani_string staticRawheapPathAni, ani_string leakListPathAni, ani_int leakObjectCount)
+{
+    HILOG_INFO(LOG_CORE, "hisysevent reportrawheap begin!");
+    ReportData data;
+    data.pid = pid;
+    data.leakObjectCount = leakObjectCount;
+    if (!ParseReportStrings(env, happenTimeAni, moduleAni, leakListAni,
+        dynamicRawheapPathAni, staticRawheapPathAni, leakListPathAni, data)) {
+        return;
+    }
+    WriteReportToHiSysEvent(data);
 }
 
 ani_status ANI_ConstructorImpl(ani_vm *vm, uint32_t *result)
