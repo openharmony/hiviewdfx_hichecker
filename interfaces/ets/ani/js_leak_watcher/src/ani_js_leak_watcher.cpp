@@ -526,32 +526,32 @@ struct ReportData {
     int32_t leakObjectCount = 0;
 };
 
-static bool ParseReportStrings(ani_env *env, ani_string happenTimeAni, ani_string moduleAni,
-    ani_string leakListAni, ani_string dynamicRawheapPathAni,
-    ani_string staticRawheapPathAni, ani_string leakListPathAni, ReportData &data)
+struct ReportAniParams {
+    ani_string happenTime;
+    ani_string module;
+    ani_string leakList;
+    ani_string dynamicRawheapPath;
+    ani_string staticRawheapPath;
+    ani_string leakListPath;
+};
+
+static bool ParseAniStringSafe(ani_env *env, ani_string aniStr, std::string &out, const char *name)
 {
-    if (JsLeakWatcherAniUtil::ParseAniString(env, happenTimeAni, data.happenTime) != ANI_OK) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString happenTime failed");
+    if (JsLeakWatcherAniUtil::ParseAniString(env, aniStr, out) != ANI_OK) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString %{public}s failed", name);
         return false;
     }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, moduleAni, data.module) != ANI_OK) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString module failed");
-        return false;
-    }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, leakListAni, data.leakList) != ANI_OK) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString leakList failed");
-        return false;
-    }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, dynamicRawheapPathAni, data.dynamicRawheapPath) != ANI_OK) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString dynamicRawheapPath failed");
-        return false;
-    }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, staticRawheapPathAni, data.staticRawheapPath) != ANI_OK) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString staticRawheapPath failed");
-        return false;
-    }
-    if (JsLeakWatcherAniUtil::ParseAniString(env, leakListPathAni, data.leakListPath) != ANI_OK) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap ParseAniString leakListPath failed");
+    return true;
+}
+
+static bool ParseReportStrings(ani_env *env, const ReportAniParams &params, ReportData &data)
+{
+    if (!ParseAniStringSafe(env, params.happenTime, data.happenTime, "happenTime") ||
+        !ParseAniStringSafe(env, params.module, data.module, "module") ||
+        !ParseAniStringSafe(env, params.leakList, data.leakList, "leakList") ||
+        !ParseAniStringSafe(env, params.dynamicRawheapPath, data.dynamicRawheapPath, "dynamicRawheapPath") ||
+        !ParseAniStringSafe(env, params.staticRawheapPath, data.staticRawheapPath, "staticRawheapPath") ||
+        !ParseAniStringSafe(env, params.leakListPath, data.leakListPath, "leakListPath")) {
         return false;
     }
     return true;
@@ -579,8 +579,14 @@ static void ReportRawHeap(ani_env *env, ani_int pid, ani_string happenTimeAni,
     ReportData data;
     data.pid = pid;
     data.leakObjectCount = leakObjectCount;
-    if (!ParseReportStrings(env, happenTimeAni, moduleAni, leakListAni,
-        dynamicRawheapPathAni, staticRawheapPathAni, leakListPathAni, data)) {
+    ReportAniParams params;
+    params.happenTime = happenTimeAni;
+    params.module = moduleAni;
+    params.leakList = leakListAni;
+    params.dynamicRawheapPath = dynamicRawheapPathAni;
+    params.staticRawheapPath = staticRawheapPathAni;
+    params.leakListPath = leakListPathAni;
+    if (!ParseReportStrings(env, params, data)) {
         return;
     }
     WriteReportToHiSysEvent(data);
