@@ -54,7 +54,9 @@ generate_static_abc("jsleakwatcher") {
   files = [ "./ets/@ohos.hiviewdfx.jsLeakWatcher.ets" ]
   is_boot_abc = "True"
   device_dst_file = "/system/framework/jsleakwatcher.abc"
-  external_dependencies = [ "ace_engine:copy_arkui_ets" ]
+  if (!ohos_indep_compiler_enable) {
+    external_dependencies = [ "ace_engine:copy_arkui_ets" ]
+  }
 }
 
 ohos_prebuilt_etc("jsleakwatcher_etc") {
