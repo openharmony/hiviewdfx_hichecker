@@ -206,7 +206,8 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
       deleteLastOldFile(filePath);
     }
   }
-  let file = dumpStatus ? fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE) :
+  let file = dumpStatus ?
+    fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE) :
     fs.openSync(filePath + '/' + getHeapBaseName(true) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
   let leakObjList = getLeakList();
   let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
@@ -232,7 +233,8 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
 
   let fileList: string[] = [];
   if (needSandBox) {
-    fileList = [filePath + '/' + getHeapBaseName(false) + '.jsleaklist', dumpStatus ? filePath + '/' + getHeapBaseName(false) + '.rawheap' : ''];
+    fileList = [filePath + '/' + getHeapBaseName(false) + '.jsleaklist', dumpStatus ?
+                filePath + '/' + getHeapBaseName(false) + '.rawheap' : ''];
   } else {
     fileList = [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
   }
@@ -650,7 +652,8 @@ function executeRegister(config: MonitorObjectType) {
       }
     });
     if (!ret) {
-      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ? MonitorObjectType.WINDOW : retryMonitorObjectTypes | MonitorObjectType.WINDOW;
+      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ?
+        MonitorObjectType.WINDOW : retryMonitorObjectTypes | MonitorObjectType.WINDOW;
     }
   }
     if (config & MonitorObjectType.NODE_CONTAINER ||
@@ -663,13 +666,16 @@ function executeRegister(config: MonitorObjectType) {
       registerObject(obj, '');
     });
     if (!ret) {
-      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ? MonitorObjectType.NODE_CONTAINER : retryMonitorObjectTypes | MonitorObjectType.NODE_CONTAINER;
-      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ? MonitorObjectType.WINDOW : retryMonitorObjectTypes | MonitorObjectType.X_COMPONENT;
+      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ?
+        MonitorObjectType.NODE_CONTAINER : retryMonitorObjectTypes | MonitorObjectType.NODE_CONTAINER;
+      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ?
+        MonitorObjectType.WINDOW : retryMonitorObjectTypes | MonitorObjectType.X_COMPONENT;
     }
   }
   if (config & MonitorObjectType.ABILITY) {
     if (!registerAbilityLifecycleCallback()) {
-      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ? MonitorObjectType.ABILITY : retryMonitorObjectTypes | MonitorObjectType.ABILITY;
+      retryMonitorObjectTypes = (retryMonitorObjectTypes === undefined) ?
+        MonitorObjectType.ABILITY : retryMonitorObjectTypes | MonitorObjectType.ABILITY;
     }
   }
 }
@@ -683,7 +689,8 @@ function dumpInnerSync(filePath, needSandBox, isRawHeap) {
   }
   try {
     createHeapDumpFile(filePath, isRawHeap, true);
-    let file = fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+    let file = fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist',
+      fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
     let leakObjList = getLeakList();
     let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
     let heapDumpFileName = getHeapBaseName(false) + suffix;
@@ -709,7 +716,8 @@ function dumpInnerSync(filePath, needSandBox, isRawHeap) {
     return [];
   }
   if (needSandBox) {
-    return [filePath + '/' + getHeapBaseName(false) + '.jsleaklist', filePath + '/' + getHeapBaseName(false) + '.rawheap'];
+    return [filePath + '/' + getHeapBaseName(false) + '.jsleaklist',
+            filePath + '/' + getHeapBaseName(false) + '.rawheap'];
   } else {
     return [getHeapBaseName(false) + '.jsleaklist', getHeapBaseName(false) + '.heapsnapshot'];
   }
@@ -788,7 +796,8 @@ let jsLeakWatcher = {
       watchObjMap.clear();
     }
   },
-  enableLeakWatcher: (isEnabled: boolean, configs: Array<string> | LeakWatcherConfig, callback: Callback<Array<string>>) => {
+  enableLeakWatcher: (isEnabled: boolean, configs: Array<string> | LeakWatcherConfig,
+    callback: Callback<Array<string>>) => {
     if (isEnabled === undefined || isEnabled === null) {
       throw new BusinessError(ERROR_CODE_ENABLE_INVALID);
     }
