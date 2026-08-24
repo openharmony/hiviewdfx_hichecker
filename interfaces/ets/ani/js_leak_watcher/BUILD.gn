@@ -55,7 +55,11 @@ generate_static_abc("jsleakwatcher") {
   is_boot_abc = "True"
   device_dst_file = "/system/framework/jsleakwatcher.abc"
   paths_keys = [ "arkui.base.ArkUIObjectFinalizationRegisterProxy" ]
-  paths_values = [ "//foundation/arkui/ace_engine/frameworks/bridge/arkts_frontend/koala_projects/inner_api/arkui/base/ArkUIObjectFinalizationRegisterProxy.d.ets" ]
+  if (ohos_indep_compiler_enable) {
+    paths_values = [ "//binarys/foundation/arkui/ace_engine/innerapis/copy_arkui_ets/libs/ArkUIObjectFinalizationRegisterProxy.d.ets" ]
+  } else {
+    paths_values = [ "//foundation/arkui/ace_engine/frameworks/bridge/arkts_frontend/koala_projects/inner_api/arkui/base/ArkUIObjectFinalizationRegisterProxy.d.ets" ]
+  }
 }
 
 ohos_prebuilt_etc("jsleakwatcher_etc") {
