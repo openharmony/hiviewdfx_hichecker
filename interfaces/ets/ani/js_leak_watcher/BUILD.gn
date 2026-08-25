@@ -1,0 +1,71 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/components/ets_frontend/ets2abc_config.gni")
+import("//build/ohos.gni")
+import("//base/hiviewdfx/hichecker/hichecker.gni")
+
+ohos_shared_library("jsleakwatcher_ani") {
+  branch_protector_ret = "pac_ret"
+  shlib_type = "ani"
+  include_dirs = [ "include/" ]
+
+  sources = [
+    "./src/ani_js_leak_watcher.cpp",
+    "./src/ani_util.cpp",
+  ]
+
+  deps = [ "../../../native/innerkits:libhichecker" ]
+
+  external_deps = [
+    "ace_engine:libace_compatible",
+    "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
+    "ets_runtime:libark_jsruntime",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "runtime_core:ani",
+    "runtime_core:libarkruntime",
+  ]
+  if (hichecker_hiviewdfx_api_metrics_enable) {
+    defines = [ "ENABLE_API_METRICS" ]
+  }
+  cflags = [ "-fstack-protector-strong" ]
+  subsystem_name = "hiviewdfx"
+  part_name = "hichecker"
+  output_extension = "so"
+}
+
+generate_static_abc("jsleakwatcher") {
+  base_url = "./ets"
+  files = [ "./ets/@ohos.hiviewdfx.jsLeakWatcher.ets" ]
+  is_boot_abc = "True"
+  device_dst_file = "/system/framework/jsleakwatcher.abc"
+  paths_keys = [ "arkui.base.ArkUIObjectFinalizationRegisterProxy" ]
+  if (ohos_indep_compiler_enable) {
+    paths_values = [ "//binarys/foundation/arkui/ace_engine/innerapis/copy_arkui_ets/libs/ArkUIObjectFinalizationRegisterProxy.d.ets" ]
+  } else {
+    paths_values = [ "//foundation/arkui/ace_engine/frameworks/bridge/arkts_frontend/koala_projects/inner_api/arkui/base/ArkUIObjectFinalizationRegisterProxy.d.ets" ]
+  }
+}
+
+ohos_prebuilt_etc("jsleakwatcher_etc") {
+  source = "$target_out_dir/jsleakwatcher.abc"
+  module_install_dir = "framework"
+  subsystem_name = "hiviewdfx"
+  part_name = "hichecker"
+  deps = [ ":jsleakwatcher" ]
+}

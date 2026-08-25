@@ -19,6 +19,8 @@ group("ani_hichecker_package") {
     deps += [
       "hichecker:hichecker_ani",
       "hichecker:hichecker_etc",
+      "js_leak_watcher:jsleakwatcher_ani",
+      "js_leak_watcher:jsleakwatcher_etc",
     ]
   }
 }
