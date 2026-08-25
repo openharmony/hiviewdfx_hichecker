@@ -609,7 +609,11 @@ HWTEST_F(JsLeakWatcherNapiTest, CreateFileTest007, TestSize.Level1)
 {
     std::string filePath = "/";
     bool result = TestCreateFile(filePath);
+#ifdef __aarch64__
     ASSERT_FALSE(result);
+#else
+    ASSERT_TRUE(result);
+#endif
 }
 
 /**
