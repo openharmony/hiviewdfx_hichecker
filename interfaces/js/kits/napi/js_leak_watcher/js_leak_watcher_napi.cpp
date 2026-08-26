@@ -581,13 +581,13 @@ extern "C" __attribute__((constructor)) void NAPI_hiviewdfx_jsLeakWatcher_AutoRe
     napi_module_register(&_module);
 }
 
-//for test
-#ifdef JSLEAKWATHCER_UNITTEST
 std::shared_ptr<LeakWatcherEventHandler> GetTestHandler()
 {
     return g_handler;
 }
 
+//for test
+#ifdef JSLEAKWATHCER_UNITTEST
 bool TestCreateFile(const std::string& filePath)
 {
     return CreateFile(filePath);
