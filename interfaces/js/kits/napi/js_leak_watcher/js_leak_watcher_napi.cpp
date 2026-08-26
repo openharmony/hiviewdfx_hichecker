@@ -582,6 +582,7 @@ extern "C" __attribute__((constructor)) void NAPI_hiviewdfx_jsLeakWatcher_AutoRe
 }
 
 //for test
+#ifdef JSLEAKWATHCER_UNITTEST
 std::shared_ptr<LeakWatcherEventHandler> GetTestHandler()
 {
     return g_handler;
@@ -601,3 +602,4 @@ bool TestAppendMetaData(const std::string& filePath)
 {
     return AppendMetaData(filePath);
 }
+#endif
