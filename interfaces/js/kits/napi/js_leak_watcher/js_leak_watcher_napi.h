@@ -165,9 +165,9 @@ private:
     napi_ref callbackRef_ = nullptr;
 };
 
-std::shared_ptr<LeakWatcherEventHandler> GetTestHandler();
 //for test
 #ifdef JSLEAKWATHCER_UNITTEST
+std::shared_ptr<LeakWatcherEventHandler> GetTestHandler();
 bool TestCreateFile(const std::string& filePath);
 uint64_t TestGetFileSize(const std::string& filePath);
 bool TestAppendMetaData(const std::string& filePath);
