@@ -75,7 +75,10 @@ if (support_jsapi) {
       "window_manager:libwm",
     ]
 
-    cflags = [ "-fstack-protector-strong" ]
+    cflags = [
+      "-fstack-protector-strong",
+      "-DJSLEAKWATHCER_UNITTEST"
+    ]
   }
 
   ohos_unittest("JsLeakWatcherTsTest") {

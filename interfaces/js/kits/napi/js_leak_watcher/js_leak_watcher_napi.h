@@ -165,10 +165,12 @@ private:
     napi_ref callbackRef_ = nullptr;
 };
 
+//for test
+#ifdef JSLEAKWATHCER_UNITTEST
 std::shared_ptr<LeakWatcherEventHandler> GetTestHandler();
 bool TestCreateFile(const std::string& filePath);
 uint64_t TestGetFileSize(const std::string& filePath);
 bool TestAppendMetaData(const std::string& filePath);
+#endif
 const uint64_t FDTAG = 0xD002D0B;
-
 #endif // JS_LEAK_WATCHER_NAPI_H
