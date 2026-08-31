@@ -22,6 +22,8 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <charconv>
+#include <system_error>
 #include <parameter.h>
 
 #include "securec.h"
@@ -40,6 +42,23 @@ namespace HiviewDFX {
 #define LOG_TAG "HICHECKER"
 constexpr int BASE_TAG = 10;
 constexpr uint64_t ALLOWED_RULE = Rule::RULE_CHECK_ARKUI_PERFORMANCE;
+
+namespace {
+bool ParseHicheckerUint64(const char *text, uint64_t &out)
+{
+    if (text == nullptr || *text == '\0') {
+        return false;
+    }
+    uint64_t value = 0;
+    const char *last = text + std::strlen(text);
+    auto result = std::from_chars(text, last, value, BASE_TAG);
+    if (result.ec != std::errc() || result.ptr != last) {
+        return false;
+    }
+    out = value;
+    return true;
+}
+} // namespace
 
 std::mutex HiChecker::mutexLock_;
 volatile bool HiChecker::checkMode_;
@@ -255,8 +274,11 @@ void HiChecker::InitHicheckerParam(const char *processName)
     }
     paramOutBuf[retLen] = '\0';
     HILOG_INFO(LOG_CORE, "hichecker param value is %{public}s", paramOutBuf);
-    char *endPtr = nullptr;
-    uint64_t rule = strtoull(paramOutBuf, &endPtr, BASE_TAG);
+    uint64_t rule = 0;
+    if (!ParseHicheckerUint64(paramOutBuf, rule)) {
+        HILOG_ERROR(LOG_CORE, "hichecker param parse failed: %{public}s", paramOutBuf);
+        return;
+    }
     if (!(rule & ALLOWED_RULE)) {
         HILOG_ERROR(LOG_CORE, "not allowed param.");
         return;
