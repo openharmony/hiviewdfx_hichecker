@@ -77,7 +77,7 @@ if (support_jsapi) {
 
     cflags = [
       "-fstack-protector-strong",
-      "-DJSLEAKWATHCER_UNITTEST"
+      "-DJSLEAKWATCHER_UNITTEST"
     ]
   }
 
