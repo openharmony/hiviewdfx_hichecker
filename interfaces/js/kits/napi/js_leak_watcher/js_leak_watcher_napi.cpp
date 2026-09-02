@@ -582,7 +582,7 @@ extern "C" __attribute__((constructor)) void NAPI_hiviewdfx_jsLeakWatcher_AutoRe
 }
 
 //for test
-#ifdef JSLEAKWATHCER_UNITTEST
+#ifdef JSLEAKWATCHER_UNITTEST
 std::shared_ptr<LeakWatcherEventHandler> GetTestHandler()
 {
     return g_handler;
