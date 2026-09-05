@@ -401,6 +401,41 @@ static napi_value GetDumpStatus(napi_env env, napi_callback_info info)
     return result;
 }
 
+static std::string GetStringProperty(napi_env env, napi_value obj, const char* propertyName)
+{
+    napi_value propValue = nullptr;
+    if (napi_get_named_property(env, obj, propertyName, &propValue) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetStringProperty napi_get_named_property %{public}s failed", propertyName);
+        return {};
+    }
+    size_t strLength = 0;
+    if (napi_get_value_string_utf8(env, propValue, nullptr, 0, &strLength) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetStringProperty napi_get_value_string_utf8 len %{public}s failed", propertyName);
+        return {};
+    }
+    std::string str;
+    str.resize(strLength);
+    if (napi_get_value_string_utf8(env, propValue, str.data(), strLength + 1, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetStringProperty napi_get_value_string_utf8 %{public}s failed", propertyName);
+        return {};
+    }
+    return str;
+}
+
+static int32_t GetInt32Property(napi_env env, napi_value obj, const char* propertyName)
+{
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, obj, propertyName, &value) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetInt32Property napi_get_named_property %{public}s failed", propertyName);
+        return 0;
+    }
+    int32_t result = 0;
+    if (napi_get_value_int32(env, value, &result) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetInt32Property napi_get_value_int32 %{public}s failed", propertyName);
+    }
+    return result;
+}
+
 static napi_value ReportRawHeap(napi_env env, napi_callback_info info)
 {
     HILOG_INFO(LOG_CORE, "hisysevent reportrawheap begin!");
@@ -424,49 +459,14 @@ static napi_value ReportRawHeap(napi_env env, napi_callback_info info)
         return nullptr;
     }
 
-    napi_value value = nullptr;
-    int32_t pid = 0;
-    if (napi_get_named_property(env, argv[0], "pid", &value) != napi_ok) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap napi_get_named_property pid failed");
-    }
-    if (napi_get_value_int32(env, value, &pid) != napi_ok) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap napi_get_value_int32 pid failed");
-    }
-
-    auto getStringProperty = [](napi_env env, napi_value obj, const char* propertyName) -> std::string {
-        napi_value propValue = nullptr;
-        if (napi_get_named_property(env, obj, propertyName, &propValue) != napi_ok) {
-            HILOG_ERROR(LOG_CORE, "getStringProperty napi_get_named_property %{public}s failed", propertyName);
-            return {};
-        }
-
-        size_t strLength = 0;
-        if (napi_get_value_string_utf8(env, propValue, nullptr, 0, &strLength) != napi_ok) {
-            HILOG_ERROR(LOG_CORE, "getStringProperty napi_get_value_string_utf8 len %{public}s failed", propertyName);
-            return {};
-        }
-
-        std::string str;
-        str.resize(strLength);
-        if (napi_get_value_string_utf8(env, propValue, str.data(), strLength + 1, nullptr) != napi_ok) {
-            HILOG_ERROR(LOG_CORE, "getStringProperty napi_get_value_string_utf8 %{public}s failed", propertyName);
-            return {};
-        }
-        return str;
-    };
-    std::string happenTime = getStringProperty(env, argv[0], "happenTime");
-    std::string module = getStringProperty(env, argv[0], "module");
-    std::string leakList = getStringProperty(env, argv[0], "leakList");
-    std::string dynamicRawHeapPath = getStringProperty(env, argv[0], "dynamicRawheapPath");
-    std::string staticRawHeapPath = getStringProperty(env, argv[0], "staticRawheapPath");
-    std::string leakListPath = getStringProperty(env, argv[0], "leakListPath");
-    int32_t leakObjectCount = 0;
-    if (napi_get_named_property(env, argv[0], "leakObjectCount", &value) != napi_ok) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap napi_get_named_property leakObjectCount failed");
-    }
-    if (napi_get_value_int32(env, value, &leakObjectCount) != napi_ok) {
-        HILOG_ERROR(LOG_CORE, "ReportRawHeap napi_get_value_int32 leakObjectCount failed");
-    }
+    int32_t pid = GetInt32Property(env, argv[0], "pid");
+    std::string happenTime = GetStringProperty(env, argv[0], "happenTime");
+    std::string module = GetStringProperty(env, argv[0], "module");
+    std::string leakList = GetStringProperty(env, argv[0], "leakList");
+    std::string dynamicRawHeapPath = GetStringProperty(env, argv[0], "dynamicRawheapPath");
+    std::string staticRawHeapPath = GetStringProperty(env, argv[0], "staticRawheapPath");
+    std::string leakListPath = GetStringProperty(env, argv[0], "leakListPath");
+    int32_t leakObjectCount = GetInt32Property(env, argv[0], "leakObjectCount");
 
     int ret = HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::RELIABILITY, "MEMORY_LEAK_JS_LEAK_WATCHER",
         OHOS::HiviewDFX::HiSysEvent::EventType::FAULT,
