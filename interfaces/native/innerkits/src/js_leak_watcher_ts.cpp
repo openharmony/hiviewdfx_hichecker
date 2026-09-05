@@ -29,6 +29,10 @@
 #define LOG_TAG "JSLEAK_WATCHER_TS"
 
 #define JSLEAK_WATCHER_NAME_LEN 256
+constexpr int ENABLE_ARGS_COUNT = 3;
+constexpr int ARGS_INDEX_FIRST = 0;
+constexpr int ARGS_INDEX_SECOND = 1;
+constexpr int ARGS_INDEX_THIRD = 2;
 
 static bool g_enableStatus = false;
 
@@ -109,9 +113,9 @@ void CreateCallbackObject(napi_env env, napi_value* js_callback)
     }
 }
 
-static bool BuildEnableArgs(napi_env env, napi_value args[3])
+static bool BuildEnableArgs(napi_env env, napi_value args[ENABLE_ARGS_COUNT])
 {
-    if (napi_get_boolean(env, true, &args[0]) != napi_ok) {
+    if (napi_get_boolean(env, true, &args[ARGS_INDEX_FIRST]) != napi_ok) {
         HILOG_ERROR(LOG_CORE, "BuildEnableArgs napi_get_boolean failed");
         return false;
     }
@@ -129,8 +133,8 @@ static bool BuildEnableArgs(napi_env env, napi_value args[3])
         HILOG_ERROR(LOG_CORE, "BuildEnableArgs napi_set_named_property failed");
         return false;
     }
-    args[1] = configsObj;
-    CreateCallbackObject(env, &args[2]);
+    args[ARGS_INDEX_SECOND] = configsObj;
+    CreateCallbackObject(env, &args[ARGS_INDEX_THIRD]);
     return true;
 }
 
@@ -169,7 +173,7 @@ void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
         return;
     }
 
-    napi_value args[3];
+    napi_value args[ENABLE_ARGS_COUNT];
     if (!BuildEnableArgs(env, args)) {
         napi_close_handle_scope(env, scope);
         return;
@@ -177,7 +181,7 @@ void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
 
     napi_value result;
     if (napi_call_function(env, nvJsLeakWatcher, jsFuncEnableLeakWatcher,
-        3, args, &result) != napi_ok) {
+        ENABLE_ARGS_COUNT, args, &result) != napi_ok) {
         HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_call_function failed");
     }
     napi_close_handle_scope(env, scope);
