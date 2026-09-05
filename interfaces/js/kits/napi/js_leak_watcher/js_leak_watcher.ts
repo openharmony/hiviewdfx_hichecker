@@ -153,6 +153,28 @@ class BusinessError extends Error {
   }
 }
 
+function isPathTraversal(path) {
+  if (path.includes('../') || path.includes('..\\')) {
+    return true;
+  }
+  return false;
+}
+
+function isLegalDumpPath(filePath) {
+  if (isPathTraversal(filePath)) {
+    return false;
+  }
+  let appCtx = application.getApplicationContext();
+  if (appCtx === undefined || appCtx === null) {
+    return false;
+  }
+  let allowedDir = appCtx.filesDir;
+  if (!filePath.startsWith(allowedDir)) {
+    return false;
+  }
+  return true;
+}
+
 let enabled = false;
 let watchObjMap = new Map();
 let firstDump = true;
@@ -209,20 +231,23 @@ function getJsleaklistFile(filePath, needSandBox, isRawHeap, jsCallback) {
   let file = dumpStatus ?
     fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE) :
     fs.openSync(filePath + '/' + getHeapBaseName(true) + '.jsleaklist', fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
-  let leakObjList = getLeakList();
-  let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
-  let heapDumpFileName = getHeapBaseName(false) + suffix;
-  let desFilePath = filePath + '/' + heapDumpFileName;
-  const heapDumpSHA256 = dumpStatus ? getHeapDumpSHA256(desFilePath) : '';
+  try {
+    let leakObjList = getLeakList();
+    let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
+    let heapDumpFileName = getHeapBaseName(false) + suffix;
+    let desFilePath = filePath + '/' + heapDumpFileName;
+    const heapDumpSHA256 = dumpStatus ? getHeapDumpSHA256(desFilePath) : '';
 
-  if (isRawHeap) {
-    let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
-    fs.writeSync(file.fd, JSON.stringify(result));
-  } else {
-    let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
-    fs.writeSync(file.fd, JSON.stringify(result));
+    if (isRawHeap) {
+      let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
+      fs.writeSync(file.fd, JSON.stringify(result));
+    } else {
+      let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
+      fs.writeSync(file.fd, JSON.stringify(result));
+    }
+  } finally {
+    fs.closeSync(file);
   }
-  fs.closeSync(file);
 
   try {
     deleteOldFile(filePath);
@@ -539,20 +564,21 @@ function createHeapDumpFile(filePath, isRawHeap, isSync, dumpCallback = undefine
 function getHeapDumpSHA256(filePath) {
   let md = cryptoFramework.createMd('SHA256');
   let heapDumpFile = fs.openSync(filePath, fs.OpenMode.READ_WRITE);
-  let bufSize = 40960;
-  let readSize = 0;
-  let buf = new ArrayBuffer(bufSize);
-  let readOptions = { offset: readSize, length: bufSize };
-  let readLen = fs.readSync(heapDumpFile.fd, buf, readOptions);
-
-  while (readLen > 0) {
-    md.updateSync({ data: new Uint8Array(buf.slice(0, readLen)) });
-    readSize += readLen;
-    readOptions.offset = readSize;
-    readLen = fs.readSync(heapDumpFile.fd, buf, readOptions);
+  try {
+    let bufSize = 40960;
+    let readSize = 0;
+    let buf = new ArrayBuffer(bufSize);
+    let readOptions = { offset: readSize, length: bufSize };
+    let readLen = fs.readSync(heapDumpFile.fd, buf, readOptions);
+    while (readLen > 0) {
+      md.updateSync({ data: new Uint8Array(buf.slice(0, readLen)) });
+      readSize += readLen;
+      readOptions.offset = readSize;
+      readLen = fs.readSync(heapDumpFile.fd, buf, readOptions);
+    }
+  } finally {
+    fs.closeSync(heapDumpFile);
   }
-  fs.closeSync(heapDumpFile);
-
   let digestOutPut = md.digestSync();
   return Array.from(digestOutPut.data, byte => ('0' + byte.toString(16)).slice(-2)).join('').toUpperCase();
 }
@@ -691,19 +717,22 @@ function dumpInnerSync(filePath, needSandBox, isRawHeap) {
     createHeapDumpFile(filePath, isRawHeap, true);
     let file = fs.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist',
       fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
-    let leakObjList = getLeakList();
-    let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
-    let heapDumpFileName = getHeapBaseName(false) + suffix;
-    let desFilePath = filePath + '/' + heapDumpFileName;
-    const heapDumpSHA256 = getHeapDumpSHA256(desFilePath);
-    if (isRawHeap) {
-      let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
-      fs.writeSync(file.fd, JSON.stringify(result));
-    } else {
-      let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
-      fs.writeSync(file.fd, JSON.stringify(result));
+    try {
+      let leakObjList = getLeakList();
+      let suffix = isRawHeap ? '.rawheap' : '.heapsnapshot';
+      let heapDumpFileName = getHeapBaseName(false) + suffix;
+      let desFilePath = filePath + '/' + heapDumpFileName;
+      const heapDumpSHA256 = getHeapDumpSHA256(desFilePath);
+      if (isRawHeap) {
+        let result = { version: '2.0.0', snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
+        fs.writeSync(file.fd, JSON.stringify(result));
+      } else {
+        let result = { snapshot_hash: heapDumpSHA256, leakObjList: leakObjList };
+        fs.writeSync(file.fd, JSON.stringify(result));
+      }
+    } finally {
+      fs.closeSync(file);
     }
-    fs.closeSync(file);
   } catch (error) {
     console.log('Dump heapSnapShot or LeakList failed! ' + error);
     return [];
@@ -782,6 +811,9 @@ let jsLeakWatcher = {
   dump: (filePath) => {
     jsLeakWatcherNative.apiRecord('dump');
     if (filePath === undefined || filePath === null) {
+      throw new BusinessError(ERROR_CODE_INVALID_PARAM);
+    }
+    if (!isLegalDumpPath(filePath)) {
       throw new BusinessError(ERROR_CODE_INVALID_PARAM);
     }
     return dumpInnerSync(filePath, false, false);

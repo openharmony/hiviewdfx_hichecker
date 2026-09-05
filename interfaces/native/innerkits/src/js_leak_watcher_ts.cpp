@@ -79,7 +79,9 @@ bool GetjsLeakWatcherEnableStatus()
 inline napi_value CreateJsUndefined(napi_env env)
 {
     napi_value result = nullptr;
-    napi_get_undefined(env, &result);
+    if (napi_get_undefined(env, &result) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "CreateJsUndefined napi_get_undefined failed");
+    }
     return result;
 }
 
@@ -87,8 +89,9 @@ napi_value InternalCallback(napi_env env, napi_callback_info info)
 {
     size_t argc = 1;
     napi_value argv[1];
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
-    
+    if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "InternalCallback napi_get_cb_info failed");
+    }
     return nullptr;
 }
 
@@ -120,30 +123,58 @@ void JSLeakWatcherEarlyInit(napi_env env, std::string bundleName)
     }
 
     napi_handle_scope scope;
-    napi_open_handle_scope(env, &scope);
+    if (napi_open_handle_scope(env, &scope) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_open_handle_scope failed");
+        return;
+    }
     HILOG_INFO(LOG_CORE, "JSLeakWatcherEarlyInit %{public}s", bundleName.c_str());
 
     napi_value nvJsLeakWatcher = nullptr;
+    if (napi_load_module(env, "@ohos.hiviewdfx.jsLeakWatcher", &nvJsLeakWatcher) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_load_module failed");
+        napi_close_handle_scope(env, scope);
+        return;
+    }
 
-    napi_load_module(env, "@ohos.hiviewdfx.jsLeakWatcher", &nvJsLeakWatcher);
-
-    napi_value jsFuncEnableLeakWatcher;
-    napi_get_named_property(env, nvJsLeakWatcher, "enableLeakWatcher", &jsFuncEnableLeakWatcher);
+    napi_value jsFuncEnableLeakWatcher = nullptr;
+    if (napi_get_named_property(env, nvJsLeakWatcher, "enableLeakWatcher", &jsFuncEnableLeakWatcher) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_get_named_property failed");
+        napi_close_handle_scope(env, scope);
+        return;
+    }
 
     napi_value args[3];
-    napi_get_boolean(env, true, &args[0]);
-    
+    if (napi_get_boolean(env, true, &args[0]) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_get_boolean failed");
+        napi_close_handle_scope(env, scope);
+        return;
+    }
+
     napi_value configsObj;
-    napi_create_object(env, &configsObj);
+    if (napi_create_object(env, &configsObj) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_create_object failed");
+        napi_close_handle_scope(env, scope);
+        return;
+    }
 
     napi_value value;
-    napi_create_int32(env, -1, &value);
-    napi_set_named_property(env, configsObj, "monitorObjectTypes", value);
+    if (napi_create_int32(env, -1, &value) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_create_int32 failed");
+        napi_close_handle_scope(env, scope);
+        return;
+    }
+    if (napi_set_named_property(env, configsObj, "monitorObjectTypes", value) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_set_named_property failed");
+        napi_close_handle_scope(env, scope);
+        return;
+    }
     args[1] = configsObj;
     CreateCallbackObject(env, &args[2]);
 
     napi_value result;
-    napi_call_function(env, nvJsLeakWatcher, jsFuncEnableLeakWatcher, 3, args, &result);
+    if (napi_call_function(env, nvJsLeakWatcher, jsFuncEnableLeakWatcher, 3, args, &result) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "JSLeakWatcherEarlyInit napi_call_function failed");
+    }
     napi_close_handle_scope(env, scope);
 }
 
