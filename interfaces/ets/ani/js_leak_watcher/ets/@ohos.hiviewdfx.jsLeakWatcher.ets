@@ -188,10 +188,6 @@ export default namespace jsLeakWatcher {
     if (isPathTraversal(filePath)) {
       return false;
     }
-    const ALLOWED_PREFIX: string = '/data/storage/el2/base';
-    if (!filePath.startsWith(ALLOWED_PREFIX)) {
-      return false;
-    }
     return true;
   }
 
