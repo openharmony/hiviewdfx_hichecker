@@ -153,23 +153,19 @@ class BusinessError extends Error {
   }
 }
 
-function isPathTraversal(path) {
+function isPathTraversal(path: string): boolean {
   if (path.includes('../') || path.includes('..\\')) {
     return true;
   }
   return false;
 }
 
-function isLegalDumpPath(filePath) {
+function isLegalDumpPath(filePath: string): boolean {
   if (isPathTraversal(filePath)) {
     return false;
   }
-  let appCtx = application.getApplicationContext();
-  if (appCtx === undefined || appCtx === null) {
-    return false;
-  }
-  let allowedDir = appCtx.filesDir;
-  if (!filePath.startsWith(allowedDir)) {
+  const ALLOWED_PREFIX: string = '/data/storage/el2/base';
+  if (!filePath.startsWith(ALLOWED_PREFIX)) {
     return false;
   }
   return true;

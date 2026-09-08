@@ -188,12 +188,8 @@ export default namespace jsLeakWatcher {
     if (isPathTraversal(filePath)) {
       return false;
     }
-    let appCtx = application.getApplicationContextInstance();
-    if (appCtx === undefined || appCtx === null) {
-      return false;
-    }
-    let allowedDir: string = appCtx.filesDir;
-    if (!filePath.startsWith(allowedDir)) {
+    const ALLOWED_PREFIX: string = '/data/storage/el2/base';
+    if (!filePath.startsWith(ALLOWED_PREFIX)) {
       return false;
     }
     return true;
