@@ -27,6 +27,7 @@ ohos_shared_library("hichecker_ani") {
     "hilog:libhilog",
     "runtime_core:ani",
   ]
+  version_script = "hichecker_ani.map"
 
   subsystem_name = "hiviewdfx"
   part_name = "hichecker"

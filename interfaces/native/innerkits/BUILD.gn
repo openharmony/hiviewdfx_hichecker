@@ -54,6 +54,7 @@ ohos_shared_library("libhichecker") {
   sources = [ "src/js_leak_watcher_ts.cpp" ]
   branch_protector_ret = "pac_ret"
   public_configs = [ ":hichecker_native_config" ]
+  version_script = "libhichecker.map"
 
   deps = [
     ":hichecker_etc",

@@ -1,0 +1,15 @@
+{
+  global:
+    InitHicheckerParamWrapper;
+    extern "C++" {
+      OHOS::HiviewDFX::HiChecker::*;
+      OHOS::HiviewDFX::Caution::*;
+      *JSLeakWatcherEarlyInit*;
+      *SetjsLeakWatcherEnableStatus*;
+      *GetjsLeakWatcherEnableStatus*;
+    };
+    _fini;
+    _init;
+  local:
+    *;
+};

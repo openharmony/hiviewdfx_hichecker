@@ -1,0 +1,7 @@
+{
+  global:
+    NAPI_hiviewdfx_jsLeakWatcher_GetJSCode;
+    NAPI_hiviewdfx_jsLeakWatcher_GetABCCode;
+  local:
+    *;
+};
