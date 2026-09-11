@@ -131,22 +131,35 @@ static bool AppendMetaData(const std::string& filePath)
 static napi_value CreateUndefined(napi_env env)
 {
     napi_value result = nullptr;
-    napi_get_undefined(env, &result);
+    if (napi_get_undefined(env, &result) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "CreateUndefined napi_get_undefined failed");
+    }
     return result;
 }
 
 static bool GetCallbackRef(napi_env env, napi_callback_info info, napi_ref* ref)
 {
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
+    if (napi_open_handle_scope(env, &scope) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetCallbackRef napi_open_handle_scope failed");
+        return false;
+    }
     size_t argc = ONE_VALUE_LIMIT;
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetCallbackRef napi_get_cb_info failed");
+        napi_close_handle_scope(env, scope);
+        return false;
+    }
     if (argc != ONE_VALUE_LIMIT) {
         napi_close_handle_scope(env, scope);
         return false;
     }
-    napi_create_reference(env, argv[0], 1, ref);
+    if (napi_create_reference(env, argv[0], 1, ref) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetCallbackRef napi_create_reference failed");
+        napi_close_handle_scope(env, scope);
+        return false;
+    }
     napi_close_handle_scope(env, scope);
     return true;
 }
@@ -173,7 +186,9 @@ static void MainThreadExec(napi_env env, napi_value jscb, void* context, void* d
         delete pData;
         return;
     }
-    napi_call_function(env, global, jscb, 1, argv, nullptr);
+    if (napi_call_function(env, global, jscb, 1, argv, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "MainThreadExec napi_call_function failed");
+    }
 
     if (context == nullptr) {
         HILOG_ERROR(LOG_CORE, "MainThreadExec context is nullptr");
@@ -188,33 +203,52 @@ static void MainThreadExec(napi_env env, napi_value jscb, void* context, void* d
 
 static napi_value RegisterArkUIObjectLifeCycleCallback(napi_env env, napi_callback_info info)
 {
-    napi_value ret;
+    napi_value ret = nullptr;
     if (!GetCallbackRef(env, info, &g_callbackRef)) {
-        napi_get_boolean(env, false, &ret);
+        if (napi_get_boolean(env, false, &ret) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback napi_get_boolean failed");
+        }
         return ret;
     }
 
     RefPtr<Kit::UIContext> uiContext = Kit::UIContext::Current();
     if (uiContext == nullptr) {
-        napi_get_boolean(env, false, &ret);
+        if (napi_get_boolean(env, false, &ret) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback napi_get_boolean failed");
+        }
         return ret;
     }
     uiContext->RegisterArkUIObjectLifecycleCallback([env](void* obj) {
         napi_handle_scope scope = nullptr;
-        napi_open_handle_scope(env, &scope);
+        if (napi_open_handle_scope(env, &scope) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback napi_open_handle_scope failed");
+            return;
+        }
         ArkUIRuntimeCallInfo* arkUIRuntimeCallInfo = reinterpret_cast<ArkUIRuntimeCallInfo*>(obj);
         panda::Local<panda::JSValueRef> firstArg = arkUIRuntimeCallInfo->GetCallArgRef(0);
         napi_value param = reinterpret_cast<napi_value>(*firstArg);
         napi_value global = nullptr;
-        napi_get_global(env, &global);
         napi_value callback = nullptr;
-        napi_get_reference_value(env, g_callbackRef, &callback);
+        if (napi_get_global(env, &global) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback napi_get_global failed");
+            napi_close_handle_scope(env, scope);
+            return;
+        }
+        if (napi_get_reference_value(env, g_callbackRef, &callback) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback napi_get_reference_value failed");
+            napi_close_handle_scope(env, scope);
+            return;
+        }
         napi_value argv[1] = {param};
-        napi_call_function(env, global, callback, 1, argv, nullptr);
+        if (napi_call_function(env, global, callback, 1, argv, nullptr) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback napi_call_function failed");
+        }
         napi_close_handle_scope(env, scope);
     });
 
-    napi_get_boolean(env, true, &ret);
+    if (napi_get_boolean(env, true, &ret) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "RegisterArkUIObjectLifeCycleCallback napi_get_boolean failed");
+    }
     return ret;
 }
 
@@ -226,7 +260,9 @@ static napi_value UnregisterArkUIObjectLifeCycleCallback(napi_env env, napi_call
     }
     uiContext->UnregisterArkUIObjectLifecycleCallback();
     if (env != nullptr && g_callbackRef != nullptr) {
-        napi_delete_reference(env, g_callbackRef);
+        if (napi_delete_reference(env, g_callbackRef) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "UnregisterArkUIObjectLifeCycleCallback napi_delete_reference failed");
+        }
         g_callbackRef = nullptr;
     }
     return CreateUndefined(env);
@@ -235,14 +271,18 @@ static napi_value UnregisterArkUIObjectLifeCycleCallback(napi_env env, napi_call
 static napi_value RegisterWindowLifeCycleCallback(napi_env env, napi_callback_info info)
 {
     napi_ref ref = nullptr;
-    napi_value ret;
+    napi_value ret = nullptr;
     if (!GetCallbackRef(env, info, &ref)) {
-        napi_get_boolean(env, false, &ret);
+        if (napi_get_boolean(env, false, &ret) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "RegisterWindowLifeCycleCallback napi_get_boolean failed");
+        }
         return ret;
     }
     g_listener->SetEnvAndCallback(env, ref);
     WindowManager::GetInstance().RegisterWindowLifeCycleCallback(g_listener);
-    napi_get_boolean(env, true, &ret);
+    if (napi_get_boolean(env, true, &ret) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "RegisterWindowLifeCycleCallback napi_get_boolean failed");
+    }
     return ret;
 }
 
@@ -270,10 +310,17 @@ static napi_value HandleDumpTask(napi_env env, napi_callback_info info)
 static napi_value SetDumpDelay(napi_env env, napi_callback_info info)
 {
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
+    if (napi_open_handle_scope(env, &scope) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "SetDumpDelay napi_open_handle_scope failed");
+        return nullptr;
+    }
     size_t argc = ONE_VALUE_LIMIT;
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "SetDumpDelay napi_get_cb_info failed");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
     if (argc != ONE_VALUE_LIMIT) {
         napi_close_handle_scope(env, scope);
         return nullptr;
@@ -292,10 +339,17 @@ static napi_value SetDumpDelay(napi_env env, napi_callback_info info)
 static napi_value SetGcDelay(napi_env env, napi_callback_info info)
 {
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
+    if (napi_open_handle_scope(env, &scope) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "SetGcDelay napi_open_handle_scope failed");
+        return nullptr;
+    }
     size_t argc = ONE_VALUE_LIMIT;
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "SetGcDelay napi_get_cb_info failed");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
     if (argc != ONE_VALUE_LIMIT) {
         napi_close_handle_scope(env, scope);
         return nullptr;
@@ -314,27 +368,71 @@ static napi_value SetGcDelay(napi_env env, napi_callback_info info)
 static napi_value GetDumpStatus(napi_env env, napi_callback_info info)
 {
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
+    if (napi_open_handle_scope(env, &scope) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetDumpStatus napi_open_handle_scope failed");
+        return nullptr;
+    }
 
-    napi_value result;
+    napi_value result = nullptr;
     char paraName[JSLEAK_WATCHER_NAME_LEN] = "hiviewdfx.hichecker.jsleakwatcher.dump";
     CachedHandle appEnableHandle = CachedParameterCreate(paraName, "true");
     if (appEnableHandle == nullptr) {
-        napi_get_boolean(env, true, &result);
+        if (napi_get_boolean(env, true, &result) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "GetDumpStatus napi_get_boolean failed");
+        }
         napi_close_handle_scope(env, scope);
         return result;
     }
     const char *paramValue = CachedParameterGet(appEnableHandle);
     if (paramValue != nullptr && strlen(paramValue) != 0 && strcmp(paramValue, "false") == 0) {
         CachedParameterDestroy(appEnableHandle);
-        napi_get_boolean(env, false, &result);
+        if (napi_get_boolean(env, false, &result) != napi_ok) {
+            HILOG_ERROR(LOG_CORE, "GetDumpStatus napi_get_boolean failed");
+        }
         napi_close_handle_scope(env, scope);
         return result;
     }
 
     CachedParameterDestroy(appEnableHandle);
-    napi_get_boolean(env, true, &result);
+    if (napi_get_boolean(env, true, &result) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetDumpStatus napi_get_boolean failed");
+    }
     napi_close_handle_scope(env, scope);
+    return result;
+}
+
+static std::string GetStringProperty(napi_env env, napi_value obj, const char* propertyName)
+{
+    napi_value propValue = nullptr;
+    if (napi_get_named_property(env, obj, propertyName, &propValue) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetStringProperty napi_get_named_property %{public}s failed", propertyName);
+        return {};
+    }
+    size_t strLength = 0;
+    if (napi_get_value_string_utf8(env, propValue, nullptr, 0, &strLength) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetStringProperty napi_get_value_string_utf8 len %{public}s failed", propertyName);
+        return {};
+    }
+    std::string str;
+    str.resize(strLength);
+    if (napi_get_value_string_utf8(env, propValue, str.data(), strLength + 1, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetStringProperty napi_get_value_string_utf8 %{public}s failed", propertyName);
+        return {};
+    }
+    return str;
+}
+
+static int32_t GetInt32Property(napi_env env, napi_value obj, const char* propertyName)
+{
+    napi_value value = nullptr;
+    if (napi_get_named_property(env, obj, propertyName, &value) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetInt32Property napi_get_named_property %{public}s failed", propertyName);
+        return 0;
+    }
+    int32_t result = 0;
+    if (napi_get_value_int32(env, value, &result) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "GetInt32Property napi_get_value_int32 %{public}s failed", propertyName);
+    }
     return result;
 }
 
@@ -345,43 +443,30 @@ static napi_value ReportRawHeap(napi_env env, napi_callback_info info)
         return nullptr;
     }
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
+    if (napi_open_handle_scope(env, &scope) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap napi_open_handle_scope failed");
+        return nullptr;
+    }
     size_t argc = ONE_VALUE_LIMIT;
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "ReportRawHeap napi_get_cb_info failed");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
     if (argc != ONE_VALUE_LIMIT) {
         napi_close_handle_scope(env, scope);
         return nullptr;
     }
 
-    napi_value value;
-    int32_t pid;
-    napi_get_named_property(env, argv[0], "pid", &value);
-    napi_get_value_int32(env, value, &pid);
-
-    auto getStringProperty = [](napi_env env, napi_value obj, const char* propertyName) -> std::string {
-        napi_value propValue;
-        if (napi_get_named_property(env, obj, propertyName, &propValue) != napi_ok) {
-            return {};
-        }
-
-        size_t strLength = 0;
-        napi_get_value_string_utf8(env, propValue, nullptr, 0, &strLength);
-
-        std::string str;
-        str.resize(strLength);
-        napi_get_value_string_utf8(env, propValue, str.data(), strLength + 1, nullptr);
-        return str;
-    };
-    std::string happenTime = getStringProperty(env, argv[0], "happenTime");
-    std::string module = getStringProperty(env, argv[0], "module");
-    std::string leakList = getStringProperty(env, argv[0], "leakList");
-    std::string dynamicRawHeapPath = getStringProperty(env, argv[0], "dynamicRawheapPath");
-    std::string staticRawHeapPath = getStringProperty(env, argv[0], "staticRawheapPath");
-    std::string leakListPath = getStringProperty(env, argv[0], "leakListPath");
-    int32_t leakObjectCount = 0;
-    napi_get_named_property(env, argv[0], "leakObjectCount", &value);
-    napi_get_value_int32(env, value, &leakObjectCount);
+    int32_t pid = GetInt32Property(env, argv[0], "pid");
+    std::string happenTime = GetStringProperty(env, argv[0], "happenTime");
+    std::string module = GetStringProperty(env, argv[0], "module");
+    std::string leakList = GetStringProperty(env, argv[0], "leakList");
+    std::string dynamicRawHeapPath = GetStringProperty(env, argv[0], "dynamicRawheapPath");
+    std::string staticRawHeapPath = GetStringProperty(env, argv[0], "staticRawheapPath");
+    std::string leakListPath = GetStringProperty(env, argv[0], "leakListPath");
+    int32_t leakObjectCount = GetInt32Property(env, argv[0], "leakObjectCount");
 
     int ret = HiSysEventWrite(OHOS::HiviewDFX::HiSysEvent::Domain::RELIABILITY, "MEMORY_LEAK_JS_LEAK_WATCHER",
         OHOS::HiviewDFX::HiSysEvent::EventType::FAULT,
@@ -445,7 +530,10 @@ static void DumpRawHeapImpl(TsfnContext* tsfnContext, napi_callback_info info, s
             HILOG_INFO(LOG_CORE, "DumpRawHeapImpl callback tsfnContext invalid!");
             delete pData;
         } else {
-            napi_call_threadsafe_function(tsfnContext->tsfn, pData, napi_tsfn_nonblocking);
+            if (napi_call_threadsafe_function(tsfnContext->tsfn, pData, napi_tsfn_nonblocking) != napi_ok) {
+                HILOG_ERROR(LOG_CORE, "DumpRawHeapImpl napi_call_threadsafe_function failed");
+                delete pData;
+            }
         }
         AppendMetaData(filePath);
     });
@@ -456,10 +544,17 @@ static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
 {
     HILOG_INFO(LOG_CORE, "DumpRawHeap begin!");
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
+    if (napi_open_handle_scope(env, &scope) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap napi_open_handle_scope failed");
+        return nullptr;
+    }
     size_t argc = TWO_LIMIT;
     napi_value argv[TWO_LIMIT] = {nullptr};
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeap napi_get_cb_info failed");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
     if (argc != TWO_LIMIT) {
         HILOG_ERROR(LOG_CORE, "DumpRawHeap argc invalid");
         napi_close_handle_scope(env, scope);
@@ -494,10 +589,17 @@ static napi_value DumpRawHeap(napi_env env, napi_callback_info info)
 static napi_value DumpRawHeapSync(napi_env env, napi_callback_info info)
 {
     napi_handle_scope scope = nullptr;
-    napi_open_handle_scope(env, &scope);
+    if (napi_open_handle_scope(env, &scope) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync napi_open_handle_scope failed");
+        return nullptr;
+    }
     size_t argc = ONE_VALUE_LIMIT;
     napi_value argv[ONE_VALUE_LIMIT] = {nullptr};
-    napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr);
+    if (napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "DumpRawHeapSync napi_get_cb_info failed");
+        napi_close_handle_scope(env, scope);
+        return nullptr;
+    }
     if (argc != ONE_VALUE_LIMIT) {
         napi_close_handle_scope(env, scope);
         return nullptr;
@@ -523,22 +625,34 @@ static napi_value ApiRecord(napi_env env, napi_callback_info info)
 #ifdef ENABLE_API_METRICS
     size_t argc = 1;
     napi_value args[1] = {nullptr};
-    napi_get_cb_info(env, info, &argc, args, nullptr, nullptr);
+    if (napi_get_cb_info(env, info, &argc, args, nullptr, nullptr) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "ApiRecord napi_get_cb_info failed");
+        return CreateUndefined(env);
+    }
     if (argc != 1 || args[0] == nullptr) {
         return CreateUndefined(env);
     }
     napi_valuetype valType;
-    napi_typeof(env, args[0], &valType);
+    if (napi_typeof(env, args[0], &valType) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "ApiRecord napi_typeof failed");
+        return CreateUndefined(env);
+    }
     if (valType != napi_string) {
         napi_throw_type_error(env, nullptr, "String expected");
         return nullptr;
     }
 
     size_t strLen = 0;
-    napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen);
+    if (napi_get_value_string_utf8(env, args[0], nullptr, 0, &strLen) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "ApiRecord napi_get_value_string_utf8 len failed");
+        return CreateUndefined(env);
+    }
 
     std::string value(strLen + 1, '\0');
-    napi_get_value_string_utf8(env, args[0], value.data(), strLen + 1, &strLen);
+    if (napi_get_value_string_utf8(env, args[0], value.data(), strLen + 1, &strLen) != napi_ok) {
+        HILOG_ERROR(LOG_CORE, "ApiRecord napi_get_value_string_utf8 failed");
+        return CreateUndefined(env);
+    }
 
     value.resize(strLen);
 

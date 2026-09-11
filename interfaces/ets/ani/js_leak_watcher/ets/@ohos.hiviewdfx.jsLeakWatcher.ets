@@ -177,6 +177,20 @@ export default namespace jsLeakWatcher {
     throw new BusinessError<void>(code, msg);
   }
 
+  function isPathTraversal(path: string): boolean {
+    if (path.includes('../') || path.includes('..\\')) {
+      return true;
+    }
+    return false;
+  }
+
+  function isLegalDumpPath(filePath: string): boolean {
+    if (isPathTraversal(filePath)) {
+      return false;
+    }
+    return true;
+  }
+
   function toInt(v: int | undefined, def: int): int {
     if (v === undefined || v === null) {
       return def;
@@ -390,17 +404,20 @@ export default namespace jsLeakWatcher {
   function getHeapDumpSHA256(filePath: string): string {
     let md: cryptoFramework.Md = cryptoFramework.createMd('SHA256');
     let f = fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE);
-    let bs: int = 40960;
-    let rs: long = 0;
-    let buf: ArrayBuffer = new ArrayBuffer(bs);
-    let rl: long = fileIo.readSync(f.fd, buf, { offset: rs, length: bs } as ReadOptions);
-    while (rl > 0) {
-      let blob: cryptoFramework.DataBlob = { data: new Uint8Array(buf, 0, Number.parseInt(rl.toString(), 10)) } as cryptoFramework.DataBlob;
-      md.updateSync(blob);
-      rs += rl;
-      rl = fileIo.readSync(f.fd, buf, { offset: rs, length: bs } as ReadOptions);
+    try {
+      let bs: int = 40960;
+      let rs: long = 0;
+      let buf: ArrayBuffer = new ArrayBuffer(bs);
+      let rl: long = fileIo.readSync(f.fd, buf, { offset: rs, length: bs } as ReadOptions);
+      while (rl > 0) {
+        let blob: cryptoFramework.DataBlob = { data: new Uint8Array(buf, 0, Number.parseInt(rl.toString(), 10)) } as cryptoFramework.DataBlob;
+        md.updateSync(blob);
+        rs += rl;
+        rl = fileIo.readSync(f.fd, buf, { offset: rs, length: bs } as ReadOptions);
+      }
+    } finally {
+      fileIo.closeSync(f);
     }
-    fileIo.closeSync(f);
     let dig: cryptoFramework.DataBlob = md.digestSync();
     let arr: string[] = [];
     for (let i: int = 0; i < dig.data.length; i++) {
@@ -428,15 +445,18 @@ export default namespace jsLeakWatcher {
     }
     let f = fileIo.openSync(filePath + '/' + getHeapBaseName(dumpStatus ? false : true) + '.jsleaklist',
       fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE);
-    let lol: ObjMsg[] = getLeakList();
-    let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
-    let dp: string = filePath + '/' + getHeapBaseName(false) + suf;
-    let sha: string = dumpStatus ? getHeapDumpSHA256(dp) : '';
-    let r: LeakJsonResult = dumpStatus
-      ? { version: '2.0.0', snapshot_hash: sha, leakObjList: lol }
-      : { snapshot_hash: sha, leakObjList: lol };
-    fileIo.writeSync(f.fd, JSON.stringify(r));
-    fileIo.closeSync(f);
+    try {
+      let lol: ObjMsg[] = getLeakList();
+      let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
+      let dp: string = filePath + '/' + getHeapBaseName(false) + suf;
+      let sha: string = dumpStatus ? getHeapDumpSHA256(dp) : '';
+      let r: LeakJsonResult = dumpStatus
+        ? { version: '2.0.0', snapshot_hash: sha, leakObjList: lol }
+        : { snapshot_hash: sha, leakObjList: lol };
+      fileIo.writeSync(f.fd, JSON.stringify(r));
+    } finally {
+      fileIo.closeSync(f);
+    }
     try { deleteOldFile(filePath); }
     catch (e) { console.log('Delete old files failed! ' + e); return []; }
     let fl: string[] = [];
@@ -467,15 +487,18 @@ export default namespace jsLeakWatcher {
       createHeapDumpFile(filePath, isRawHeap, true);
       let f = fileIo.openSync(filePath + '/' + getHeapBaseName(false) + '.jsleaklist',
         fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE);
-      let lol: ObjMsg[] = getLeakList();
-      let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
-      let dp: string = filePath + '/' + getHeapBaseName(false) + suf;
-      let sha: string = getHeapDumpSHA256(dp);
-      let r: LeakJsonResult = isRawHeap
-        ? { version: '2.0.0', snapshot_hash: sha, leakObjList: lol }
-        : { snapshot_hash: sha, leakObjList: lol };
-      fileIo.writeSync(f.fd, JSON.stringify(r));
-      fileIo.closeSync(f);
+      try {
+        let lol: ObjMsg[] = getLeakList();
+        let suf: string = isRawHeap ? '.rawheap' : '.heapsnapshot';
+        let dp: string = filePath + '/' + getHeapBaseName(false) + suf;
+        let sha: string = getHeapDumpSHA256(dp);
+        let r: LeakJsonResult = isRawHeap
+          ? { version: '2.0.0', snapshot_hash: sha, leakObjList: lol }
+          : { snapshot_hash: sha, leakObjList: lol };
+        fileIo.writeSync(f.fd, JSON.stringify(r));
+      } finally {
+        fileIo.closeSync(f);
+      }
     } catch (error) {
       console.log('Dump failed! ' + error);
       return [];
@@ -683,6 +706,7 @@ export default namespace jsLeakWatcher {
 
   export function dump(filePath: string): string[] {
     if (filePath === undefined || filePath === null) { throwBusinessError(ERROR_CODE_INVALID_PARAM); }
+    if (!isLegalDumpPath(filePath)) { throwBusinessError(ERROR_CODE_INVALID_PARAM); }
     return dumpInnerSync(filePath, false, false);
   }
 
