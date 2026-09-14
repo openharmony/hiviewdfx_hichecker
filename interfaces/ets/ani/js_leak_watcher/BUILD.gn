@@ -44,6 +44,7 @@ ohos_shared_library("jsleakwatcher_ani") {
     defines = [ "ENABLE_API_METRICS" ]
   }
   cflags = [ "-fstack-protector-strong" ]
+  version_script = "jsleakwatcher_ani.map"
   subsystem_name = "hiviewdfx"
   part_name = "hichecker"
   output_extension = "so"

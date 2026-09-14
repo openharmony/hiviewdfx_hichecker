@@ -1,0 +1,9 @@
+{
+  global:
+    ANI_Constructor;
+    *vtable*for*;
+    *typeinfo*for*;
+    *VTT*for*;
+  local:
+    *;
+};

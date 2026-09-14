@@ -1,0 +1,8 @@
+{
+  global:
+    *vtable*for*;
+    *typeinfo*for*;
+    *VTT*for*;
+  local:
+    *;
+};

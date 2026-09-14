@@ -58,6 +58,7 @@ ohos_shared_library("jsleakwatcher") {
     ]
     cflags = [ "-fstack-protector-strong" ]
     relative_install_dir = "module/hiviewdfx"
+    version_script = "jsleakwatcher.map"
     subsystem_name = "hiviewdfx"
     part_name = "hichecker"
   }
@@ -93,6 +94,7 @@ ohos_shared_library("jsleakwatchernative") {
     }
     cflags = [ "-fstack-protector-strong" ]
     relative_install_dir = "module/hiviewdfx"
+    version_script = "jsleakwatchernative.map"
     subsystem_name = "hiviewdfx"
     part_name = "hichecker"
   }

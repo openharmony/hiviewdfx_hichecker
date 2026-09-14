@@ -41,6 +41,7 @@ ohos_shared_library("hichecker") {
     ]
 
     relative_install_dir = "module"
+    version_script = "hichecker.map"
 
     subsystem_name = "hiviewdfx"
     part_name = "hichecker"
